@@ -1,7 +1,7 @@
 ---
 title: 'Mern Goal Setter -2-'
 date: 'September 4, 2022'
-excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使って目標を覚書するアプリをつくりました。2回目は認証機能(JWT Authentication)を実装していきます'
+excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使って目標を覚書するアプリをつくりました。2回目は認証機能(JWT Authentication)を実装しています。'
 cover_image: '/images/posts/img7.jpg'
 category: 'JavaScript'
 author: 'Toku'
