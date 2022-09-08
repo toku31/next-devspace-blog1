@@ -1,7 +1,7 @@
 ---
 title: 'Mern Goal Setter -2-'
 date: 'September 4, 2022'
-excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使って目標を覚書するアプリをつくりました。2回目は認証機能(JWT Authentication)を実装しています。'
+excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使って目標を覚書するアプリをつくりました。2回目は認証機能(JWT Authentication)を実装していきます。'
 cover_image: '/images/posts/img7.jpg'
 category: 'JavaScript'
 author: 'Toku'
@@ -58,7 +58,7 @@ const mongoose = require('mongoose')
 
 const goalSchema = mongoose.Schema(
   {
-    user: {
+    user: {　// ポイント２
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'User',　// モデル名
@@ -127,8 +127,8 @@ npm install bcryptjs
 JWT
 npm i jsonwebtoken
 
-別の参考例
 ~~~js
+// 別の参考例
 const router = require("express").Router()
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
@@ -176,15 +176,15 @@ const registerUser = asyncHandler(async (req, res) => {
   // Hash password
   const salt = await bcrypt.genSalt(10)
   const hashedPassword = await bcrypt.hash(password, salt)
-  // Create user
-  const user = await User.create({
+  // Create user　　★　★　★　★　★　★　★　★　★
+  const user = await User.create({　// idも自動的に生成される
     name,
     email,
     password: hashedPassword
   })
   if (user) {
     res.status(201).json({
-      _id: user.id,
+      _id: user.id,　　// ★　★　★　★　★　JSON形式では　_idと定義する
       name: user.name,
       email:user.email,
     })
@@ -228,7 +228,7 @@ JWT_SECRET = XXXX // 追加
 #### JWTの生成
 ~~~js
 // userController.js の続き
-const generateToken = (id) => {
+const generateToken = (id) => {　// ★★★トークンの生成★★★
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   })
@@ -248,7 +248,7 @@ const generateToken = (id) => {
       _id: user.id,
       name: user.name,
       email:user.email,
-      token:generateToken(user._id)  // 追加
+      token:generateToken(user._id)  // 追加　
     })
   } else {
     res.status(400)
@@ -258,10 +258,11 @@ const generateToken = (id) => {
 token:generateToken(user._id)をloginUserにも追加  
 https://jwt.io/ でペイロード確認
 
-ルートのプロテクト  
- getMe関数のようなログインしてるユーザのみに有効になるように
+### ルートのプロテクト  
+ getMe関数のようなログインしてるユーザのみ有効になるように
 プロテクト機能を実装するためauthMiddleware.jsの作成
 ~~~js
+// mern-tutorial/backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken')
 const asyncHandler = require('express-async-handler')
 const User = require=('../models/userModel')
@@ -275,8 +276,8 @@ const protect = asyncHandler(async(req, res, next) => {　// ミドルウェア�
       token = req.headers.authorization.split(' ')[1] // Bear△X3mkdilj~~~~
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
-      // Get user from the token
-      req.user = await User.findById(decoded.id).select('-password')
+      // Get user from the token　　　　パスワードを含めない ★　★　★　★　★　★ ポイント１
+      req.user = await User.findById(decoded.id).select('-password') 
       next()
     } catch (error) {
       console.log(error)
@@ -290,4 +291,156 @@ const protect = asyncHandler(async(req, res, next) => {　// ミドルウェア�
   }
  })
 module.exports = { protect }
+~~~
+ミドルウェアの実装
+~~~js
+// mern-tutorial/backend/routes/userRoutes.js 
+const express = require('express')
+const router = express.Router()
+const {
+  registerUser,
+  loginUser,
+  getMe,
+} = require('../controllers/userController')
+const { protect } = require('../middleware/authMiddleware') // 追加
+
+router.post('/', registerUser)
+router.post('/login', loginUser)
+router.get('/me', protect, getMe)　// 追加
+
+module.exports = router
+~~~
+
+~~~js
+//mern-tutorial/backend/controllers/userController.js 
+// @desc    Get user data
+// @route   GET /api/users/me
+// @access  Private
+const getMe = asyncHandler(async (req, res) => {
+  const { _id, name, email } = await User.findById(req.user.id) // ポイント１のreq.userを受け取る
+  res.status(200).json({
+    id: _id,
+    name,
+    email,
+  })
+})
+~~~
+
+### Goal RoutesもProtectする
+~~~js
+//mern-tutorial/backend/routes/goalRoutes.js 
+const express = require('express')
+const router = express.Router()
+const {
+  getGoals,
+  setGoal,
+  updateGoal,
+  deleteGoal,
+} = require('../controllers/goalController')
+
+const { protect } = require('../middleware/authMiddleware') // 追加
+
+router.route('/').get(protect, getGoals).post(protect, setGoal)　　// protectの追加
+router.route('/:id').delete(protect, deleteGoal).put(protect, updateGoal)　// protectの追加
+
+module.exports = router
+~~~
+
+~~~js
+// mern-tutorial/backend/controllers/goalController.js 
+const asyncHandler = require('express-async-handler')
+
+const Goal = require('../models/goalModel')
+const User = require('../models/userModel')
+
+// @desc    Get goals
+// @route   GET /api/goals
+// @access  Private
+const getGoals = asyncHandler(async (req, res) => {
+  const goals = await Goal.find({ user: req.user.id }) // 追加　ポイント２参照
+
+  res.status(200).json(goals)
+})
+
+// @desc    Set goal
+// @route   POST /api/goals
+// @access  Private
+const setGoal = asyncHandler(async (req, res) => {
+  if (!req.body.text) {
+    res.status(400)
+    throw new Error('Please add a text field')
+  }
+
+  const goal = await Goal.create({
+    text: req.body.text,
+    user: req.user.id,  // 追加
+  })
+
+  res.status(200).json(goal)
+})
+
+// @desc    Update goal
+// @route   PUT /api/goals/:id
+// @access  Private
+const updateGoal = asyncHandler(async (req, res) => {
+  const goal = await Goal.findById(req.params.id)
+
+  if (!goal) {
+    res.status(400)
+    throw new Error('Goal not found')
+  }
+
+  // Check for user
+  if (!req.user) {
+    res.status(401)
+    throw new Error('User not found')
+  }
+
+  // Make sure the logged in user matches the goal user
+  if (goal.user.toString() !== req.user.id) {
+    res.status(401)
+    throw new Error('User not authorized')
+  }
+
+  const updatedGoal = await Goal.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  })
+
+  res.status(200).json(updatedGoal)
+})
+
+// @desc    Delete goal
+// @route   DELETE /api/goals/:id
+// @access  Private
+const deleteGoal = asyncHandler(async (req, res) => {
+  const goal = await Goal.findById(req.params.id)
+
+  if (!goal) {
+    res.status(400)
+    throw new Error('Goal not found')
+  }
+
+  // Check for user
+  if (!req.user) {
+    res.status(401)
+    throw new Error('User not found')
+  }
+
+  // Make sure the logged in user matches the goal user
+  if (goal.user.toString() !== req.user.id) {
+    res.status(401)
+    throw new Error('User not authorized')
+  }
+
+  await goal.remove()
+
+  res.status(200).json({ id: req.params.id })
+})
+
+module.exports = {
+  getGoals,
+  setGoal,
+  updateGoal,
+  deleteGoal,
+}
 ~~~

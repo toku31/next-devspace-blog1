@@ -4,7 +4,7 @@ title: "Build ECommerce Shopping Cart By React & Redux -1-
 date: 'August 30, 2022'
 excerpt: 'React.jsを用いてショッピングカートのサイトを作成しました。値段やサイズで並び変えできるようにしました。'
 cover_image: '/images/posts/img4.jpg'
-category: 'JavaScript'
+category: 'React'
 author: 'Toku'
 author_image: 'https://randomuser.me/api/portraits/women/12.jpg'
 ---
@@ -669,11 +669,132 @@ class App extends React.Component {
 }
 
 ```
-## Checkout Formの作成
-Make cart items persistent(画面を更新しても Cartの表示が消えないようにする)
+## Checkout Formの作成 8
+Make cart items persistent(画面を更新しても Cartの表示が消えないようにする)  
+localStorage.setItemを使う
+```js
+// react-shopping-cart/src/App.js 
+addToCart = (product) => {
+  const cartItems = this.state.cartItems.slice();
+  let alreadyInCart = false;
+  cartItems.forEach((item) => {
+    if (item._id === product._id) {
+      item.count++;
+      alreadyInCart = true;
+    }
+  });
+  if (!alreadyInCart) {
+    cartItems.push({ ...product, count: 1 });
+  }
+  this.setState({ cartItems });
+  // キー　とバリューを引数に入れる
+  localStorage.setItem('cartItems', JSON.stringify(cartItems)); // 追加
+};
 ```
+JSON.stringify でJSオブジェクトを文字列に変換する  
+↓ カートのアイテムを削除した後もカート中のアイテムを正しくlocalstrageに記録させる
+~~~
+class App extends React.Component {
+   constructor() {
+     super();
+     this.state = {
+       products: data.products,
+       cartItems: localStorage.getItem('cartItems')　// 追加
+         ? JSON.parse(localStorage.getItem('cartItems'))
+         : [],
+       size: '',
+       sort: '',
+     };
+   }
 
+removeFromCart = (product) => {
+  const cartItems = this.state.cartItems.slice();
+  this.setState({
+    cartItems: cartItems.filter((x) => x._id !== product._id),
+  });
+  localStorage.setItem( // 追加
+    'cartItems',
+    JSON.stringify(cartItems.filter((x) => x._id !== product._id))
+  );
+};
+~~~
 
-```
-
-
+Handle Click on Proceed
+~~~JS
+class Cart extends Component {
+  constructor(props) {　// コンストラクタ追加
+    super(props);
+    this.state = {
+      name: "",
+      email: "",
+      address: "",
+      showCheckout: false, // 追加
+    };
+  }
+  handleInput = (e) => {
+    this.setState({ [e.target.name]: e.target.value });
+  };
+     - - - - -
+<div>
+  <div className="cart">
+    <div className="total">
+      <div>
+        Total:{" "}
+        {formatCurrency(
+          cartItems.reduce((a, c) => a + c.price * c.count, 0)
+        )}
+      </div>
+      <button
+        onClick={() => {  // 追加　↓
+          this.setState({ showCheckout: true });
+        }}
+        className="button primary"
+      >
+        Proceed
+      </button>
+    </div>
+  </div>
+  {this.state.showCheckout && (
+    <Fade right cascade>
+      <div className="cart">
+        <form onSubmit={this.createOrder}>
+          <ul className="form-container">
+            <li>
+              <label>Email</label>
+              <input
+                name="email"
+                type="email"
+                required
+                onChange={this.handleInput} // ★★★★★
+              ></input>
+            </li>
+            <li>
+              <label>Name</label>
+              <input
+                name="name"
+                type="text"
+                required
+                onChange={this.handleInput}
+              ></input>
+            </li>
+            <li>
+              <label>Address</label>
+              <input
+                name="address"
+                type="text"
+                required
+                onChange={this.handleInput}
+              ></input>
+            </li>
+            <li>
+              <button className="button primary" type="submit">
+                Checkout
+              </button>
+            </li>
+          </ul>
+        </form>
+      </div>
+    </Fade>
+  )}
+  </div>
+~~~

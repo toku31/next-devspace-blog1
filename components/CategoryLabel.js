@@ -7,7 +7,8 @@ export default function CategoryLabel({children}) {
     CSS: 'bg-blue-600',
     Python: 'bg-green-600',
     PHP: 'bg-purple-600',
-    Ruby: 'bg-red-600',
+    React: 'bg-orange-600',
+    Solidity: 'bg-pink-600',
   }
 
   const bgColor = `bg-${colorKey[children]}-600`;
