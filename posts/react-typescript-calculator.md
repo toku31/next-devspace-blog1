@@ -11,6 +11,7 @@ author_image: 'https://randomuser.me/api/portraits/women/11.jpg'
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 参考にしたサイト：https://www.youtube.com/watch?v=YbsBQbqxy1I  
              https://www.youtube.com/watch?v=SeCNgYA3Ns4&t=2s  
+             https://www.youtube.com/watch?v=qefInxlG1kM&t=278s
 
 ```
 user@mbp React % npx create-react-app calculator-typescript --template typescript
@@ -426,3 +427,11 @@ export const calculate = (button: string, state: State):State => {
   return state
 }
 ~~~
+
+SassをインストールしてCSSを実装する  
+npm install sass
+~~~
+
+~~~
+
+

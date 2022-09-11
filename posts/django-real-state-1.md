@@ -719,7 +719,7 @@ state_choices = {
 }
 ~~~
 
-~~~
+~~~python
 // btre_project/pages/views.py 
 from django.http import HttpResponse
 from listings.choices import price_choices, bedroom_choices, state_choices
@@ -789,9 +789,124 @@ btre_project/templates/pages/index.html
 <div class="search">
     <form action="{% url 'search' %}">  //追加
 ~~~
-
 btre_project/templates/listings/search.htmlを作成する  
 中身はbtre_project/templates/pages/index.htmlとほぼ同じ
+
+#### Search Form Filtering 46
+~~~python
+// btre_project/listings/views.py 
+from django.shortcuts import get_object_or_404, render
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from .choices import price_choices, bedroom_choices, state_choices
+
+from .models import Listing
+        - - - - - 
+def search(request):
+    queryset_list = Listing.objects.order_by('-list_date')
+    #Keywords
+    if 'keywords' in request.GET:
+        keywords = request.GET['keywords']
+        if keywords:
+            queryset_list = queryset_list.filter(description__icontains=keywords)
+    #City
+    if 'city' in request.GET:
+        city = request.GET['city']
+        if city:
+            queryset_list = queryset_list.filter(city__iexact=city)
+    #State
+    if 'state' in request.GET:
+        state = request.GET['state']
+        if state:
+            queryset_list = queryset_list.filter(state__iexact=state)
+    #Bedrooms
+    if 'bedrooms' in request.GET:
+        bedrooms = request.GET['bedrooms']
+        if bedrooms:
+            queryset_list = queryset_list.filter(bedrooms__lte=bedrooms)
+    #Price
+    if 'price' in request.GET:
+        price = request.GET['price']
+        if price:
+            queryset_list = queryset_list.filter(price__lte=price)
+    context = {
+        'state_choices': state_choices,
+        'bedroom_choices': bedroom_choices,
+        'price_choices': price_choices,
+        'listings': queryset_list,
+    }
+    return render(request, 'listings/search.html', context)
+~~~
+上の例で例えばrequest.GET['city']の'city'はbtre_project/templates/pages/index.htmlにある＜input type="text" name="city" class="form-control" placeholder="City"＞のname属性を見ている
+
+#### Preserving Form Input 47
+検索の結果が表示された後も検索の入力がそのまま残っているようにしたい
+~~~python
+    #Price
+    if 'price' in request.GET:
+        price = request.GET['price']
+        if price:
+            queryset_list = queryset_list.filter(price__lte=price)
+    context = {
+        'state_choices': state_choices,
+        'bedroom_choices': bedroom_choices,
+        'price_choices': price_choices,
+        'listings': queryset_list,
+        'values':request.GET  // 追加
+    }
+~~~
+
+value="{{ values.keywords }}", value="{{ values.city }}"など追加する
+~~~html
+// btre_project/templates/listings/search.html
+          - - - 
+<section id="showcase-inner" class="showcase-search text-white py-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-12">
+                <form action="{% url 'search' %}">
+                    <!-- Form Row 1 -->
+                    <div class="form-row">
+                        <div class="col-md-4 mb-3">
+                            <label class="sr-only">Keywords</label>
+                            <input type="text" name="keywords" class="form-control"
+                                placeholder="Keyword (Pool, Garage, etc)" value="{{ values.keywords }}"> //追加
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="sr-only">City</label>
+                            <input type="text" name="city" class="form-control" placeholder="City" value="{{ values.city }}"> //追加
+                        </div>
+~~~
+tagがinputの代わりにselectの時
+~~~html
+                            <select name="state" class="form-control">
+                                <option selected="true" disabled="disabled">State (All)</option>
+                                {% for key,value in state_choices.items %}
+                                    <option value="{{ key }}"
+                                    {% if key == values.state %}　// 追加
+                                        selected　// 追加
+                                    {% endif %}　　// 追加
+                                    >{{ value }} </option>
+                                {% endfor %}
+                            </select>
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
 ~~~
 
 ~~~
