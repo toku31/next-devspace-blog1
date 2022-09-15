@@ -3,7 +3,7 @@ title: 'Mern Goal Setter -2-'
 date: 'September 4, 2022'
 excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使って目標を覚書するアプリをつくりました。2回目は認証機能(JWT Authentication)を実装していきます。'
 cover_image: '/images/posts/img7.jpg'
-category: 'JavaScript'
+category: 'React'
 author: 'Toku'
 author_image: 'https://randomuser.me/api/portraits/men/11.jpg'
 ---
@@ -346,12 +346,13 @@ router.route('/:id').delete(protect, deleteGoal).put(protect, updateGoal)　// p
 module.exports = router
 ~~~
 
+自分の作成したゴールだけ更新や削除できるようにしたい
 ~~~js
 // mern-tutorial/backend/controllers/goalController.js 
 const asyncHandler = require('express-async-handler')
 
 const Goal = require('../models/goalModel')
-const User = require('../models/userModel')
+const User = require('../models/userModel')　// 追加する
 
 // @desc    Get goals
 // @route   GET /api/goals
@@ -390,12 +391,14 @@ const updateGoal = asyncHandler(async (req, res) => {
     throw new Error('Goal not found')
   }
 
+  // const user = await User.findById(req.user.id)
+
   // Check for user
-  if (!req.user) {
+  if (!req.user) {  // tokenより取得したuser(ポイント１)
     res.status(401)
     throw new Error('User not found')
   }
-
+  //ログインしたユーザがゴールを作成しているかをチェックする
   // Make sure the logged in user matches the goal user
   if (goal.user.toString() !== req.user.id) {
     res.status(401)
@@ -425,7 +428,7 @@ const deleteGoal = asyncHandler(async (req, res) => {
     res.status(401)
     throw new Error('User not found')
   }
-
+   
   // Make sure the logged in user matches the goal user
   if (goal.user.toString() !== req.user.id) {
     res.status(401)

@@ -409,6 +409,138 @@ truffle(development)>instance.getAllFunders()
 ]
 ~~~
 ### 37. Public vs External
+~~~js
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.4.22 <0.9.0;
+
+contract Faucet {
+  address[] public funders;
+  receive() external payable {}
+
+  function addFunds() external payable {
+    funders.push(msg.sender);
+  }
+　　　　　　　　　　　　　　　　
+ function getAllFunders() public view returns (address[] memory){
+    return funders;
+  }
+
+  function getFunderAtIndex(uint8 index) external view returns(address){
+    address[] memory _funders = getAllFunders();　//
+    return _funders[index];
+  }
+}
+~~~
+上の例ではgetFunderAtIndex関数がgetAllFunders関数をコールしているが、
+同じFaucetの内にある関数を呼ぶ時は呼ばれるgetAllFunders()をexternalではなくpublicにする必要がある externalは外部からのみでpublicは外部と内部の両方から呼ばれる
+
+~~~
+user@mbp faucet % truffle migrate --reset
+user@mbp faucet % truffle console
+truffle(development)> const instance = await Faucet.deployed()
+undefined
+truffle(development)> instance.addFunds({from: accounts[0], value: "2"})
+truffle(development)>instance.addFunds({from: accounts[1], value: "2"})
+truffle(development)>instance.getFunderAtIndex(0)
+'0xf8929- - - - - - - - - - - - - - - - 6c6'
+truffle(development)>instance.getFunderAtIndex(1)
+'0x75d78- - - - - - - - - - - - - - - - 7a1'
+~~~
+### 42. Private & Internal
+~~~
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.4.22 <0.9.0;
+
+contract Faucet {
+  address[] internal funders;  // internalに変更
+  // private -> can be accessble only when the smart contract
+  // internal -> can be accessble within smart contract and also derived smart contract
+
+  receive() external payable {}
+        - - - - -
+}
+~~~
+### 45 Funders mapping
+~~~js
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.4.22 <0.9.0;
+
+contract Faucet {
+
+  uint public numOfFunders;
+  mapping(uint => address) private funders;
+
+  receive() external payable {}
+
+  function addFunds() external payable {
+    uint index = numOfFunders++;
+    funders[index] = msg.sender;
+  }
+　　　　　　　　　　　　　　　　
+  function getFunderAtIndex(uint8 index) external view returns(address){
+    return funders[index];
+  }
+}
+~~~
+~~~
+user@mbp faucet % truffle migrate --reset
+user@mbp faucet % truffle console
+truffle(development)> const instance = await Faucet.deployed()
+undefined
+truffle(development)> instance.addFunds({from: accounts[0], value: "200000000"})
+truffle(development)>instance.addFunds({from: accounts[1], value: "200000000"})
+truffle(development)>instance.getFunderAtIndex(0)
+'0xf8929- - - - - - - - - - - - - - - - 6c6'
+truffle(development)>instance.getFunderAtIndex(1)
+'0x75d78- - - - - - - - - - - - - - - - 7a1'
+~~~
+
+### 46 Get all funders
+~~~js
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.4.22 <0.9.0;
+
+contract Faucet {
+
+  uint public numOfFunders;
+  mapping(uint => address) private funders;
+
+  receive() external payable {}
+
+  function addFunds() external payable {
+    uint index = numOfFunders++;
+    funders[index] = msg.sender;
+  }
+  // ↓ 追加
+  function getAllFunders() external view returns (address[] memory) {
+    address[] memory _funders = new address[](numOfFunders);
+
+    for (uint i = 0; i < numOfFunders; i++) {
+      _funders[i] = funders[i];
+    }
+
+    return _funders;
+  }
+　　　　　　　　　　　　　　　　
+  function getFunderAtIndex(uint8 index) external view returns(address){
+    return funders[index];
+  }
+}
+~~~
+~~~
+user@mbp faucet % truffle migrate --reset
+user@mbp faucet % truffle console
+truffle(development)> const instance = await Faucet.deployed()
+undefined
+truffle(development)> instance.addFunds({from: accounts[0], value: "200000000"})
+truffle(development)>instance.addFunds({from: accounts[1], value: "200000000"})
+truffle(development)>instance.getAllFunders()
+[
+'0xf8929- - - - - - - - - - - - - - - - 6c6'
+'0x75d78- - - - - - - - - - - - - - - - 7a1'
+]
+~~~
+### 47 Prevent duplications
 
 
 48 lutfunders
