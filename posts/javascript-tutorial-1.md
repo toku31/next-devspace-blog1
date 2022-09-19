@@ -1,7 +1,7 @@
 ---
 title: 'JavaScript Tutorial -1-'
 date: 'September11, 2022'
-excerpt: 'JavaScriptの基礎から応用まで要点をメモ書きしていきます。React, jQuery, TypeScript, Node.js, Express, webpackを学習している方にオススメです。'
+excerpt: 'JavaScriptの基礎から応用まで要点をメモ書きしていきます。React, jQuery, TypeScript, Node.js, Express, webpackの学習にも役立ちます。'
 cover_image: '/images/posts/img1.jpg'
 category: 'JavaScript'
 author: 'Toku'
@@ -42,10 +42,326 @@ if (真偽値) {条件}
 ~~~
 
 ~~~
-let ok = true;
+let ok = false;
+let perhapsOK =false;
+let maybeOK = true
+if (ok) {
+  console.log('Ok')
+} elseif(perhapsOK ) {
+  console.log('perhaps OK')
+}
+} else {
+  if(maybeOK) {
+    console.log('maybe OK')
+  }else {
+    console.log('NG')
+  }
+}
+~~~
+
+同値演算子 '＝＝＝' & 等値演算子'=='
+~~~
+let ok = false;
+ok = 5 === 5;
+ok = 'test' === 'test';
+console.log(ok) // true
+~~~
+~~~
+let ok = false;
+ok = 5!== 6;
+ok = 'test' !== 'morning';
+console.log(ok) // true
+~~~
+等値演算子 型の制約なし
+~~~
+let ok = false;
+ok = 5 == 5;
+ok = 5 == '5'; // true
+ok = 5 ==＝ '5'; // false
+ok = 5 != '4'; // true
+console.log(ok) // true
+~~~
+
+同値演算子とオブジェクト
+~~~
+let ok = false;
+const flower1 = {name: 'tulip'};
+const flower2 = {name: 'tulip'};
+ok = flower1 === flower2 // false
+const flower3 = flower1
+ok = flower1 === flower3 // true
+ok = flower1.name === flower2.name // true
+~~~
+配列もオブジェクトと考える
+~~~
+let ok
+const cars1 = ['toyota', 'ford']
+const cars2 = ['toyota', 'ford']
+ok = cars1 === cars2
+console.log(ok) // false
+~~~
+大小を比較する演算子
+~~~
+let ok
+ok = 1 > 1;
+console.log(ok) // false
+ok = 1 >= 1; //true
+ok = 1 <= 1; //true
+ok = 'a' < 'b'; //true
+ok = 'A' < 'a'; //true
+~~~
+TruthyやFalsy  
+https://developer.mozilla.org/en-US/docs/Glossary/Falsy
+~~~
+let ok = 'test'; // 文字列
 if (ok) {
   console.log('Ok')
 } else {
   console.log('NG')
 }
+'test'：OK Truthy
+""：NG  Falsy
+100:OK Truthy
+0:NG   Falsy
+null:NG   Falsy
+undefined:NG   Falsy
+NaN:NG   Falsy
+~~~
+論理積演算子&論理和演算子
+~~~
+let ok 
+ok = true && false // false 両方がtrueの時のみtrue
+ok = true || false // True 両方がfalseの時のみfalse
+ok = 'Alise' && 'Bob'  // Bob
+ok = true && 'Bob'  // Bob
+ok = false && 'Bob'  // false
+ok = 0 && 'Bob'  // 0
+ok = 'Alise' || 'Bob'  // Alise
+ok = 0 || 'Bob'  // Bob
+~~~
+論理積：左がtruthyなら右を返す　左がfalseyなら左を返す  
+論理和: 左がtruthyなら左を返す　左がfalseyなら右を返す
+~~~
+// 論理和の使い方
+const inputName = '';
+const Username = inputName || 'User'
+console.log(Username) // User
+~~~
+優先順位　Logical Operators  
+https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
+~~~
+const x = 15
+const name = 'Steve'
+OK = x > 10 && x < 20;
+~~~
+
+~~~
+ok = x ===10 || x > 12 && name;
+1 x > 12  // true
+2 x ===10  // false
+Ok = false || true && name;
+3 true && name // name (|| より　&&の方が優先される)
+4 false || name  左がfalseyなら右を返す
+5 ok = name
+~~~
+結合性
+
+Null合体演算子 ??  
+左がnullかundefinedなら右を返す、そうでなければ左を返す
+~~~
+// 論理和の使い方
+const inputName = '';
+const Username = inputName ?? 'Steve'
+console.log(Username) // '' 空文字はNULLでもundefinedでもない
+const Username = inputName ?? 'Steve' && 1 // &&や||と一緒に使えない
+const Username = inputName ?? ('Steve' && 1) // OK
+~~~
+論理否定演算子
+~~~
+let ok
+const x = 15
+ok = !true;
+console.log(ok) // false
+ok = !'good'; // Truthyの反転　false
+ok = !''; // Falseyの反転　true
+ok = !x; // false
+ok = !!x; // true 型変換できる
+~~~
+ChromeのDevtoolでconditional breakpoint がある
+
+文(statement)と式(expression)
+~~~
+// statement
+declarations → var let const
+functions and classes　→ function, async function, return, class
+Iterations →  do...while
+control flow →  break continue switch try...catch throw
+Other →  debugger
+empty → ; (空文)
+~~~
+~~~
+// expression
+x = 10 // 右側は式
+x = 5 + 4 // 右側は式
+~~~
+
+ブロック文： 複数の文組み合わせて書くとき
+~~~
+{
+  const name = 'Bob'
+  {
+    const name = 'Bob' // 優先される
+  }
+}
+~~~
+~~~
+const name = 'Bob2'
+{
+  console.log(hello); エラー　dead zone
+  const name = 'Bob1'
+}
+~~~
+三項演算子 値を返す
+~~~
+let score;
+score = 90;
+let msg = (score > 60) ? '合格' : '不合格';
+console.log(msg); // 合格
+~~~
+以下と同じ
+~~~js
+let score
+score = 90
+if (score > 60) msg = '合格'
+else msg = '不合格'
+~~~
+switch文 (全ての箇所でbreak文が必要)
+~~~js
+function address(pref) {
+  if (pref === 'tokyo') {
+    console.log(tokyo is Kanto)
+  } else if (pref === 'osaka') {
+    console.log(osaka is Kansai)
+  }else if (pref === 'fukuoka') {
+    console.log(fukuoka is Kyusyu)
+  }
+}
+~~~
+以下と同じ
+~~~js
+function address(pref) {
+  switch (pref) {
+    case 'tokyo':
+      console.log(tokyo is Kanto)
+      break;
+    case 'hyogo':
+    case 'osaka':
+      console.log(`${pref} is Kansai`)
+      break;
+    case 'fukuoka':
+      console.log(fukuoka is Kyusyu)
+      break;
+    default;
+      onsole.log(Not found)
+  }
+}
+~~~
+
+~~~js
+function address(pref) {
+  switch (pref) {
+    case 'tokyo': {
+      const message = 'tokyo is Kanto'
+      console.log(message)
+      break;
+    }
+    case 'hyogo':
+    case 'osaka':{
+      const message = `${pref} is Kansai`
+      console.log(message)
+      break;
+    }
+    case 'fukuoka':{
+      const message = 'fukuoka is Kyusyu'
+      console.log(message)
+      break;
+    }
+    default;{
+      const message = 'not found'
+      console.log(message)
+    }
+  }
+}
+~~~
+
+ループ文 ：while文
+~~~js
+let i = 0;
+while(i < 10) {
+  console.log('Number' + i)
+  i ++;
+}
+~~~
+
+do while文 必ず１回は処理を行う
+~~~js
+let i = 100;
+do {
+  console.log('Number' + i)
+  i += 1;
+} while (i < 10)
+~~~
+
+For 文
+~~~
+for (let i=0; i<10; i++) {
+  if (i===2){
+    console.log('2 is my favorite number');
+  }
+}
+~~~
+let文とカンマ演算子
+~~~
+for (let count=0, i=0; count<10; count+=1,i+=1){
+  console.log(count, i)
+}
+~~~
+配列のループ
+~~~
+const cars = ['Ford', 'Chevy', 'Honda', 'Toyota']
+for (let i=0; i<cars.length; i++) {
+  console.log(cars[i])
+}
+~~~
+For-of文で書く(配列、文字列はOK、イテラブルオブジェクトもOK？)
+~~~js
+const cars = ['Ford', 'Chevy', 'Honda', 'Toyota']
+for (const car of cars) {
+  console.log(car)
+}
+~~~
+For-in文
+~~~
+const people = {
+  name: 'Bob',
+  age: 25,
+  isAdult: true,
+};
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
 ~~~

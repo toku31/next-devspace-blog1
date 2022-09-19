@@ -123,7 +123,7 @@ import { faBed,faPlane,faCar,faTaxi, faCalendarDays, faPerson, faSwimmer} from '
 import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css'; // main css file
 import 'react-date-range/dist/theme/default.css'; // theme css file
-import {format} from "date-fns"
+import {format} from "date-fns"　// 日付のフォーマット
 import ja from 'date-fns/locale/ja'
 
 const Header = ()  => {
@@ -368,7 +368,7 @@ https://hypeserver.github.io/react-date-range/
 
 user@mbp reservation-app % npm i react-date-range  
 user@mbp reservation-app % npm i date-fns
-~~~
+~~~js
 // サンプル
 import {useState} from 'react'
 const [state, setState] = useState([
@@ -386,7 +386,192 @@ const [state, setState] = useState([
   ranges={state}
 />
 ~~~
+~~~js
+// Header.jsx　日付の設定
+import {format} from "date-fns"　// 日付のフォーマット
+  //サーチの窓枠の開閉
+  const [openDate, setOpenDate] = useState(false)
+  // カレンダー日
+  const [date, setDate] = useState([
+    {
+      startDate: new Date(),
+      endDate: new Date(),
+      key: 'selection'
+    }
+  ]);
 
+  <span onClick={()=>setOpenDate(!openDate)} 
+   className='headerSearchText'>{`${format(date[0].startDate, "M月dd日(ccc)")} -- ${format(date[0].endDate, "M月dd日(ccc)")}`}</span>
+  {openDate && <DateRange
+    editableDateInputs={true}
+    onChange={item => setDate([item.selection])}
+    moveRangeOnFirstSelection={false}
+    locale={ja} // 言語設定
+    ranges={date}
+    className="date"
+    minDate={new Date()} 
+  />}
+~~~
+~~~js
+// 部屋のオプション部分
+<div className="headerSearchItem">
+  <FontAwesomeIcon icon={faPerson} className="headerIcon" />
+  <span onClick={()=>setOpenOptions(!openOptions)} className='headerSearchText'>{`大人${options.adult}名  ・ 子供${options.children}名  ・ ${options.room} 部屋`}</span>
+    {openOptions && <div className="options">
+      <div className="optionItem">
+        <span className="optionText">大人</span>
+        <div className="optionCounter">
+          <button disabled ={options.adult <= 1} className="optionCounterButton" onClick={()=>handleOption("adult", "d")}>-</button>
+          <span className="optionCounterNumber">{options.adult}</span>
+          <button className="optionCounterButton" onClick={()=>handleOption("adult", "i")}>+</button>
+        </div>
+      </div>
+      <div className="optionItem">
+        <span className="optionText">子供</span>
+        <div className="optionCounter">
+          <button disabled ={options.children <= 0} className="optionCounterButton" onClick={()=>handleOption("children", "d")}>-</button>
+          <span className="optionCounterNumber">{options.children}</span>
+          <button className="optionCounterButton" onClick={()=>handleOption("children", "i")}>+</button>
+        </div>
+      </div>
+      <div className="optionItem">
+        <span className="optionText">部屋</span>
+        <div className="optionCounter">
+          <button disabled ={options.room <= 1} className="optionCounterButton" onClick={()=>handleOption("room", "d")}>-</button>
+          <span className="optionCounterNumber">{options.room}</span>
+          <button className="optionCounterButton" onClick={()=>handleOption("room", "i")}>+</button>
+        </div>
+      </div>
+    </div>
+    }
+</div>
 ~~~
 
+~~~js
+// "d"はdecrease "i"はincerease
+<button className="optionCounterButton" onClick={()=>handleOption("adult", "d")}>-</button>
+<button className="optionCounterButton" onClick={()=>handleOption("adult", "i")}>-</button>
+<button className="optionCounterButton" onClick={()=>handleOption("children", "d")}>-</button>
+<button className="optionCounterButton" onClick={()=>handleOption("children", "i")}>-</button>
+~~~
+
+~~~js
+// src/components/header/Header.jsx
+const [options, setOptions] = useState({
+  adult: 1,
+  children: 0,
+  room: 1,
+});
+// カウントメソッド
+const handleOption = (name, operation) => {
+  setOptions((prev) => {
+    return {
+      ...prev, // adult: 1,children: 0,room: 1
+      [name]: operation === "i" ? options[name] + 1 : options[name] - 1,
+    };
+  });
+};
+~~~
+
+~~~js
+// 部屋数の値が１未満の時ボタンを押せなくする
+<button disabled ={options.adult <= 1}  //追加
+className="optionCounterButton" onClick={()=>handleOption("adult", "d")}>-</button>
+
+// style
+.optionCounterButton:disabled {
+  cursor: not-allowed;
+}
+~~~
+
+
+~~~css
+// オプションボタンのスタイル
+.options {
+  z-index: 2;
+  position: absolute;
+  top: 50px;
+  background-color: white;
+  color: gray;
+  border-radius: 5px;
+  -webkit-box-shadow: 0px 0px 10px -5px rgba(0, 0, 0, 0.4);
+  box-shadow: 0px 0px 10px -5px rgba(0, 0, 0, 0.4);
+}
+
+.optionItem {
+  width: 200px;
+  display: flex;
+  justify-content: space-between;
+  margin: 10px;
+}
+
+.optionCounter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: black;
+}
+
+.optionCounterButton {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #0071c2;
+  color: #0071c2;
+  cursor: pointer;
+  background-color: white;
+}
+
+.optionCounterButton:disabled {
+  cursor: not-allowed;
+}
+~~~
+
+部屋のリストを表示するが、ヘッダーにサーチボックスを表示させない  
+Headerコンポーネントにpopsを作成する
+~~~js
+// src/pages/list/List.jsx
+import "./list.css";
+import Navbar from "../../components/navbar/Navbar";
+import Header from "../../components/header/Header";
+
+const List = () => {
+
+  return (
+    <div>
+      <Navbar />
+      <Header type="list" /> // props追加
+    </div>
+  )
+}
+
+export default List
+~~~
+
+~~~js
+// src/components/header/Header.jsx
+const Header = ({ type }) => {
+        ~ ~ ~
+    return (
+    <div className="header">
+      <div
+        className={type === "list" ? "headerContainer listMode" : "headerContainer"}>
+  {type !== "list" && (
+    <>
+      <h1 className="headerTitle">
+        A lifetime of discounts? It's Genius.
+      </h1>
+        ~ ~ ~
+        ~ ~ ~
+      </div>
+    </>
+  )}
+  </div>
+</div>
+}
+
+// style Header.cssに追加
+.headerContainer.listMode {
+  margin: 20px 0px 0px 0px;
+}
 ~~~
