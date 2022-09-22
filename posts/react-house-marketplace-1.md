@@ -307,7 +307,6 @@ npm install firebase
 // react-house-market/src/pages/SignUp.jsx 
 import {useState} from 'react'
 import { useNavigate, Link} from 'react-router-dom'
-import {toast} from 'react-toastify'
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth"; // 追加
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";　// 追加
 import {db} from '../firebase.config'　// 追加
@@ -447,25 +446,91 @@ await setDoc(doc(db, 'users', user.uid), formDataCopy)
 
 ~~~
 
-## ユーザのサインイン
+## ユーザのサインイン 87
 ~~~javascript
-import { useState, useEffect } from 'react'
-import { getAuth } from 'firebase/auth'
+// react-house-market/src/pages/SignIn.jsx 
+import {useState} from 'react'
+import { useNavigate, Link} from 'react-router-dom'
+import { getAuth, signInWithEmailAndPassword} from "firebase/auth"; // 追加
+import { ReactComponent as ArrowRightIcon} from '../assets/svg/keyboardArrowRightIcon.svg'
+import visibilityIcon from '../assets/svg/visibilityIcon.svg'
 
-function Profile() {
-  const auth = getAuth()
-  const [user, setUser] = useState({})
+function SignIn() {
+  const  [showPassword, setShowPassword] = useState(false)
+  const  [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  }) 
+  const {email, password} = formData
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    console.log('profile', auth.currentUser)
-    setUser(auth.currentUser)
-  }, [])
+  const onChange = (e) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [e.target.id] : e.target.value,
+    }))
+  }
 
-  return user ? <h1>{user.displayName}</h1> : 'Not Logged In'   
+  const onSubmit = async (e) => {
+    e.preventDefault()
+
+    try {
+      const auth = getAuth()
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      if (userCredential.user) {
+        navigate('/')
+      }
+    } catch (error) {
+      console.log(error)
+      //toast.error('Something went wrong with registration')
+    }
+  }
+
+  return (
+  <>
+    <div className="pageContainer">
+      <header>
+        <p className="pageHeader">ようこそ！</p>
+        {/* <p className="pageHeader">Welcome Back!</p> */}
+      </header>
+
+      <form onSubmit={onSubmit}>　// 追加
+        <input type="email" className='emailInput' placeholder='メールアドレス' 
+          id="email" value={email} onChange={onChange} />
+
+        <div className="passwordInputDiv">
+          <input type={showPassword ? 'text' : 'password'} className="passwordInput"
+            placeholder='メールアドレス(確認)' id='password' value={password} onChange={onChange} />
+          <img src={visibilityIcon} alt="show password" className='showPassword'
+             onClick={() => setShowPassword((prevState) => (!prevState))} />
+        </div>
+        <Link to='/forgot-password' className='forgotPasswordLink'>パスワードを忘れましたか</Link>
+
+        <div className="signUpBar">
+          <p className="signUpText">サインアップ</p>
+          <button className="signUpButton">
+            <ArrowRightIcon fill='#ffffff' width='34px' height='34px'/>
+          </button>
+        </div>
+      </form>
+
+      <OAuth />
+
+      <Link to='/sign-in' className='registerLink'>サインインする</Link>
+      {/* <Link to='/sign-in' className='registerLink'>Sign In Instead</Link> */}
+    </div>
+  </>
+  )
 }
-
-export default Profile
+export default SignUp
 ~~~
+
+Profileページの編集
+~~~
+
+
+~~~
+
 
 ## 88 Alerts with ReactToastify
 https://fkhadra.github.io/react-toastify/introduction/
@@ -803,7 +868,7 @@ https://console.firebase.google.com/project/house-marketpalce-app-9e335/authenti
 Google　を有効にする
 
 データは「ドキュメント」に格納し、それが「コレクション」にまとめられている。    
-ドキュメントは値にマッピングされるフィールドを含む軽量のレコードで、JSON によく似ており、基本的にはJSON と同じです
+ドキュメントは値にマッピングされるフィールドを含む軽量のレコードで、JSON によく似ており、基本的にはJSON と同じ
 
 
 ~~~
