@@ -321,13 +321,13 @@ for (let i=0; i<10; i++) {
 }
 ~~~
 let文とカンマ演算子
-~~~
-for (let count=0, i=0; count<10; count+=1,i+=1){
+~~~js
+ count=0, i=0; count<10; count+=1,i+=1){
   console.log(count, i)
 }
 ~~~
 配列のループ
-~~~
+~~~js
 const cars = ['Ford', 'Chevy', 'Honda', 'Toyota']
 for (let i=0; i<cars.length; i++) {
   console.log(cars[i])
@@ -340,28 +340,74 @@ for (const car of cars) {
   console.log(car)
 }
 ~~~
-For-in文
-~~~
+For In Loop　オブジェクト/配列に使う
+~~~js
 const people = {
   name: 'Bob',
   age: 25,
   isAdult: true,
 };
-
+for (const key in people) {
+  console.log(key) // key（name, age, isAdult) のみ表示される
+  console.log(key.name) // 'Bob','Bob','Bob'
+  console.log(people.key) // undefined,undefined,undefined
+  console.log(people['name']) //  'Bob','Bob','Bob'
+  console.log(`${key}: ${people[key]}`) // 'Bob',25,true
+}
+// 配列
+const cars = ['Ford', 'Chevy', 'Honda', 'Toyota']
+for (const key in cars) {
+  console.log(key) // key（０, １, ２、３) のみ表示される
+  console.log(cars[key]) // 'Ford','Chevy', 'Honda', 'Toyota'
+}
 ~~~
-
+Continue, Break文
+~~~js
+for(let i=0; i<10; i++){
+  if(i===2) {
+    console.log('2 is my favorite number');
+    continue;
+  }
+  if(i===5) {
+    console.log('stop the loop');
+    break;
+  }
+  console.log('Number' + i);
+}
 ~~~
+ラベル文はContinue, Break文に使う
 
+例外処理    
+どうしてもエラーの発生が止めれない時  
+tryは数行程度を囲む
+~~~js
+try {
+     let result = 100 * num;
+     console.log( result );
+     return 'hello'
+ } catch(e) {
+    console.log( e.message ); //num is not defined
+ } finally {
+  console.log('Finally runs regardless of result');
+  return 'helloを上書きする'
+ }
+ cosole.log('Program continues')
 ~~~
+throw文でエラーを作る
+~~~js
+try {
+  if (!user.name){
+    throw 'User has no name'
+    throw 'new syntaxError('User has no name')
+    throw {err: 'User has no name'} // オブジェクトでもOK
+    console.error('try') // 実行されない
+  }
+ } catch(e) {
+  　console.log(e); // 'User has no name'
+    console.log(e.message);  // 'User has no name'
+    console.log(e.name);  // 'Reference Error'
+    console.log(e instance of Reference Error);  // true
+ } finally {
 
-~~~
-
-~~~
-
-~~~
-
-~~~
-
-~~~
-
+ }
 ~~~
