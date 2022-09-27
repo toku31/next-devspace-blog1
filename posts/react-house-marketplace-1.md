@@ -482,7 +482,7 @@ function SignIn() {
       }
     } catch (error) {
       console.log(error)
-      //toast.error('Something went wrong with registration')
+      toast.error('Bad User Credentials')
     }
   }
 
@@ -526,9 +526,22 @@ export default SignUp
 ~~~
 
 Profileページの編集
-~~~
+~~~js
+react-house-market/src/pages/Profile.jsx 
+import { useState, useEffect } from 'react'
+import { getAuth, updateProfile } from 'firebase/auth'
 
+function Profile() {
+  const auth = getAuth()
+  const [user, setUser] = useState(null)
 
+  useEffect(() => {
+    console.log('profile', auth.currentUser)
+    setUser(auth.currentUser)
+  }, [])
+  return user ? <h1>{user.displayName}</h1> : 'Not Logged In' 
+}
+export default Profile
 ~~~
 
 
@@ -554,11 +567,11 @@ pauseOnHover
 {/* Same as */}
 <ToastContainer />
 ~~~
-
+Tostifyの導入例
 ~~~javascript
   import React from 'react';
   import { ToastContainer, toast } from 'react-toastify';
-  import 'react-toastify/dist/ReactToastify.css';
+  import 'react-toastify/dist/ReactToastify.css'; // 必要
   
   function App(){
     const notify = () => toast("Wow so easy!");
@@ -573,8 +586,9 @@ pauseOnHover
 ~~~
 
 ~~~javascript
+// App.js
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
-import {ToastContainer} from 'react-toastify'
+import {ToastContainer} from 'react-toastify'　 // 追加
 import 'react-toastify/dist/ReactToastify.css';
 import Explore from './pages/Explore'
 import Offers from './pages/Offers'
@@ -598,25 +612,22 @@ function App() {
         </Routes>
         <Navbar />
       </Router>
-      <ToastContainer />
+      <ToastContainer />  // 追加
     </>
   );
 }
-
 export default App;
-
 ~~~
 
 ## 89 User Logout
-Profile.jsx
 ~~~javascript
+react-house-market/src/pages/Profile.jsx 
 import { useState, useEffect } from 'react'
 import { getAuth } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 
 function Profile() {
   const auth = getAuth()
-  // const [user, setUser] = useState(null)
   const [formData, setFormData] = useState({
     name: auth.currentUser.displayName,
     email: auth.currentUser.email,
@@ -629,13 +640,11 @@ function Profile() {
     auth.signOut()
     navigate('/')
   }
-
   // useEffect(() => {
   //   console.log('profile', auth.currentUser)
   //   setUser(auth.currentUser)
   // }, [])
   // return user ? <h1>{user.displayName}</h1> : 'Not Logged In' 
-
   return <div className='profile'>
     <header className='profileHeader'>
       <p className="pageHeader">My Profile</p>
@@ -645,12 +654,12 @@ function Profile() {
     </header>
   </div> 
 }
-
 export default Profile
 ~~~
 
 ##  90 Display & Update User details
 ~~~javascript
+// react-house-market/src/pages/Profile.jsx 
 import { useState, useEffect } from 'react'
 import { getAuth, updateProfile } from 'firebase/auth'
 import {updateDoc, doc} from 'firebase/firestore'
@@ -678,19 +687,17 @@ function Profile() {
   const onSubmit = async() => {
     console.log(123)
     try {
-      // Update display name on fb
       if (auth.currentUser.displayName !== name) {
+        // Update display name on fb
         await updateProfile(auth.currentUser, {
           displayName: name
         })
+        // Update in firestore
+        const userRef = doc(db, 'users', auth.currentUser.uid)
+        await updateDoc(userRef, {
+          name: name
+        })
       }
-
-      // Update in firestore
-      const userRef = doc(db, 'users', auth.currentUser.uid)
-      await updateDoc(userRef, {
-        name
-      })
-    
     } catch(error) {
       toast.error('Could not update profile details')
     }
@@ -732,7 +739,7 @@ function Profile() {
           />
 
           <input type="text" id="email" 
-          className={!changeDetails ? 'profileName' : 'profileNameActive'}
+          className={!changeDetails ? 'profileEmail' : 'profileEmailActive'}
           disabled={!changeDetails}
           value={email}
           onChange={onChange}
@@ -740,46 +747,73 @@ function Profile() {
         </form>
       </div>
     </main>
-
   </div> 
 }
-
 export default Profile
 ~~~
 
-
 ## 91 PrivateRoute Component & useAuthState Hook
-react-router-dom を使って、ログイン時とログアウト時でページ遷移の許可をわける、`PrivateRoute`(`ProtectedRoute`?)を実装する
+react-router-dom を使って、ログイン時とログアウト時でページ遷移の許可をわける、PrivateRoute(ProtectedRoute?)を実装する
 
 ~~~javascript
+// react-house-market/src/components/PrivateRoute.jsx 
 import {Navigate, Outlet} from 'react-router-dom'
 import { useAuthStatus } from '../hooks/useAuthStatus'
-import Spinner from './Spinner'
 
 const PrivateRoute = () => {
+  // const loggedIn = true
+  cconst {loggedIn, checkingStatus} = useAuthStatus()
 
-  const { loggedIn, checkingStatus } = useAuthStatus()
-
-  if (checkingStatus) {
-    return <Spinner />
-    // return <h3>Loading...</h3>
+  if(checkingStatus) {
+    return <h3>Loading...</h3>
   }
-
-
-  // const loggedIn = true 91
   return loggedIn ? <Outlet /> : <Navigate to='/sign-in' /> 
 }
-
 export default PrivateRoute
 ~~~
 
+~~~js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css';
+import Explore from './pages/Explore'
+import Offers from './pages/Offers'
+import Profile from './pages/Profile'
+import SignIn from './pages/SignIn'
+import SignUp from './pages/SignUp'
+import ForgotPassword from './pages/ForgotPassword'
+import Navbar from './components/Navbar'
+import PrivateRoute from './components/PrivateRoute' // added
+
+function App() {
+  return (
+    <>
+      <Router>
+        <Routes>
+          <Route path='/' element={<Explore />} />
+          <Route path='/offers' element={<Offers />} />
+          <Route path='/category/:categoryName' element={<Category />} />
+          <Route path='/profile' element={<PrivateRoute />} > // added
+            <Route path='/profile' element={<Profile />} />
+          </Route>  // added
+          <Route path='/sign-in' element={<SignIn />} />
+          <Route path='/sign-up' element={<SignUp />} />
+          <Route path='/forgot-password' element={<ForgotPassword />} />
+        </Routes>
+        <Navbar />
+      </Router>
+      <ToastContainer />
+    </>
+~~~
+
 ~~~javascript
+// hooks/useAuthStatus.js
 import { useEffect, useState, useRef } from 'react'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 
 export const useAuthStatus = () => {
   const [loggedIn, setLoggedIn] = useState(false)
-  const [checkingStatus, setCheckingStatus] = useState(true)
+  const [checkingStatus, setCheckingStatus] = useState(true) // Loadingと同じ
   const isMounted = useRef(true)
 
   useEffect(() => {
@@ -813,6 +847,52 @@ export const useAuthStatus = () => {
 
 // Fix memory leak warning
 // https://stackoverflow.com/questions/59780268/cleanup-memory-leaks-on-an-unmounted-component-in-react-hooks
+
+~~~js
+// spinner.jsx
+import React from 'react'
+
+function Spinner() {
+  return (
+    <div className='loadingSpinnerContainer'>
+      <div className="loadingSpinner"></div>
+    </div>
+  )
+}
+export default Spinner
+~~~
+spinnerのcss
+~~~css
+.loadingSpinnerContainer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 5000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loadingSpinner {
+  width: 64px;
+  height: 64px;
+  border: 8px solid;
+  border-color: #00cc66 transparent #00cc66 transparent;
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+~~~
 
 ## 92 Forgot Password Page
 ~~~javascript

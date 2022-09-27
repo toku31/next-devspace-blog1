@@ -16,7 +16,7 @@ npm start
 npm run server  
 John Doe : john@gmail.com
 
-#### Exploreページ(Home)
+#### 94 Exploreページ(Home)
 ~~~javascript
 import {Link} from 'react-router-dom'
 import rentCategoryImage from '../assets/jpg/rentCategoryImage.jpg'
