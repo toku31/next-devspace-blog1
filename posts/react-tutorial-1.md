@@ -485,11 +485,287 @@ function FeedbackItem() {
 export default FeedbackItem
 ~~~
 
+### Managing Glocal State
 ~~~js
-
-
+// data/Feedback.js
+const FeedbackData = [
+  {
+    id: 1,
+    rating: 10,
+    text: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. consequuntur vel vitae commodi alias voluptatem est voluptatum ipsa quae.',
+  },
+  {
+    id: 2,
+    rating: 9,
+    text: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. consequuntur vel vitae commodi alias voluptatem est voluptatum ipsa quae.',
+  },
+  {
+    id: 3,
+    rating: 8,
+    text: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. consequuntur vel vitae commodi alias voluptatem est voluptatum ipsa quae.',
+  },
+]
+export default FeedbackData
 ~~~
 
+~~~js
+// App.js
+import { useState } from 'react'
+import FeedbackItem from "./components/FeedbackItem"
+import Header from "./components/Header"
+
+function App() {
+  const [feedback, setFeedback] = useState([
+    {
+      id: 1,
+      rating: 10,
+      text: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. consequuntur vel vitae commodi alias voluptatem est voluptatum ipsa quae.',
+    },
+  ])
+
+  return(
+  <>
+      ~ ~ ~
+~~~
+
+~~~js
+import { useState } from 'react'
+// import FeedbackItem from "./components/FeedbackItem"
+import FeedbackList from './components/FeedbackList'
+import Header from "./components/Header"
+import FeedbackData from './data/FeedbackData'
+
+function App() {
+  const [feedback, setFeedback] = useState(FeedbackData)
+
+  return(
+    <>
+      <Header />
+      <div className="container">
+        <FeedbackList feedback={feedback}/>
+      </div>
+    </> 
+  )
+}
+export default App
+~~~
+
+~~~js
+// ¥components/FeedbackList.jsx
+function FeedbackList({feedback}) {
+  if (!feedback || feedback.length === 0) {
+    return <p>No Feedback Yet</p>
+  }
+  // console.log(feedback)
+  return <div className="feedback-list">list</div>
+}
+
+export default FeedbackList
+~~~
+### map関数を使って表示
+~~~js
+// ¥components/FeedbackList.jsx
+function FeedbackList({feedback}) {
+  if (!feedback || feedback.length === 0) {
+    return <p>No Feedback Yet</p>
+  }
+  // console.log(feedback)
+  return (
+  <div className="feedback-list">
+    {feedback.map((item)=> (
+      <div>{item.id}</div>
+    ))}
+  </div>
+  )
+}
+export default FeedbackList
+~~~
+
+~~~js
+// ¥components/FeedbackList.jsx
+import FeedbackItem from "./FeedbackItem"
+
+function FeedbackList({feedback}) {
+  if (!feedback || feedback.length === 0) {
+    return <p>No Feedback Yet</p>
+  }
+  // console.log(feedback)
+  return (
+  <div className="feedback-list">
+    {feedback.map((item)=> (
+      <FeedbackItem key={item.id} item={item}/>
+    ))}
+  </div>
+  )
+}
+export default FeedbackList
+~~~
+
+~~~js
+// ¥components/FeedbackItem.jsx 修正前
+import {useState} from 'react'
+
+function FeedbackItem() {
+  const [rating, setRating] = useState(7)
+  const [text, setText] = useState('This is an example of a feedback item')
+    
+  return (
+    <div className="card">
+      <div className="num-display">{rating}</div>
+      <div className="text-display">{text}</div>
+    </div>
+  )
+}
+export default FeedbackItem
+~~~
+
+~~~js
+// ¥components/FeedbackItem.jsx 修正後
+function FeedbackItem({item}) {
+  return (
+    <div className="card">
+      <div className="num-display">{item.rating}</div>
+      <div className="text-display">{item.text}</div>
+    </div>
+  )
+}
+export default FeedbackItem
+~~~
+### Card Component & Conditional Style
+~~~js
+// components/shared/Card.js
+function Card({children}) {
+  return (
+    <div className="card">{children}</div>
+  )
+}
+export default Card
+~~~
+
+~~~js
+import Card from "./shared/Card"
+
+function FeedbackItem({item}) {
+  return (
+    <Card>
+      <div className="num-display">{item.rating}</div>
+      <div className="text-display">{item.text}</div>
+    </Card>
+  )
+}
+export default FeedbackItem
+~~~
+conditional class
+~~~js
+import Card from "./shared/Card"
+
+function FeedbackItem({item}) {
+  return (
+    <Card reverse={true}>  //追加
+      <div className="num-display">{item.rating}</div>
+      <div className="text-display">{item.text}</div>
+    </Card>
+  )
+}
+export default FeedbackItem
+~~~
+
+~~~js
+// components/shared/Card.js
+function Card({children, reverse}) {
+  return (
+    <div className={`card ${reverse && 'reverse'}`}>{children}</div>
+  )
+}
+export default Card
+~~~
+
+conditional Style
+~~~js
+function Card({children, reverse}) {
+  return (
+    <div className='card' style={{
+      backgroundColor: reverse ? 'rgba(0,0,0,0.4)' : '#fff',
+      color: reverse ? '#fff' : '#000',
+    }}>{children}</div>
+  )
+}
+export default Card
+~~~
+親のFeedbackItemでreverseのpropsをコールしないやり方
+~~~js
+import PropTypes from 'prop-types'
+
+function Card({children, reverse}) {
+  return (
+    <div className='card' style={{
+      backgroundColor: reverse ? 'rgba(0,0,0,0.4)' : '#fff',
+      color: reverse ? '#fff' : '#000',
+    }}>{children}</div>
+  )
+}
+
+Card.defaultProps = {
+  reverse: false
+}
+Card.propTypes = {
+  children: PropTypes.node.isRequired,
+  reverse: PropTypes.bool,
+}
+export default Card
+~~~
+
+~~~js
+// ¥components/FeedbackItem.jsx 
+import PropTypes from 'prop-types'　// 追加
+import Card from "./shared/Card"
+
+function FeedbackItem({item}) {
+  return (
+    <Card>
+      <div className="num-display">{item.rating}</div>
+      <div className="text-display">{item.text}</div>
+    </Card>
+  )
+}
+// 以下追加
+FeedbackItem.propTypes = {
+  item: PropTypes.object.isRequired,
+}
+export default FeedbackItem
+~~~
+
+~~~js
+// ¥components/FeedbackList.jsx 
+import PropTypes from 'prop-types'
+import FeedbackItem from "./FeedbackItem"
+
+function FeedbackList({feedback}) {
+  if (!feedback || feedback.length === 0) {
+    return <p>No Feedback Yet</p>
+  }
+  // console.log(feedback)
+  return (
+  <div className="feedback-list">
+    {feedback.map((item)=> (
+      <FeedbackItem key={item.id} item={item}/>
+    ))}
+  </div>
+  )
+}
+// 以下追加
+FeedbackList.propTypes = {
+  feedback: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      Text: PropTypes.string.isRequired,
+      rating: PropTypes.number.isRequired,
+    })
+  )
+}
+export default FeedbackList
+~~~
+#### Events & Prop Drilling
 ~~~js
 
 
