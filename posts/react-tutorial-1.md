@@ -766,27 +766,448 @@ FeedbackList.propTypes = {
 export default FeedbackList
 ~~~
 #### Events & Prop Drilling
+リストを削除する　削除ボタンにfontawsomeのXマーク(FaTimes)  
+user@mbp feedback-app % npm i react-icons
 ~~~js
+// ¥components/FeedbackItem.jsx 
+import { FaTimes } from 'react-icons/fa' // added
+import PropTypes from 'prop-types'
+import Card from "./shared/Card"
 
+function FeedbackItem({item}) {
+  return (
+    <Card>
+      <div className="num-display">{item.rating}</div>
+      <button className="close" onClick={()=>console.log(item.id)}> ★★★
+        <FaTimes color='purple' />
+      </button>
+      <div className="text-display">{item.text}</div>
+    </Card>
+  )
+}
 
+FeedbackItem.propTypes = {
+  item: PropTypes.object.isRequired,
+}
+export default FeedbackItem
+~~~
+上のonClickの箇所は以下のようにもできる
+~~~js
+function FeedbackItem({item}) {
+  const handleClick = () => {   // added
+    console.log(item.id)
+  }
+  return (
+    <Card>
+      <div className="num-display">{item.rating}</div>
+      <button className="close" onClick={handleClick}>　★★★
+        <FaTimes color='purple' />
+      </button>
+      <div className="text-display">{item.text}</div>
+    </Card>
+  )
+}
+   ~ ~ ~
+~~~
+但し、handleClickに引数を設定して、onClick={()=>handleClick(item.id)}とアロー関数にすることで const handleClick = (id) => {
+    console.log(id)
+  }を呼ぶこともできる  
+こうすることでクローズボタン（X）をクリックするとそのfeedbackのIdがログに出る  
+#### Prop Drilling
+次はクローズボタン（X）をクリックするとfeedbackItemの親のFeedbackListにIDを伝達してログ出力させたい
+~~~js
+// ¥components/FeedbackList.jsx 
+  <div className="feedback-list">
+    {feedback.map((item)=> (
+      <FeedbackItem key={item.id} item={item} handleDelete={(id)=>console.log(id)} />
+    ))}
+  </div>
+~~~
+
+~~~js
+// ¥components/FeedbackItem.jsx 
+function FeedbackItem({item, handleDelete }) {
+  // 削除
+  // const handleClick = (id) => {
+  //   console.log(id)
+  // }
+
+  return (
+    <Card>
+      <div className="num-display">{item.rating}</div>
+      <button className="close" onClick={() => handleDelete(item.id)}>　// 変更
+        <FaTimes color='purple' />
+      </button>
+      <div className="text-display">{item.text}</div>
+    </Card>
+  )
+}
+
+FeedbackItem.propTypes = {
+  item: PropTypes.object.isRequired,
+}
+export default FeedbackItem
+~~~
+さらにクローズボタン（X）をクリックするとFeedbackListの親のApp.jsにIDを伝達してログ出力させたい
+~~~js
+// ¥components/FeedbackList.jsx 
+function FeedbackList({feedback, handleDelete}) { // added
+  if (!feedback || feedback.length === 0) {
+    return <p>No Feedback Yet</p>
+  }
+  return (
+  <div className="feedback-list">
+    {feedback.map((item)=> (
+      <FeedbackItem key={item.id} item={item} handleDelete={handleDelete} />   // 変更
+    ))}
+  </div>
+~~~
+
+~~~js
+// App.js
+function App() {
+  const [feedback, setFeedback] = useState(FeedbackData)
+  const deleteFeedback =(id) => { // added
+    console.log('App',id)
+  }
+
+  return(
+    <>
+      <Header />
+      <div className="container">
+        <FeedbackList feedback={feedback} handleDelete={deleteFeedback}/> // added
+      </div>
+    </> 
+  )
+}
+export default App
+~~~
+#### filter関数を使った削除処理
+~~~js
+// App.js
+import { useState } from 'react'
+import FeedbackList from './components/FeedbackList'
+import Header from "./components/Header"
+import FeedbackData from './data/FeedbackData'
+
+function App() {
+  const [feedback, setFeedback] = useState(FeedbackData)
+  const deleteFeedback =(id) => {
+    console.log('App', id)
+    if (window.confirm('Are you sure you want to delete?')) {
+      setFeedback(feedback.filter((item)=> item.id !== id))
+    }
+  }
+
+  return(
+    <>
+      <Header />
+      <div className="container">
+        <FeedbackList feedback={feedback} handleDelete={deleteFeedback}/>
+      </div>
+    </> 
+  )
+}
+export default App
+~~~
+#### FeedbackStats Component & Reactivity
+~~~js
+import PropTypes from 'prop-types'
+
+function FeedbackStats({feedback}) {
+  // Calcurating rating avg
+  let average = feedback.reduce((acc, cur) => {
+    return acc + cur.rating
+  }, 0) / feedback.length
+  // 小数第一位まで表示、末尾が０の時は省略
+  average = average.toFixed(1).replace(/[.,]0$/, '')
+  // console.log(average)
+  return (
+    <div className="feedback-stats">
+      <h4>{feedback.length} Review</h4>
+      <h4>Average Rating: {isNaN(average) ? 0 : average}</h4>
+    </div>
+  )
+}
+FeedbackStats.propTypes = {
+  feedback: PropTypes.array.isRequired
+}
+export default FeedbackStats
 ~~~
 
 ~~~js
 
+~~~
 
 ~~~
 
-~~~js
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
 
 
 ~~~
 
-~~~js
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
 
 
 ~~~
 
-~~~js
+~~~
 
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
+
+~~~
 
 ~~~
