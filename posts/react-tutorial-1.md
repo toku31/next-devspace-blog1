@@ -1,7 +1,7 @@
 ---
 title: 'React Tutorial -1-'
-date: 'September 21, 2022'
-excerpt: 'Reatの基礎のメモ書きです'
+date: 'September 20, 2022'
+excerpt: 'Reatの基礎のメモ書きです。1回目は簡単なコンポーネント作成からです。'
 cover_image: '/images/posts/img1.jpg'
 category: 'React'
 author: 'Toku'

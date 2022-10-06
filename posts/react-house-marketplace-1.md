@@ -1,7 +1,7 @@
 ---
 title: "House Marketplace Project By React & Firebase -1-
 "
-date: 'September 11, 2022'
+date: 'September 18, 2022'
 excerpt: 'ReactとFirebaseを用いて不動産物件を売買できるアプリをつくりました。メールアドレスやGoogleアカウントで認証して、Cloud FireStore(クラウドデータベース)にデータ保存できるようにしました。'
 cover_image: '/images/posts/img4.jpg'
 category: 'React'
@@ -754,25 +754,19 @@ export default Profile
 
 ## 91 PrivateRoute Component & useAuthState Hook
 react-router-dom を使って、ログイン時とログアウト時でページ遷移の許可をわける、PrivateRoute(ProtectedRoute?)を実装する
-
 ~~~javascript
 // react-house-market/src/components/PrivateRoute.jsx 
 import {Navigate, Outlet} from 'react-router-dom'
-import { useAuthStatus } from '../hooks/useAuthStatus'
 
 const PrivateRoute = () => {
-  // const loggedIn = true
-  cconst {loggedIn, checkingStatus} = useAuthStatus()
-
-  if(checkingStatus) {
-    return <h3>Loading...</h3>
-  }
+  const loggedIn = false
   return loggedIn ? <Outlet /> : <Navigate to='/sign-in' /> 
 }
 export default PrivateRoute
 ~~~
 
 ~~~js
+// App.js
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
 import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css';
@@ -805,7 +799,8 @@ function App() {
       <ToastContainer />
     </>
 ~~~
-
+useAuthStatus Hook を作成する  
+checkingStatusはloadingと同じ
 ~~~javascript
 // hooks/useAuthStatus.js
 import { useEffect, useState, useRef } from 'react'
@@ -841,12 +836,23 @@ export const useAuthStatus = () => {
 // Fix memory leak warning
 // https://stackoverflow.com/questions/59780268/cleanup-memory-leaks-on-an-unmounted-component-in-react-hooks
 ~~~
+PrivateRouteにuseAuthStatusを取り込む
+~~~js
+import {Navigate, Outlet} from 'react-router-dom'
+import { useAuthStatus } from '../hooks/useAuthStatus'　// added
+import Spinner from './Spinner'
 
-// Protected routes in v6
-// https://stackoverflow.com/questions/65505665/protected-route-with-firebase
-
-// Fix memory leak warning
-// https://stackoverflow.com/questions/59780268/cleanup-memory-leaks-on-an-unmounted-component-in-react-hooks
+const PrivateRoute = () => {
+  const { loggedIn, checkingStatus } = useAuthStatus() // added
+  if (checkingStatus) {
+    return <Spinner />
+    // return <h3>Loading...</h3>
+  }
+  // const loggedIn = true 91
+  return loggedIn ? <Outlet /> : <Navigate to='/sign-in' /> 
+}
+export default PrivateRoute
+~~~
 
 ~~~js
 // spinner.jsx
@@ -948,11 +954,54 @@ https://console.firebase.google.com/project/house-marketpalce-app-9e335/authenti
 Google　を有効にする
 
 データは「ドキュメント」に格納し、それが「コレクション」にまとめられている。    
-ドキュメントは値にマッピングされるフィールドを含む軽量のレコードで、JSON によく似ており、基本的にはJSON と同じ
+ドキュメントは値にマッピングされるフィールドを含む軽量のレコードで、基本的にはJSON と同じ
+~~~js
+import {useLocation, useNavigate} from 'react-router-dom'
+import {getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import { doc ,setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import {db} from '../firebase.config'
+import {toast} from 'react-toastify'
+import googleIcon from '../assets/svg/googleIcon.svg'
 
+function OAuth() {
+  const navigate = useNavigate()
+  const location = useLocation()
 
-~~~
+  const onGoogleClick = async() => {
+    try {
+      const auth = getAuth()
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
+      const user = result.user
 
+      const docRef = doc(db, 'users', user.uid)
+      const docSnap = await getDoc(docRef)
+
+      // If user dosen't ecist, create user
+      if(!docSnap.exists()) {
+        await setDoc(doc(db, 'users', user.uid), {  // 'users'はコレクション名
+          name: user.displayName,
+          email: user.email,
+          timestamp: serverTimestamp()
+        })
+      }
+      navigate('/')
+    } catch (error) {
+      toast.error('Could not authorize with Google')
+    }
+  }
+
+  return (
+    <div className='socialLogin'>
+      <p>Sign {location.pathname==='/sign-up' ? 'up' : 'in' } with</p>
+      <button className="socialIconDiv" onClick={onGoogleClick}>
+        <img className="socialIconImg" src={googleIcon} alt="google" />
+      </button>
+    </div>
+  )
+}
+
+export default OAuth
 ~~~
 
 ~~~
