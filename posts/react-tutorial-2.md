@@ -1,7 +1,7 @@
 ---
 title: 'React Tutorial -2-'
 date: 'September 21, 2022'
-excerpt: 'Reatの基礎のメモ書きです ２回目はForms,Validation,＆Simple Animationなど学びます'
+excerpt: 'Reatの基礎のメモ書きです ２回目はForms,Validation,Animation, Routes, Links など学びます'
 cover_image: '/images/posts/img1.jpg'
 category: 'React'
 author: 'Toku'
@@ -10,7 +10,7 @@ author_image: 'https://randomuser.me/api/portraits/men/13.jpg'
 
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 
-#### Forms,Validation,＆Simple Animation
+#### Forms,Validation, Simple Animation, Routes, Links
 https://github.com/bradtraversy/feedback-app
 
 ~~~js
@@ -941,6 +941,7 @@ function App() {
 ~~~
 
 ~~~js
+// ¥components¥Post.jsx
 import {useParams} from 'react-router-dom'
 
 function Post() {
@@ -958,16 +959,82 @@ export default Post
 ~~~
 
 #### Navigate & Nested Routes
+Redirectの代わりにNavigateが使われるようになった
+~~~js
+// ¥components¥Post.jsx
+import {Navigate, useNavigate} from 'react-router-dom'
+
+function Post() {
+  const status = 200
+
+  const navigate = useNavigate()
+
+  const onClick =()=> {
+    console.log('Hello')
+    navigate('/about')
+  }
+
+  if(status === 404) {
+    return <Navigate to='/notfound' />
+  }
+
+  return (
+    <div>
+      <h1>Post</h1>
+      <button onClick={onClick}>Click</button>
+    </div>
+  )
+}
+export default Post
 ~~~
 
-~~~
+nested Routes
+~~~js
+// ¥components¥Post.jsx
+import {Navigate, useNavigate, Routes, Route} from 'react-router-dom'
 
-~~~
+function Post() {
+  const status = 200
 
-~~~
+  const navigate = useNavigate()
 
-~~~
+  const onClick =()=> {
+    console.log('Hello')
+    navigate('/about')
+  }
 
+  if(status === 404) {
+    return <Navigate to='/notfound' />
+  }
+
+  return (
+    <div>
+      <h1>Post</h1>
+      <button onClick={onClick}>Click</button>
+      <Routes>
+        <Route path='/show' element={<h1>Hello World</h1>} />  // 'localhost:300/post/show'
+      </Routes>
+    </div>
+  )
+}
+export default Post
+~~~
+/post/の後にアスタリスクをつける
+~~~js
+// App.js
+    <Routes>
+      <Route exact path='/' element={
+        <>
+          <FeedbackForm handleAdd={addFeedback} /> 
+          <FeedbackStats feedback={feedback} />
+          <FeedbackList feedback={feedback} handleDelete={deleteFeedback}/>
+        </>
+      }></Route>
+
+      <Route path='/about' element={<AboutPage />} />
+      <Route path='/post/*' element={<Post />} /> // Changed
+      // <Route path='/post/:id/:name' element={<Post />} />
+    </Routes>
 ~~~
 
 ~~~

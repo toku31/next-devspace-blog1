@@ -1,6 +1,6 @@
 ---
 title: 'JavaScript Tutorial -2-'
-date: 'September25, 2022'
+date: 'September28, 2022'
 excerpt: 'JavaScriptの要点をメモ書きしていきます。React, jQuery, TypeScript, Node.jsなどの学習にも役立ちます。今回は関数を中心にみていきます'
 cover_image: '/images/posts/img1.jpg'
 category: 'JavaScript'

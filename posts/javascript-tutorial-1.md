@@ -1,6 +1,6 @@
 ---
 title: 'JavaScript Tutorial -1-'
-date: 'September11, 2022'
+date: 'September27, 2022'
 excerpt: 'JavaScriptの基礎から応用まで要点をメモ書きしていきます。React, jQuery, TypeScript, Node.js, Express, webpackの学習にも役立ちます。'
 cover_image: '/images/posts/img1.jpg'
 category: 'JavaScript'

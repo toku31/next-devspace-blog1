@@ -1,7 +1,7 @@
 ---
 title: "Build React JS Webste
 "
-date: 'September 26, 2022'
+date: 'October 1, 2022'
 excerpt: 'React.jsを用いてGalaxy Travelのサイトを作成しました。Navbarのハンバーガーメニューなど機能実装してます'
 cover_image: '/images/posts/img4.jpg'
 category: 'React'
