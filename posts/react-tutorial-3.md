@@ -9,8 +9,8 @@ author_image: 'https://randomuser.me/api/portraits/men/13.jpg'
 ---
 
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
-
-https://github.com/bradtraversy/feedback-app  
+https://feedback-app-ten-orpin.vercel.app/  
+https://github.com/toku31/feedback-app
 #### Create a Context & Provider 
 参考(Obsidean): 52 Contacts Context & Global State  
 ~~~js
@@ -551,7 +551,7 @@ export default  FeedbackForm
   },[feedbackEdit])
 ~~~
 
-上の状態では番号の表示が切り替わらないので、RatingSelect.jsxにFeedbackContextとuseEffectを実装して修正する
+上の状態では番号の表示が切り替わらないので、RatingSelect.jsxにもFeedbackContextとuseEffectを実装して修正する
 ~~~js
 // components¥RatingSelect.jsx
 import { useState, useContext, useEffect } from 'react' // added
@@ -565,7 +565,7 @@ function RatingSelect({select}) {
     setSelected(+e.currentTarget.value)
     select(+e.currentTarget.value)
   }
-
+  // 以下を追加
   useEffect(()=> {
     setSelected(feedbackEdit.item.rating)
   },[feedbackEdit])
@@ -638,24 +638,176 @@ function RatingSelect({select}) {
 
 export default RatingSelect
 ~~~
+#### 更新処理  
+FeedbackContextにupdateFeedback を追加する
+~~~js
+import { v4 as uuidv4 } from 'uuid'
+import {createContext, useState} from 'react'
 
+const FeedbackContext = createContext()
+
+export const FeedbackProvider = ({children})=> {
+  const [feedback, setFeedback] = useState([
+    {
+      id: 1,
+      text: 'This item is from context1',
+      rating: 10
+    },
+    {
+      id: 2,
+      text: 'This item is from context2',
+      rating: 9
+    },
+    {
+      id: 3,
+      text: 'This item is from context3',
+      rating: 7
+    }
+  ])
+
+  const [feedbackEdit, setFeedbackEdit] = useState({
+    item: {},
+    edit: false
+  })
+  // Add feedback
+  const addFeedback = (newFeedback) => {
+    newFeedback.id = uuidv4()
+    // console.log(newFeedback)
+    setFeedback([newFeedback, ...feedback])
+  }
+  // deleet feedback
+  const deleteFeedback =(id) => {
+    console.log('App', id)
+    if (window.confirm('Are you sure you want to delete?')) {
+      setFeedback(feedback.filter((item)=> item.id !== id))
+    }
+  }
+
+  // Update feedback item
+  const updateFeedback = (id, updItem)=> {
+    // console.log(id, updItem)
+    setFeedback(feedback.map((item)=> (
+      item.id ===id ? {...item, ...updItem} : item
+    )))
+  }
+
+  // 編集項目　Set item to be updated
+  const editFeedback = (item)=> {
+    setFeedbackEdit({
+      item: item,
+      edit: true
+    })
+  }
+
+  return <FeedbackContext.Provider value={{feedback:feedback, 
+    deleteFeedback:deleteFeedback, // deleteFeedbackのみの省略可
+    addFeedback: addFeedback,
+    editFeedback: editFeedback,
+    feedbackEdit: feedbackEdit,
+    updateFeedback: updateFeedback, // added
+  }}>
+    {children}
+  </FeedbackContext.Provider>
+}
+
+export default FeedbackContext
+~~~
+map関数の更新  
+~~~
+  // Update feedback item
+  const updateFeedback = (id, updItem)=> {
+    // console.log(id, updItem)
+    setFeedback(feedback.map((item)=> (
+      item.id ===id ? {...item, ...updItem} : item
+    )))
+  }
+~~~
+~~~js
+import { useState, useContext, useEffect } from "react"
+import RatingSelect from "./RatingSelect"
+import Button from "./shared/Button"
+import Card from "./shared/Card"
+import FeedbackContext from '../context/FeedbackContext'
+
+function  FeedbackForm() {
+  const [text, setText] = useState('')
+  const [rating, setRating] = useState(10)
+  const [btnDisabled, setBtnDisabled] = useState(true)
+  const [message, setMessage] = useState('')
+  const {addFeedback, feedbackEdit, updateFeedback} = useContext(FeedbackContext) // added
+
+  useEffect(()=> {
+    console.log('editbox clicked')
+    if (feedbackEdit.edit===true){
+      setBtnDisabled(false)
+      setText(feedbackEdit.item.text)
+      setRating(feedbackEdit.item.rating)
+    }
+  },[feedbackEdit])
+
+  const handleTextChange =(e)=> {
+    if (text === '') {
+      setBtnDisabled(true)
+      setMessage(null)
+    } else if (text !== '' && text.trim().length <= 10 ) {
+      setMessage('Text must be at least 10 characters')
+      setBtnDisabled(true)
+    } else {
+      setMessage(null)
+      setBtnDisabled(false)
+    }
+    setText(e.target.value)
+  }
+
+  const handleSubmit=(e)=> {
+    e.preventDefault()
+    if (text.trim().length > 10){
+      const newFeedback = {
+        text, // 省略形　 text: text
+        rating, // 省略形　 rating: rating
+      }
+      // console.log(newFeedback)
+      if (feedbackEdit.edit === true){  // 追加
+        updateFeedback(feedbackEdit.item.id, newFeedback)　// 追加
+      }else{
+        addFeedback(newFeedback)
+      }
+      setText('')
+    }
+  }
+
+  return (
+    <Card> 
+      <form onSubmit={handleSubmit}>
+        <h2>How would you rate your service with us?</h2>
+          <RatingSelect select={(rating) => setRating(rating)}/>
+        <div className="input-group">
+          <input onChange={handleTextChange} type="text" value={text} placeholder="Wite a review"/>
+          <Button type='submit' isDisabled={btnDisabled}>Send</Button>
+        </div>
+
+        {message && <div className="message">{message}</div>}
+      </form>
+    </Card>
+  )
+}
+
+export default  FeedbackForm
+~~~
+
+#### Deploy
+~~~
+npm run build
+npm install -g serve
+serve -s build
 ~~~
 
 ~~~
-
+user@mbp feedback-app % git init
+user@mbp feedback-app % git add .
+user@mbp feedback-app % git commit -m 'initial'
 ~~~
-
-
-~~~
-
-~~~
-
-~~~
-
-~~~
-
-~~~
-
+https://feedback-app-ten-orpin.vercel.app/
 ~~~
 
 ~~~
