@@ -1,6 +1,6 @@
 ---
 title: 'Mern Stack Tutorial -1-'
-date: 'September 24, 2022'
+date: 'September 26, 2022'
 excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)のメモ書きです 今回から実際にアプリを作成します'
 cover_image: '/images/posts/img2.jpg'
 category: 'React'
