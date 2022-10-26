@@ -419,19 +419,379 @@ export default Spinner
 
 #### Display Users
 ~~~js
+// src/components/users/UserResults.jsx
+import { useEffect, useState } from "react"
+import Spinner from "../layout/Spinner"
+import UserItem from "./UserItem"
 
+function UserResults() {
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async() => {
+    const response = await fetch(`${process.env.REACT_APP_GITHUB_URL}/users`)
+    const data = await response.json()
+    console.log(data)
+    setUsers(data)
+    setLoading(false)
+  }
+
+  if(!loading) {
+    return (
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2">
+        {users.map((user) => (
+          // <h3>{user.login}</h3>
+          <UserItem index={user.id} user={user} /> // Changed
+        ))} 
+      </div>
+    )
+  } else {
+    return <Spinner />
+  }
+}
+
+export default UserResults
 ~~~
 
 ~~~js
+// src/components/users/UserItem.jsx
+import Proptypes from 'prop-types'
 
+function UserItem({user}) {
+  return (
+    <div>{user.login}</div>
+  )
+}
+
+UserItem.propTypes = {
+  user: Proptypes.object.isRequired
+}
+
+export default UserItem
 ~~~
 
 ~~~js
+// src/components/users/UserItem.jsx
+import Proptypes from 'prop-types'
+import {Link} from 'react-router-dom'
 
+function UserItem({user: {login, avatar_url}}) {
+  return (
+    <div className='card shadow-md compact side bg-base-100'>
+      <div className="flex-row items-center space-x-4 card-body">
+        <div>
+          <div className='avatar'>
+              <div className="rounded-full shadow w-14 h-14">
+                <img src={avatar_url} alt="Profile" />
+              </div>
+          </div>
+        </div>
+        <div>
+          <h2 className="card-title">{login}</h2>
+          <Link className='text-base-content text-opacity-40' to={`/users/${login}`}>
+            Visit Profile
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+UserItem.propTypes = {
+  user: Proptypes.object.isRequired
+}
+export default UserItem
+~~~
+#### Setup Github Context
+~~~js
+//src/context/github/GithubContext.js
+import { createContext, useState  } from "react";
+
+const GithubContext = createContext()
+
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
+
+export const GithubProvider = ({children}) => {
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchUsers = async() => {
+    const response = await fetch(`${GITHUB_URL}/users`, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`
+      },
+    })
+    const data = await response.json()
+    console.log(data)
+    
+    setUsers(data)
+    setLoading(false)
+  }
+
+  return <GithubContext.Provider value={{
+    users, 
+    loading
+    }}>
+    {children}
+  </GithubContext.Provider>
+}
+
+export default GithubContext
 ~~~
 
 ~~~js
+// App.jsx
+import {BrowserRouter as Router, Route, Routes} from 'react-router-dom'
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import Home from './pages/Home';
+import NotFound from './pages/NotFound';
+import About from './pages/About';
+import { GithubProvider } from './context/github/githubContext'; // added
 
+function App() {
+  return (
+    <GithubProvider >  // added
+      <Router>
+        <div className="flex flex-col justify-between h-screen">
+          <Navbar />
+          <main className='container mx-auto px-3 pb-12'>
+            <Routes>
+              <Route path='/' element={<Home />} />
+              <Route path='/about' element={<About />} />
+              <Route path='/notfound' element={<NotFound />} />
+              <Route path='/*' element={<NotFound />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+    </GithubProvider>  // added
+  );
+}
+
+export default App;
+~~~
+
+~~~js
+// src/components/users/UserResults.jsx
+import { useEffect, useContext} from "react"
+import Spinner from "../layout/Spinner"
+import UserItem from "./UserItem"
+import GithubContext from "../../context/github/githubContext" // added
+
+function UserResults() {
+
+  const { users, loading, fetchUsers } = useContext(GithubContext) // added
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  if(!loading) {
+    return (
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2">
+        {users.map((user) => (
+          <UserItem index={user.id} user={user} />
+        ))}
+      </div>
+    )
+  } else {
+    return <Spinner />
+  }
+}
+
+export default UserResults
+~~~
+#### Reducers & useReducer Hooks
+Reducerの参考サイト:https://www.robinwieruch.de/javascript-reducer/  
+~~~js
+ a reducer is a function which takes two arguments,   
+ the current state and an action, 
+ and returns based on both arguments a new state. 
+ (state, action) => newState
+~~~
+
+~~~js
+function counterReducer(state, action) {
+  return state + 1;
+}
+~~~
+アロー関数
+~~~js
+const counterReducer = (state, action) => {
+  return state + 1;
+};
+~~~
+ The action is normally defined as an object with a type property. 
+ Based on the type of the action, the reducer can perform conditional state transitions:
+~~~js
+const counterReducer = (count, action) => {
+  switch (action.type) {
+    case 'INCREASE':
+      return count + 1;
+    case 'DECREASE':
+      return count - 1;
+    default:
+      return count;
+  }
+};
+~~~
+GithubReducer.jsを作成する
+~~~js
+// src/context/github/GithubReducer.js
+const githubReducer = (state, action) => {
+  switch(action.type) {
+    default:
+      return state
+  }
+}
+export default githubReducer
+~~~
+Reducer を用いるのでuseStateの代わりにuseReducerを使う
+~~~js
+//src/context/github/GithubContext.js
+import { createContext, useReducer  } from "react"; // Changed
+import githubReducer from "./GithubReducer";
+
+const GithubContext = createContext()
+
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
+
+export const GithubProvider = ({children}) => {
+  // const [users, setUsers] = useState([])
+  // const [loading, setLoading] = useState(true)
+  const initialState = {
+    users: [],
+    loading: true
+  }
+
+  const [state, dispatch] = useReducer(githubReducer, initialState)
+
+  const fetchUsers = async() => {
+    const response = await fetch(`${GITHUB_URL}/users`, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`
+      },
+    })
+    const data = await response.json()
+    console.log(data)
+    
+    // setUsers(data)
+    // setLoading(false)
+    dispatch({   // added
+      type: 'GET_USERS',
+      payload: data
+    })
+  }
+
+  return <GithubContext.Provider value={{
+    users: state.users,  // Changed
+    loading: state.loading,  // Changed
+    fetchUsers
+    }}>
+    {children}
+  </GithubContext.Provider>
+}
+
+export default GithubContext
+~~~
+
+~~~js
+// src/context/github/GithubReducer.js
+const githubReducer = (state, action) => {
+  switch(action.type) {
+    case 'GET_USERS':
+      return {
+        ...state,
+        users: action.payload,
+        loading: false
+      }
+    default:
+      return state
+  }
+}
+export default githubReducer
+~~~
+
+#### Clean up FetchUsers
+initialStateのloading:true をtue→falseにして、fetchUsers関数が呼ばれるときにfalse→trueになるようにする  
+~~~js
+// src/context/github/GithubReducer.js
+const githubReducer = (state, action) => {
+  switch(action.type) {
+    case 'GET_USERS':
+      return {
+        ...state,
+        users: action.payload,
+        loading: false
+      }
+    case 'SET_LOADING':  // added
+      return {
+        ...state,
+        loading: true
+      }
+    default:
+      return state
+  }
+}
+export default githubReducer
+~~~
+initialState のloadingをfalseにする  
+setLoadingを作成する
+~~~js
+//src/context/github/GithubContext.js
+import { createContext, useReducer  } from "react";
+import githubReducer from "./GithubReducer";
+
+const GithubContext = createContext()
+
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
+
+export const GithubProvider = ({children}) => {
+  const initialState = {
+    users: [],
+    loading: false // changed
+  }
+  const [state, dispatch] = useReducer(githubReducer, initialState)
+   // Get initial users (testing purposes)
+  const fetchUsers = async() => {
+    setLoading()　// added
+
+    const response = await fetch(`${GITHUB_URL}/users`, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`
+      },
+    })
+    const data = await response.json()
+    console.log(data)
+    
+    dispatch({
+      type: 'GET_USERS',
+      payload: data
+    })
+  }
+
+  // Set loading
+  const setLoading = () => dispatch({type: 'SET_LOADING'})  // added
+
+  return <GithubContext.Provider value={{
+    users: state.users, 
+    loading: state.loading,
+    fetchUsers,
+    }}>
+    {children}
+  </GithubContext.Provider>
+}
+
+export default GithubContext
 ~~~
 
 ~~~js
