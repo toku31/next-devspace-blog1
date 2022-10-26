@@ -34,8 +34,8 @@ package.jsonができる
 }
 ~~~
 user@mbp server % npm i bcryptjs cors express jsonwebtoken mongoose morgan  
-user@mbp server % npm i nodemon --save-dev
-
+user@mbp server % npm i nodemon --save-dev  
+Express Server作成：https://www.youtube.com/watch?v=0ZkUPoeGe5s  
 ~~~Javascript
 // server/index.js
 import express from "express";
@@ -54,6 +54,13 @@ app.listen(port, () => {
 
 ~~~Javascript
 //package.json
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",　// added but deleted later
+    ===省略 ===
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js" // 追加
@@ -108,13 +115,17 @@ export default mongoose.model('User', userSchema);
 ~~~
 ### Sign-Up Controller
 ~~~js
-import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
-import userModal from "../models/user.js"
+// server/controllers/userController.js
+// import bcrypt from "bcryptjs"
+// import jwt from "jsonwebtoken"
+// import userModal from "../models/user.js"
+const jwt = require("jsonwebtoken")
+const userModal = require("../models/user");
+const bcrypt = require("bcryptjs");
 
 const secret = "test"
 // ユーザ登録
-export const signup = async (req, res) => {
+const signup = async (req, res) => {
   const {email, password, firstName, lastName}= req.body;
   try {
     const oldUser = await userModal.findOne({email});
@@ -138,29 +149,46 @@ export const signup = async (req, res) => {
     console.log(error)
   }
 }
+
+module.exports = {
+  signup,
+}
 ~~~
 ### ルーター(Sign-Up Route)の作成
 ~~~js
-// const express = require('express')
-import express from "express"
+// server/routes/userRoutes.js
+// import express from "express"
+const express = require('express')
 const router = express.Router()
+// const router = require("express").Router()
 
-// const { signup } = require("../controllers/user")
-import { signup } from "../controllers/user.js"
+// router.post('/signup', (req, res) => {
+//   res.status(200).json({message: 'Signup'})
+// })
+
+const { signup } = require("../controllers/userController")
+// import { signup } from "../controllers/user.js"
 
 router.post("/signup", signup);
 
-export default router
+module.exports = router
+// export default router
 ~~~
 ルータをindex.jsに設定する
 ~~~js
-// index.js
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors"
-import morgan from "morgan"
-import userRouter from './routes/user' // added
+// import express from "express";
+// import mongoose from "mongoose";
+// import cors from "cors"
+// import morgan from "morgan"
+const express = require("express")
+const mongoose = require("mongoose") ;
+const cors = require("cors") ;
+const morgan = require("morgan") ;
+const userRouter = require("./routes/userRoutes") ;
 
+// import userRouter from './routes/user.js'
+// apple135
+//mongodb+srv://news-user:<password>@cluster0.7eiib.mongodb.net/?retryWrites=true&w=majority
 const app = express();
 
 app.use(morgan("dev"))
@@ -168,7 +196,8 @@ app.use(express.json({limit: "30mb", extended: true}))
 app.use(express.urlencoded({limit: "30mb", extended: true}))
 app.use(cors())
 
-app.use('/users', userRouter) // added
+app.use('/users', userRouter)  // http://localhost:5000/users/signup
+// app.use('/users', require('./routes/userRoutes'))  // http://localhost:5000/users/signup
 
 const MONGODB_URL ="mongodb+srv://news-user:apple135@cluster0.7eiib.mongodb.net/news_db?retryWrites=true&w=majority"
 const port = 5000;
@@ -180,16 +209,42 @@ mongoose.connect(MONGODB_URL).then(() => {
 }).catch((error) => console.log(`${error} did not connect`))
 ~~~
 
+Postmanでユーザ作成してMongoDbで確認  
+POST: http://localhost:5000/users/signup  
+Body->raw->JSON  
 ~~~js
-
-
+{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email" : "johndoe@gmail.com",
+    "password": "123456"
+}
 ~~~
 
-~~~js
-
+### Redux-Toolkit
+view/App =>dispatch => Action => Reducer(Handle Action, Change State)
+=>Store State =>Subscribe(pass state)  
+configureStore()  
+createReducer()  
+createAction()  
+createSlice()  
+createAsyncThunk()  
+createEntityAdapter()  
+Redux Toolkitのわかりやすいサイト：
+https://www.hypertextcandy.com/learn-react-redux-with-hooks-and-redux-starter-kit
 
 ~~~
+1.  コンポーネントが　Action Creator を呼び出して Action を取得する。
+2.  取得した Action を Reducer に渡す。これを dispatch という。
+3.  Reducer は、渡された Action に応じて State を更新する。
+4.  コンポーネントは State に変更があれば、関連する UI を書き換える。
+~~~
 
+### create-react-app and installing packages
+user@mbp mern-news-app % npx create-react-app client
+user@mbp client % npm i @reduxjs/toolkit react-router-dom mdb-react-ui-kit moment react-file-b
+ase64 react-google-login react-redux react-toastify @material-ui/core material-ui-chip-input a
+xios
 ~~~js
 
 

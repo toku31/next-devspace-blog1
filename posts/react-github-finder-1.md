@@ -343,7 +343,7 @@ function Home() {
 
 export default Home
 ~~~
-
+ユーザをコンソールに出力
 ~~~js
 // components/users/UserResults.jsx
 import { useEffect } from "react"
@@ -363,18 +363,61 @@ function UserResults() {
     <div>UserResults</div>
   )
 }
+export default UserResults
+~~~
+ユーザを画面に出力
+~~~js
+// components/users/UserResults.jsx
+import { useEffect, useState } from "react"
+
+function UserResults() {
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async() => {
+    const response = await fetch(`${process.env.REACT_APP_GITHUB_URL}/users`)
+    const data = await response.json()
+    console.log(data)
+    setUsers(data)
+    setLoading(false)
+  }
+
+  if(!loading) {
+    return (
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2">
+        {users.map((user) => (
+          <h3>{user.login}</h3>
+        ))}
+      </div>
+    )
+  } else {
+    return <h3>Loading...</h3>
+  }
+}
 
 export default UserResults
 ~~~
-
+### Loading Spinner
 ~~~js
+// src/components/layout/Spinner.jsx
+import spinner from './assets/spinner.gif'
 
+function Spinner() {
+  return (
+    <div className='w-100 mt-20'>
+      <img width={180} className="text-center mx-auto" src={spinner} alt="Loading..." />
+    </div>
+  )
+}
+
+export default Spinner
 ~~~
 
-~~~js
-
-~~~
-
+#### Display Users
 ~~~js
 
 ~~~

@@ -10,81 +10,12 @@ author_image: 'https://randomuser.me/api/portraits/men/11.jpg'
 
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 
-#### Node.jsでサーバ作成
-参考にしたサイト：https://www.youtube.com/watch?v=nSXnif14lVo  
-公式：https://nodejs.org/api/synopsis.html
+#### Expressサーバ作成
+参考にしたサイト：hhttps://www.youtube.com/watch?v=0ZkUPoeGe5s  
 
-node -v  
-npm -v  
 npm init -y  
 package.jsonができる  
 npm install -g nodemon  
-
-~~~Javascript
-console.log("welcome nodejs");
-const PORT = 8080;
-const html = require("fs").readFileSync("./index.html");
-const http = require("http");
-//webサーバーを作成
-const server = http.createServer((req, res) => {
-  // console.log(req.url)
-  //ブラウザからアクセスが来た時の処理
-  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }); //クライアントに返すヘッダー情報
-  // res.write("<h1>Hello</h1>");
-  res.write(html);
-  res.end();
-
-  if (req.method === "POST") {
-    //ここに処理を記述する
-  }
-
-  if (req.method === "POST") {
-    let postData = "";
-    req
-      .on("data", function (chunk) {
-        postData += chunk;
-      })
-      .on("end", function () {
-        res.end("あなたが送信したのは、" + postData);
-      });
-  }
-});
-
-server.listen(PORT, () => {
-  console.log("server running!");
-});
-~~~
-
-~~~Javascript
-{
-  "name": "nodejs-tutorial-youtube",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "nodemon server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
-}
-
-~~~
-
-~~~Javascript
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nodejs</title>
-  </head>
-  <body>
-    <h1>HTMLファイルです。変更しました!!</h1>
-  </body>
-</html>
-~~~
 
 ### Express入門
 https://www.youtube.com/watch?v=Zk7tpzaKv0U&t=837s  
