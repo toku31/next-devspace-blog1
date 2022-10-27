@@ -794,20 +794,161 @@ export const GithubProvider = ({children}) => {
 export default GithubContext
 ~~~
 
+### User Search Component
 ~~~js
+// src/pages/Home.jsx
+import UserResults from "../components/users/UserResults"
+import UserSearch from "../components/users/UserSearch"
 
+function Home() {
+  return (
+    <>
+      <UserSearch />
+      <UserResults />
+    </>
+  )
+}
+
+export default Home
 ~~~
-
+formがあるとき、useStateを使う
 ~~~js
+// src/components/users/UserSearch.jsx
+import {useState, useContext} from 'react'
+import GithubContext from '../../context/github/GithubContext'
 
+function UserSearch() {
+  const [text, setText] = useState('')　// added
+  const {users} = useContext(GithubContext)  // added
+
+  const handleChange = (e) => setText(e.target.value)
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (text ==='') {
+      alert('Please enter something')
+    } else {
+      // @todo - search users
+      setText('')
+    }
+  }
+  console.log(users)
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-2 lg:grod-cols-2 md:grid-cols-2 mb-8 gap-8">
+      <div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-control">
+            <div className="relative">
+              <input 
+                type="text" 
+                className="w-full pr-40 bg-gray-200 input input-lg text-black"
+                placeholder ="Search"
+                value = {text}
+                onChange = {handleChange}
+              />
+              <button 
+                type="submit"
+                className="absolute top-0 right-0  rounded-l-none w-36 btn btn-lg" 
+              >
+                Go
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      {users.length > 0 && (  // added
+        <div>
+          <button className="btn btn-ghost btn-lg">Clear</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default UserSearch
 ~~~
-
+### Search Users
+https://api.github.com/search/users?q=brad
 ~~~js
+//src/context/github/GithubContext.js
+import { createContext, useReducer  } from "react";
+import githubReducer from "./GithubReducer";
 
+const GithubContext = createContext()
+
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
+
+export const GithubProvider = ({children}) => {
+  const initialState = {
+    users: [],
+    loading: false
+  }
+
+  const [state, dispatch] = useReducer(githubReducer, initialState)
+
+  // Get search results  fetchUsers => seachUsers
+  const searchUsers = async(text) => {   // Change
+    setLoading()
+    const params = new URLSearchParams({  // added
+      q: text
+    })
+
+    // https://api.github.com/search/users?q=brad
+    const response = await fetch(`${GITHUB_URL}/search/users?${params}`, {  // Change
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`
+      },
+    })
+    // const data = await response.json()
+    const {items} = await response.json()  // Change
+    console.log(items)
+    
+    dispatch({
+      type: 'GET_USERS',
+      payload: items
+    })
+  }
+
+  // Set loading
+  const setLoading = () => dispatch({type: 'SET_LOADING'})
+
+  return <GithubContext.Provider value={{
+    users: state.users, 
+    loading: state.loading,
+    searchUsers,  // Change
+    }}>
+    {children}
+  </GithubContext.Provider>
+}
+
+export default GithubContext
 ~~~
-
+### Clear users
 ~~~js
-
+// src/context/github/GithubReducer.js
+const githubReducer = (state, action) => {
+  switch(action.type) {
+    case 'GET_USERS':
+      return {
+        ...state,
+        users: action.payload,
+        loading: false
+      }
+    case 'SET_LOADING':
+      return {
+        ...state,
+        loading: true
+      }
+    case 'CLEAR_USERS':  // added
+      return {
+        ...state,
+        users: [],
+      }
+    default:
+      return state
+  }
+}
+export default githubReducer
 ~~~
 
 ~~~js
