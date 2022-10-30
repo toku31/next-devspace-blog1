@@ -924,6 +924,7 @@ export const GithubProvider = ({children}) => {
 export default GithubContext
 ~~~
 ### Clear users
+githubReducerにtype('CLEAR_USERS')を追加
 ~~~js
 // src/context/github/GithubReducer.js
 const githubReducer = (state, action) => {
@@ -951,12 +952,134 @@ const githubReducer = (state, action) => {
 export default githubReducer
 ~~~
 
+GithubContextにclearUser関数を追加
 ~~~js
+//src/context/github/GithubContext.js
+import { createContext, useReducer  } from "react";
+import githubReducer from "./GithubReducer";
 
+const GithubContext = createContext()
+
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
+
+export const GithubProvider = ({children}) => {
+  // const [users, setUsers] = useState([])
+  // const [loading, setLoading] = useState(true)
+  const initialState = {
+    users: [],
+    loading: false
+  }
+
+  const [state, dispatch] = useReducer(githubReducer, initialState)
+
+  // Get search results  fetchUsers => seachUsers
+  const searchUsers = async(text) => {
+    setLoading()
+    const params = new URLSearchParams({
+      q: text
+    })
+
+    // https://api.github.com/search/users?q=brad
+    const response = await fetch(`${GITHUB_URL}/search/users?${params}`, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`
+      },
+    })
+    // const data = await response.json()
+    const {items} = await response.json()
+    console.log(items)
+    
+    // setUsers(data)
+    // setLoading(false)
+    dispatch({
+      type: 'GET_USERS',
+      payload: items
+    })
+  }
+
+  // Clear users from state　　 added
+  const clearUsers = async() => {
+    dispatch({
+      type: 'CLEAR_USERS'
+    })
+  }
+
+  // Set loading
+  const setLoading = () => dispatch({type: 'SET_LOADING'})
+
+  return <GithubContext.Provider value={{
+    users: state.users, 
+    loading: state.loading,
+    searchUsers,
+    clearUsers,  // added
+    }}>
+    {children}
+  </GithubContext.Provider>
+}
+
+export default GithubContext
 ~~~
 
+UserSearchコンポーネントにclearUsersを実装する
 ~~~js
+import {useState, useContext} from 'react'
+import GithubContext from '../../context/github/GithubContext'
 
+function UserSearch() {
+  const [text, setText] = useState('')
+  const {users, searchUsers, clearUsers} = useContext(GithubContext)　// Changed
+
+  const handleChange = (e) => setText(e.target.value)
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (text ==='') {
+      alert('Please enter something')
+    } else {
+      // @todo - search users
+      searchUsers(text)
+      setText('')
+    }
+  }
+  console.log(users)
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-2 lg:grod-cols-2 md:grid-cols-2 mb-8 gap-8">
+      <div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-control">
+            <div className="relative">
+              <input 
+                type="text" 
+                className="w-full pr-40 bg-gray-200 input input-lg text-black"
+                placeholder ="Search"
+                value = {text}
+                onChange = {handleChange}
+              />
+              <button 
+                type="submit"
+                className="absolute top-0 right-0  rounded-l-none w-36 btn btn-lg" 
+              >
+                Go
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      {users.length > 0 && (
+        <div>
+          <button 
+            className="btn btn-ghost btn-lg"
+            onClick={clearUsers}  // Changed
+          >
+              Clear
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default UserSearch
 ~~~
 
 ~~~js
