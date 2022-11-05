@@ -964,42 +964,384 @@ RepoItem.propTypes = {
 }
 export default RepoItem
 ~~~
-
+# Section11: Refactoring Context & Actions
 ### Move SearchUsers To Actions
-~~~js
+searchUserを切り取って次のGithubActionsに貼る 
 
+~~~js
+// /src/context/github/GithubContext.js
+import { createContext, useReducer  } from "react";
+import githubReducer from "./GithubReducer";
+
+const GithubContext = createContext()
+
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
+
+export const GithubProvider = ({children}) => {
+  // const [users, setUsers] = useState([])
+  // const [loading, setLoading] = useState(true)
+  const initialState = {
+    users: [],
+    user: {},
+    repos: [],
+    loading: false
+  }
+
+  const [state, dispatch] = useReducer(githubReducer, initialState)
+ 
+  // Get single user
+  const getUser = async(login) => {
+    setLoading()
+    // https://api.github.com/search/users?q=brad
+    const response = await fetch(`${GITHUB_URL}/users/${login}`, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`
+      },
+    })
+
+    if (response.status===404) {
+      window.location = '/notfound'
+    } else {
+      const data = await response.json()
+      dispatch({
+        type: 'GET_USER',
+        payload: data
+      })
+    }
+  }
+
+  // Get user repos 64   loginはユーザネーム
+  const getUserRepos = async(login) => {
+    setLoading()
+    const params = new URLSearchParams({
+      sort: 'created',
+      per_page: 10,
+    })
+
+    const response = await fetch(`${GITHUB_URL}/users/${login}/repos?${params}`, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`
+      },
+    })
+    const data = await response.json()
+      
+    dispatch({
+      type: 'GET_REPOS',
+      payload: data
+    })
+  }
+
+  // Clear users from state
+  const clearUsers = async() => {
+    dispatch({
+      type: 'CLEAR_USERS'
+    })
+  }
+
+  // Set loading
+  const setLoading = () => dispatch({type: 'SET_LOADING'})
+
+  return <GithubContext.Provider value={{
+    ...state,  // Changed
+    dispatch,  // added
+              // searchUserを削除
+    clearUsers,
+    getUser,
+    getUserRepos,
+    }}>
+    {children}
+  </GithubContext.Provider>
+}
+
+export default GithubContext
+~~~
+GithubActionsを作成してsearchUsersを貼り付ける
+~~~js
+// /src/context/github/GithubActions.js
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
+
+ // Get search results  fetchUsers => seachUsers
+ export const searchUsers = async(text) => {
+  const params = new URLSearchParams({
+    q: text
+  })
+  // https://api.github.com/search/users?q=brad
+  const response = await fetch(`${GITHUB_URL}/search/users?${params}`, {
+    headers: {
+      Authorization: `token ${GITHUB_TOKEN}`
+    },
+  })
+  // const data = await response.json()
+  const {items} = await response.json()
+  return items
+}
+~~~
+searchUsersアクションをuserSearch.jsxに実装する
+~~~js
+// src/components/usesrs/userSearch.jsx
+import {useState, useContext} from 'react'
+import AlertContext from '../../context/alert/AlertContext'
+import { searchUsers } from '../../context/github/GithubActions'  // added
+import GithubContext from '../../context/github/GithubContext'
+
+function UserSearch() {
+  const [text, setText] = useState('')
+  const {users, clearUsers, dispatch} = useContext(GithubContext) // userSearchを削除 dispatchを追加
+  const {setAlert} = useContext(AlertContext)
+
+  const handleChange = (e) => setText(e.target.value)
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (text ==='') {
+      // alert('Please enter something')
+      setAlert('Please enter something', 'error')
+    } else {
+      dispatch({type: 'SET_LOADING'}) // added
+      const users = await searchUsers(text)  // Changed
+      dispatch({type: 'GET_USERS', payload: users})  // added
+      setText('')
+    }
+  }
+  // console.log('users:', users)
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-2 lg:grod-cols-2 md:grid-cols-2 mb-8 gap-8">
+      <div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-control">
+            <div className="relative">
+              <input 
+                type="text" 
+                className="w-full pr-40 bg-gray-200 input input-lg text-black"
+                placeholder ="Search"
+                value = {text}
+                onChange = {handleChange}
+              />
+              <button 
+                type="submit"
+                className="absolute top-0 right-0  rounded-l-none w-36 btn btn-lg" 
+              >
+                Go
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      {users.length > 0 && (
+        <div>
+          <button 
+            className="btn btn-ghost btn-lg"
+            onClick={clearUsers}
+          >
+              Clear
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+export default UserSearch
+~~~
+### Move getUser To Actions File
+GithubContextからgetUserとgetUserReposを切り取りGethubActionsに貼り付ける  
+以下も削除  
+clearUsers  
+const setLoading = () => dispatch({type: 'SET_LOADING'})   
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL  
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN 
+~~~js
+import { createContext, useReducer  } from "react";
+import githubReducer from "./GithubReducer";
+
+const GithubContext = createContext()
+
+export const GithubProvider = ({children}) => {
+  const initialState = {
+    users: [],
+    user: {},
+    repos: [],
+    loading: false
+  }
+
+  const [state, dispatch] = useReducer(githubReducer, initialState)
+ 
+   return <GithubContext.Provider value={{
+    ...state,
+    dispatch,
+    }}>
+    {children}
+  </GithubContext.Provider>
+}
+export default GithubContext
+~~~
+userSearch.jsxのclearUserを変更
+~~~js
+// src/components/usesrs/userSearch.jsx
+function UserSearch() {
+  const [text, setText] = useState('')
+  const {users, dispatch} = useContext(GithubContext) // clearUser削除
+  const {setAlert} = useContext(AlertContext)
+        ＝＝＝省略＝＝＝
+          <button 
+            className="btn btn-ghost btn-lg"
+            onClick={()=>dispatch({type: 'CLEAR_USERS'})}　　//Changed
+          >
+              Clear
+          </button>
+        ＝＝＝省略＝＝＝
+~~~
+User.jsxのuseEffectにあるgetUser, getUserReposを修正
+~~~js
+// /src/pages/User.jsx
+import  {FaCodepen, FaStore, FaUserFriends, FaUsers} from 'react-icons/fa'
+import {useEffect, useContext} from 'react'
+import {Link} from 'react-router-dom'
+import GithubContext from '../context/github/GithubContext'
+import {useParams} from 'react-router-dom'  // V6
+import Spinner from '../components/layout/Spinner'
+import RepoList from '../components/repos/RepoList'
+import { getUser, getUserRepos } from '../context/github/GithubActions' // added
+
+function User() {
+  const {user,loading,repos, dispatch} = useContext(GithubContext)　 // changed
+  const params = useParams()
+
+  useEffect(()=> {
+    // getUser(params.login)  // 削除
+    // getUserRepos(params.login)　　 // 削除
+    // // eslint-disable-next-line react-hooks/exhaustive-deps　　 // 削除
+    dispatch({type: 'SET_LOADING'})　　 // 以下追加
+    const getUserData = async() => {
+      const userData = await getUser(params.login)
+      dispatch({type: 'GET_USER', payload: userData})
+
+      const userRepoData = await getUserRepos(params.login)
+      dispatch({type: 'GET_REPOS', payload: userRepoData})
+    }
+
+    getUserData()
+  }, [dispatch, params.login])
+
+const {
+    name,
+    ＝＝＝以下省略＝＝＝
 ~~~
 
+### Cleaning Up Our Actions & Axios
+user@mbp github-finder % npm i axios  
+GithubActions.js内のfetch文の代わりにaxiosを使う  
+getUser, getUserReposを一つにまとめるgetUserAndReposを作成する
 ~~~js
+// /src/context/github/GithubActions.js
+import axios from 'axios'
+const GITHUB_URL = process.env.REACT_APP_GITHUB_URL
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN
 
+const github = axios.create({
+  baseURL: GITHUB_URL,
+  headers: { Authorization: `token ${GITHUB_TOKEN}` }
+})
+
+ // Get search results  fetchUsers => seachUsers
+ export const searchUsers = async(text) => {
+  const params = new URLSearchParams({
+    q: text
+  })
+  // https://api.github.com/search/users?q=brad
+  const response = await github.get(`/search/users?${params}`)
+  return response.data.items
+}
+
+// Get user and repos
+export const getUserAndRepos = async(login) => {
+  const [user, repos] = await Promise.all([
+    github.get(`/users/${login}`),
+    github.get(`/users/${login}/repos`)
+  ])
+
+  return { user: user.data, repos: repos.data }
+}
 ~~~
-
+User.jsxのgetUser, getUserReposの代わりに上で作成したgetUserAndReposを実装する
 ~~~js
+// /src/pages/User.jsx
+import  {FaCodepen, FaStore, FaUserFriends, FaUsers} from 'react-icons/fa'
+import {useEffect, useContext} from 'react'
+import {Link} from 'react-router-dom'
+import GithubContext from '../context/github/GithubContext'
+import {useParams} from 'react-router-dom'  // V6
+import Spinner from '../components/layout/Spinner'
+import RepoList from '../components/repos/RepoList'
+import { getUserAndRepos } from '../context/github/GithubActions' // Changed
 
+function User() {
+  const {user,loading,repos, dispatch} = useContext(GithubContext)
+  const params = useParams()
+
+  useEffect(()=> {
+    // getUser(params.login)
+    // getUserRepos(params.login)
+    // // eslint-disable-next-line react-hooks/exhaustive-deps
+    dispatch({type: 'SET_LOADING'})
+    const getUserData = async() => {
+    const userData= await getUserAndRepos(params.login)  // Changed
+    dispatch({type: 'GET_USER_AND_REPOS', payload: userData})   // Changed
+    }
+
+    getUserData()
+  }, [dispatch, params.login])
+
+  const {
+    name,
+    type,
+        ＝＝＝以下省略＝＝＝
 ~~~
-
+githubReducerのtypeにGET_USER_AND_REPOSを追加し、GET_USERとGET_REPOSを削除する
 ~~~js
-
-~~~
-
-~~~js
-
-~~~
-
-~~~js
-
-~~~
-
-~~~js
-
-~~~
-
-~~~js
-
-~~~
-
-~~~js
-
+// /src/context/github/GithubReducer.js
+const githubReducer = (state, action) => {
+  switch(action.type) {
+    case 'GET_USERS':
+      return {
+        ...state,
+        users: action.payload,
+        loading: false
+      }
+      case 'GET_USER_AND_REPOS':
+        return {
+          ...state,
+          user: action.payload.user,
+          repos: action.payload.repos,
+          loading: false
+        }
+    // case 'GET_USER':
+    //   return {
+    //     ...state,
+    //     user: action.payload,
+    //     loading: false
+    //   }
+    // case 'GET_REPOS':
+    //   return {
+    //     ...state,
+    //     repos: action.payload,
+    //     loading: false
+    //   }
+    case 'SET_LOADING':
+      return {
+        ...state,
+        loading: true
+      }
+    case 'CLEAR_USERS':
+      return {
+        ...state,
+        users: [],
+      }
+    default:
+      return state
+  }
+}
+export default githubReducer
 ~~~
 
 ~~~js
