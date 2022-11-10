@@ -157,6 +157,207 @@ export default App;
 ```
 
 ### Create the header component
+```js
+// App.js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import Header from './components/Header';
+import ForgotPassword from './pages/ForgotPassword';
+import Home from './pages/Home';
+import Offers from './pages/Offers';
+import Profile from './pages/Profile';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+
+function App() {
+  return (
+    <>
+      <Router>
+        <Header />  // added
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/profile' element={<Profile />} />
+          <Route path='/sign-in' element={<SignIn />} />
+          <Route path='/sign-up' element={<SignUp />} />
+           <Route path='/forgot-password' element={<ForgotPassword />} />
+           <Route path='/offers' element={<Offers />} />
+        </Routes>
+      </Router>
+    </>
+  );
+}
+
+export default App;
+```
+Headerコンポーネントを作成する  
+この時useLocationを用いる  
+console.log(location)にpathnameがあるのでこれを使う
+```
+Object
+hash: ""key: "default"
+pathname: "/offers"　　//
+search: ""
+state: null
+[[Prototype]]: Object
+```
+
+```js
+import {useLocation} from 'react-router-dom'
+
+function Header() {
+  const location = useLocation()
+  console.log(location)
+  const pathMathRoute=(route)=> {
+    if (route === location.pathname){
+      return true
+    }
+  }
+
+  return (
+    <div className ="bg-white border-b shadow-sm sticky top-0 z-50">
+      <header className='flex justify-between items-center px-3 max-w-6xl mx-auto'>
+        <div>
+          <img src="https://static.rdc.moveaws.com/images/logos/rdc-logo-default.svg" alt="logo" className="h-5 cursor-pointer"/>
+        </div>
+        <div>
+          <ul className='flex space-x-10'>
+            <li className={`cursor-pointer py-3  text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent ${pathMathRoute("/") && "text-black border-b-red-500"}`}>Home</li>
+            <li className={`cursor-pointer py-3  text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent ${pathMathRoute("/offers") && "text-black border-b-red-500"}`}>Offers</li>
+            <li className={`cursor-pointer py-3  text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent ${pathMathRoute("/sign-in") && "text-black border-b-red-500"} `}>Sign in</li>
+          </ul>
+        </div>
+      </header>
+    </div>
+  )
+}
+
+export default Header
+```
+# 3 Authentication using Firebase auth version9
+```js
+// src/index.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: rgb(240, 253, 244);
+}
+```
+ログインページのレイアウト
+```js
+// src/pages/SignIn.jsx
+import keyImgURL from '../assets/jpg/key.jpg'
+
+export default function SignIn() {
+  return (
+    <section>
+      <h1 className="text-3xl text-center mt-6 font-bold">Sign In</h1>
+      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
+        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
+          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
+        </div>
+        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
+          <form >
+            <input className="w-full" type="text"></input>
+          </form>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+### Create Sign in Page
+```js
+// src/pages/SignIn.jsx
+import { useState } from 'react'
+import keyImgURL from '../assets/jpg/key.jpg'
+
+export default function SignIn() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  })
+  const { email, password } = formData;
+  const onChange =(e)=> {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    })
+  }
+
+  //   const onChange =(e)=> {
+  //   setFormData((prevState) => ({
+  //     ...prevState,
+  //     [e.target.id]: e.target.value
+  //   }))
+  // }
+
+  // const [text, setText] = useState('') 
+  // const onChange =(e)=> { 
+  //   setText(e.target.value)
+  // }
+  return (
+    <section>
+      <h1 className="text-3xl text-center mt-6 font-bold">Sign In</h1>
+      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
+        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
+          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
+        </div>
+        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
+          <form >
+            <input 
+              className="w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type="email" 
+              id="email" 
+              value={email} 
+              onChange={onChange}
+              placeholder="Email address"
+            />
+            <div>
+            <input 
+              className="w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type={showPassword ? "text" : "password"}
+              id="password" 
+              value={password} 
+              onChange={onChange}
+              placeholder="Password"
+            />
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+React Iconsを使う  
+https://react-icons.github.io/react-icons/  
+npm install react-icons --save
+```js
+v
+```
+
+```js
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #### SVG をコンポーネントとして import
 ```javascript
 import { ReactComponent as Logo } from './logo.svg';
@@ -1090,7 +1291,6 @@ function OAuth() {
 export default OAuth
 ~~~
 
-~~~
 
 ~~~
 
