@@ -28,7 +28,7 @@ user@mbp mern-expense-tracker % npx create-react-app client
 user@mbp client % npm i antd react-router-dom aos react-redux redux axios
 ~~~
 Ant Design: https://ant.design/components/overview/  
-~~~
+~~~js
 import './App.css';
 import {Button} from 'antd'
 import 'antd/dist/antd.css'
@@ -124,12 +124,74 @@ function Layout(props) {
   }
 }
 ```
+# Backend Setup
+user@mbp mern-expense-tracker % npm init -y  
+user@mbp mern-expense-tracker % npm i nodemon mongoose express dotenv  
+dotenvを使うと.envファイルに定義された値を環境変数として使える。システムの環境変数として値が設定されていればそちらを優先して使えるので、開発時はローカルで.envを配置し、本番ではホスティングサービスの機能で環境変数として設定することでリポジトリ内のファイルを変更せずに実行することができる
+```js
+// server.js
+const express = require('express')
+
+const app = express();
+const port = 5000;
+
+app.get('/', (req, res) => res.send('Hello World'))
+app.listen(port, ()=> console.log(`Example app listening on port ${port}!`))
+```
+user@mbp mern-expense-tracker % nodemon server  
+mongoDB の設定  
+Browse Collections->Create Database  
+Database Access->Add new databaseuser  
+Overview->Connect->id + passwordのURLを取得  
+Built-in-Role : Read and write to anydatabase  
+```js
+// server.js
+const express = require('express')
+const dbconnect = require('./dbConnect')
+const dotenv = require("dotenv").config()
+const port = process.env.PORT || 5000;
+const app = express();
+
+app.get('/', (req, res) => res.send('Hello World'))
+app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
+```
+```js
+// .env
+NODE_ENV = development
+PORT =5000
+MONGO_URI = 'mongodb+srv://<user>:<password>@cluster========='
+```
+```js
+// dbConnect.js
+const mongoose = require('mongoose')
+const dotenv = require("dotenv").config()
+
+mongoose.connect(process.env.MONGO_URI, {useNewUrlParser : true, useUnifiedTopology: true})
+
+const connection = mongoose.connection
+
+connection.on('error', err => console.log(err))
+connection.on('connected', ()=> console.log('Mongo DB Connection successful'))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ~~~bash
 npm i express dotenv mongoose colors
 ~~~
-dotenvを使うと.envファイルに定義された値を環境変数として使える。システムの環境変数として値が設定されていればそちらを優先して使えるので、開発時はローカルで.envを配置し、本番ではホスティングサービスの機能で環境変数として設定することでリポジトリ内のファイルを変更せずに実行することができる
 
 ~~~bash
 npm i -D nodemon

@@ -190,8 +190,11 @@ export default App;
 ```
 Headerコンポーネントを作成する  
 この時useLocationを用いる  
-console.log(location)にpathnameがあるのでこれを使う
+console.log(location)にpathnameがあるのでこれを使う  
+useLocationはURLが変わるたびに再レンダリングして新しいオブジェクトを取得  
+useHistoryはURLが変わっても再レンダリングしない 
 ```
+// useLocation
 Object
 hash: ""key: "default"
 pathname: "/offers"　　//
