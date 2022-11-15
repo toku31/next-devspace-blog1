@@ -11,7 +11,7 @@ author_image: 'https://randomuser.me/api/portraits/women/12.jpg'
 
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 参考サイト：
-https://github.com/sahandghavidel/realtor-clone-react
+https://github.com/sahandghavidel/realtor-clone-react  
 npm start  
 npm run server
 
@@ -270,8 +270,9 @@ export default function SignIn() {
 }
 ```
 ### Create Sign in Page
+Sign inページの作成
 ```js
-// src/pages/SignIn.jsx
+// src/pages/SignIn.jsxの前半
 import { useState } from 'react'
 import keyImgURL from '../assets/jpg/key.jpg'
 
@@ -326,7 +327,127 @@ export default function SignIn() {
               onChange={onChange}
               placeholder="Password"
             />
+　　　　　＝＝＝以下は後半へ＝＝＝
+```
+パスワードを表示するeyeボタンやOAuthのGoogleデザインに、React Iconsを使う  
+https://react-icons.github.io/react-icons/  
+npm install react-icons --save
+```js
+// src/pages/SignIn.jsxの後半
+            {showPassword ? (<AiFillEyeInvisible className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) : (<AiFillEye className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) }
             </div>
+            <div className="flex justify-between whitespace-nowrap text-sm sm:text-lg" >
+              <p className='mb-6'>Don't have a account?
+                <Link to="/sign-up" className='text-red-600 hover:text-red-800 transition duration-200 ease-in-out ml-1'>Register</Link>
+              </p>
+              <p>
+                <Link to="/forgot-password" className='text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out'>Forgot password?</Link>
+              </p>
+            </div>
+            <button className='w-full bg-blue-600 text-white px-7 py-3 text-sm font-medium uppercase rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800' type="submit">Sign in</button>
+            <div className='flex items-center my-4 before:border-t  before:flex-1 before:border-gray-300 after:border-t after:flex-1 after:border-gray-300'>
+              <p className='text-center font-semibold mx-4'>OR</p>
+            </div>
+            <OAuth />
+          </form>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+```
+
+```js
+// src/components/OAuth.jsx
+import React from 'react'
+import {FcGoogle} from 'react-icons/fc'
+
+function OAuth() {
+  return (
+    <button className="flex items-center justify-center w-full bg-red-700 text-white px-7 py-3 uppercase text-sm font-medium hover:bg-red-800 active:bg-red-900 shadow-md hover:shadow-lg transition duration-150 ease-in-out rounded">
+      <FcGoogle className='text-2xl bg-white rounded-full mr-2'/>
+      Continue with Google
+    </button>
+  )
+}
+
+export default OAuth
+```
+Sign upページの作成
+```js
+// src/pages/SignUp.jsx
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import keyImgURL from '../assets/jpg/key.jpg'
+import {AiFillEyeInvisible, AiFillEye} from 'react-icons/ai'
+import OAuth from '../components/OAuth'
+
+export default function SignUp() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+  const { name, email, password } = formData;
+
+  const onChange =(e)=> {
+    setFormData((prevState) => ({
+      ...prevState,
+      [e.target.id]: e.target.value
+    }))
+  }
+
+  return (
+    <section>
+      <h1 className="text-3xl text-center mt-6 font-bold">Sign Up</h1>
+      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
+        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
+          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
+        </div>
+        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
+          <form >
+            <input 
+              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type="text" 
+              id="name" 
+              value={name} 
+              onChange={onChange}
+              placeholder="Full name"
+            />
+            <input 
+              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type="email" 
+              id="email" 
+              value={email} 
+              onChange={onChange}
+              placeholder="Email address"
+            />
+            <div className='relative mb-6'>
+            <input 
+              className="w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type={showPassword ? "text" : "password"}
+              id="password" 
+              value={password} 
+              onChange={onChange}
+              placeholder="Password"
+            />
+            {showPassword ? (<AiFillEyeInvisible className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) : (<AiFillEye className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) }
+            </div>
+            <div className="flex justify-between whitespace-nowrap text-sm sm:text-lg" >
+              <p className='mb-6'>Have a account?
+                <Link to="/sign-in" className='text-red-600 hover:text-red-800 transition duration-200 ease-in-out ml-1'>Sign in</Link>
+              </p>
+              <p>
+                <Link to="/forgot-password" className='text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out'>Forgot password?</Link>
+              </p>
+            </div>
+            <button className='w-full bg-blue-600 text-white px-7 py-3 text-sm font-medium uppercase rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800' type="submit">Sign up</button>
+            <div className='flex items-center my-4 before:border-t  before:flex-1 before:border-gray-300 after:border-t after:flex-1 after:border-gray-300'>
+              <p className='text-center font-semibold mx-4'>OR</p>
+            </div>
+            <OAuth />
           </form>
         </div>
       </div>
@@ -334,17 +455,249 @@ export default function SignIn() {
   )
 }
 ```
-React Iconsを使う  
-https://react-icons.github.io/react-icons/  
-npm install react-icons --save
+Forgot Passwordのページ作成
 ```js
-v
+// src/pages/ForgotPassword.jsx
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import keyImgURL from '../assets/jpg/key.jpg'
+import OAuth from '../components/OAuth'
+
+export default function ForgotPassword() {
+  const [email, setEmail] = useState("")
+
+  const onChange =(e)=> {
+    setEmail(e.target.value)
+    }
+
+  return (
+    <section>
+      <h1 className="text-3xl text-center mt-6 font-bold">Forgot Password</h1>
+      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
+        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
+          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
+        </div>
+        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
+          <form >
+            <input 
+              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type="email" 
+              id="email" 
+              value={email} 
+              onChange={onChange}
+              placeholder="Email address"
+            />
+            <div className="flex justify-between whitespace-nowrap text-sm sm:text-lg" >
+              <p className='mb-6'>Don't have a account?
+                <Link to="/sign-up" className='text-red-600 hover:text-red-800 transition duration-200 ease-in-out ml-1'>Register</Link>
+              </p>
+              <p>
+                <Link to="/sign-in" className='text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out'>Sign in instead</Link>
+              </p>
+            </div>
+            <button className='w-full bg-blue-600 text-white px-7 py-3 text-sm font-medium uppercase rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800' type="submit">Send reset password</button>
+            <div className='flex items-center my-4 before:border-t  before:flex-1 before:border-gray-300 after:border-t after:flex-1 after:border-gray-300'>
+              <p className='text-center font-semibold mx-4'>OR</p>
+            </div>
+            <OAuth />
+          </form>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+#### Install Firebase and react-toastify
+firebaseのインストール
+```bash
+user@mbp react-firebase-realtor % npm install firebase  
+```
+firebase.jsの作成
+~~~js
+// react-firebase-realtor/src/firebase.js 
+import { initializeApp } from "firebase/app";
+import { getFirestore } from 'firebase/firestore'
+
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "*****************************************",
+  authDomain: "*****************************************",
+  projectId: "**************************",
+  storageBucket: "**************************",
+  messagingSenderId: "**************************",
+  appId: "**************************"
+};
+// Initialize Firebase
+initializeApp(firebaseConfig);
+export const db = getFirestore()
+~~~
+firebase->authenticationでプロバイダの登録  
+usersの登録：john@gmail.com  
+Cloud Firestore-> データベースの作成ー>本番モード  
+Firestore rulesを以下のように変更して公開する
+```js
+// Firestore rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Listings
+    match /listings/{listing} {
+    	allow read;
+      allow create: if request.auth != null && request.resource.data.imgUrls.size() < 7;
+    	allow delete: if resource.data.userRef == request.auth.uid;
+      allow update: if resource.data.userRef == request.auth.uid;
+    }
+   
+    // Users
+    match /users/{user} {
+    	allow read;
+    	allow create;
+    	allow update: if request.auth.uid == user
+    }
+  }
+}
+```
+Storageのルールを以下のように変更して公開する
+```
+// Storage rules
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read;
+      allow write: if
+      request.auth != null &&
+      request.resource.size < 2 * 1024 * 1024 && //2MB
+      request.resource.contentType.matches('image/.*')
+    }
+  }
+}
+```
+サイト：Firebase Authentication：https://firebase.google.com/docs/auth  
+https://firebase.google.com/docs/auth/web/start  
+user@mbp react-firebase-realtor % npm i firebase
+```js
+// src/pages/SignUp.jsx
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import keyImgURL from '../assets/jpg/key.jpg'
+import {AiFillEyeInvisible, AiFillEye} from 'react-icons/ai'
+import OAuth from '../components/OAuth'
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {db} from "../firebase"
+
+export default function SignUp() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+  const { name, email, password } = formData;
+
+  const onChange =(e)=> {
+    setFormData((prevState) => ({
+      ...prevState,
+      [e.target.id]: e.target.value
+    }))
+  }
+
+  const onSubmit = async(e)=> {
+    e.preventDefault()
+    try {
+      const auth = getAuth();
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
+      console.log(user)
+    } catch (error) {
+      console.log(error);
+    }
+  }
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
 ```
 
 ```js
 
 ```
+```js
 
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 
 
 

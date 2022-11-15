@@ -173,6 +173,445 @@ const connection = mongoose.connection
 connection.on('error', err => console.log(err))
 connection.on('connected', ()=> console.log('Mongo DB Connection successful'))
 ```
+## User Login/Registration UI
+#### Login-Register Part1
+BootstrapのRegistration Form
+```js
+  <form>
+    <h3>Sign Up</h3>
+    <div className="mb-3">
+      <label>First name</label>
+      <input
+        type="text"
+        className="form-control"
+        placeholder="First name"
+      />
+    </div>
+    <div className="mb-3">
+      <label>Last name</label>
+      <input type="text" className="form-control" placeholder="Last name" />
+    </div>
+    <div className="mb-3">
+      <label>Email address</label>
+      <input
+        type="email"
+        className="form-control"
+        placeholder="Enter email"
+      />
+    </div>
+    <div className="mb-3">
+      <label>Password</label>
+      <input
+        type="password"
+        className="form-control"
+        placeholder="Enter password"
+      />
+    </div>
+    <div className="d-grid">
+      <button type="submit" className="btn btn-primary">
+        Sign Up
+      </button>
+    </div>
+    <p className="forgot-password text-right">
+      Already registered <a href="/sign-in">sign in?</a>
+    </p>
+  </form>
+```
+アニメーション  
+LottieFiles:  https://lottiefiles.com/search?q=money&category=animations
+web gradient: https://webgradients.com/  
+022 Morphrus Den
+
+```js
+//src/pages/Registration.js
+import {Link} from 'react-router-dom'
+import '../resources/authentication.css'
+import {useState} from 'react'
+
+function Register() {
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+
+  const {name, email, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=(e)=> {
+    e.preventDefault()
+    const values ={
+      name: name,
+      email: email,
+      password: password
+    }
+    console.log(values)
+    setFormData({
+      name: '',
+      email: '',
+      password: ''
+    })
+  }
+
+  return (
+    <div className='register'>
+      <div className="row justify-content-center  align-items-center w-100 h-100">
+        <div className="col-md-5 ">
+          <div className="lottie">
+            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_06a6pf9i.json"  background="transparent" speed="1" loop autoplay></lottie-player>
+          </div>
+        </div>
+        <div className="col-md-5">
+          <form onSubmit={handleSubmit}>
+            <h1>EXPENSE TRACKER / REGISTER</h1>
+            <hr />
+            <div className="mb-3">
+              <label>Name</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter name"
+                name='name'
+                value={name}
+                onChange={handleChange}
+              />
+            </div>
+            {/* <div className="mb-3">
+              <label>Last name</label>
+              <input type="text" className="form-control" placeholder="Last name" />
+            </div> */}
+            <div className="mb-3">
+              <label>Email address</label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="Enter email"
+                name='email'
+                value={email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-3">
+              <label>Password</label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Enter password"
+                name='password'
+                value={password}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="d-grid">
+              <button type="submit" className="btn btn-primary">
+                REGISTER
+              </button>
+            </div>
+            <p className="forgot-password text-right">
+              <Link to='/login'>Already registered?, Click here login</Link>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Register
+```
+```js
+//src/pages/Registration.js
+import {Link} from 'react-router-dom'
+import '../resources/authentication.css'
+import {useState} from 'react'
+
+function Login() {
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+
+  const {name, email, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=(e)=> {
+    e.preventDefault()
+    const values ={
+      name: name,
+      email: email,
+      password: password
+    }
+    console.log(values)
+    setFormData({
+      name: '',
+      email: '',
+      password: ''
+    })
+  }
+
+  return (
+    <div className='register'>
+      <div className="row justify-content-center  align-items-center w-100 h-100">
+        <div className="col-md-4">
+          <form onSubmit={handleSubmit}>
+            <h1>EXPENSE TRACKER / LOGIN</h1>
+            <hr />
+            <div className="mb-3">
+              <label>Name</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter name"
+                name='name'
+                value={name}
+                onChange={handleChange}
+              />
+            </div>
+            {/* <div className="mb-3">
+              <label>Last name</label>
+              <input type="text" className="form-control" placeholder="Last name" />
+            </div> */}
+            <div className="mb-3">
+              <label>Email address</label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="Enter email"
+                name='email'
+                value={email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-3">
+              <label>Password</label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Enter password"
+                name='password'
+                value={password}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="d-grid">
+              <button type="submit" className="btn btn-primary">
+                LOGIN
+              </button>
+            </div>
+            <p className="forgot-password text-right">
+              <Link to='/register'>Not Registered Yet?, Click here register</Link>
+            </p>
+          </form>
+        </div>
+        <div className="col-md-5 ">
+          <div className="lottie">
+            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_06a6pf9i.json"  background="transparent" speed="1" loop autoplay></lottie-player>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Login
+```
+cssの編集
+```css
+/* src/resources/authentication.css */
+.register{
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* background-image: linear-gradient(to left, #9890e3 0%, #b1f4cf 100%); */
+  background-image: linear-gradient(to right, #88d3ce 0%, #6e45e2 100%);
+}
+
+.lottie{
+  height: 400px;
+}
+
+.register input {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid white;
+  color: rgba(255, 255, 255, 0.536);
+}
+
+input:focus{
+  outline: none !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.784); !important;
+}
+
+label, a{
+  color: rgba(255, 255, 255, 0.536);
+}
+
+.register h1 {
+  font-size: 25px;
+  color: white;
+}
+```
+index.css
+```css
+/* index.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Montserrat',sans-serif !important;
+}
+
+/* スクロールバー非表示 */
+body,html {
+  overflow-x: hidden;
+}
+```
+## User Login-Registration API's
+#### User Model and API's 
+```js
+// models/user.js 
+const mongoose = require('mongoose')
+
+const userSchema = mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    },
+  },
+)
+
+module.exports = mongoose.model('User', userSchema)
+// const usermodel = mongoose.model('Users', userSchema)
+// module.exports = usermodel
+~~~
+('Users', userSchema)の'Goal' はモデル名
+```
+ルーター(userRoutes)の作成 　　Mern GoalSetter2を参照
+```js
+// /routes/userRoutes.js
+const express = require('express')
+const router = express.Router()
+const {
+  registerUser,
+  loginUser,
+  getMe,
+} = require('../controllers/userController')
+
+router.post('/', registerUser)
+router.post('/login', loginUser)
+router.get('/me', protect, getMe)
+
+module.exports = router
+```
+server.jsにuserRouteを追加
+```js
+// server.js
+const express = require('express')
+const dbconnect = require('./dbConnect')
+const dotenv = require("dotenv").config()
+const port = process.env.PORT || 5000;
+const app = express();
+app.use(express.json())　// added
+const userRoute = require('./routes/userRoute') // added
+
+app.use('/api/users/', userRoute)  // added
+
+// app.get('/', (req, res) => res.send('Hello World')) 削除
+app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
+```
+#### Login Registration Testing
+https://www.youtube.com/watch?v=OML9f6LXUUs&t=230s
+Clientのpackage.jsonの最後にproxyを追加
+```
+    ＝＝＝省略＝＝＝
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:5000" // added
+}
+```
+react-toastify
+```
+ npm install --save react-toastify
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+
+```
+```
+
+```
+```
+
+```
+
+```
+
+```
+```
+
+```
+```
+
+```
+
+```
+
+```
+```
+
+```
+```
+
+```
+
+```
+
+```
+```
+
+```
+```
+
+```
+
+```
+
+```
+```
+
+```
+```
+
+```
 
 
 
