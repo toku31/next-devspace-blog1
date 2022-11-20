@@ -617,25 +617,96 @@ export default function SignUp() {
     }
   }
 ```
+react-toastify: https://github.com/fkhadra/react-toastify  
+https://fkhadra.github.io/react-toastify/introduction/
 ```js
-
+npm install --save react-toastify
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 ```
 ```js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import Header from './components/Header';
+import ForgotPassword from './pages/ForgotPassword';
+import Home from './pages/Home';
+import Offers from './pages/Offers';
+import Profile from './pages/Profile';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import {ToastContainer} from 'react-toastify'  // added
+import 'react-toastify/dist/ReactToastify.css'  // added
 
+function App() {
+  return (
+    <>
+      <Router>
+        <Header />
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/profile' element={<Profile />} />
+          <Route path='/sign-in' element={<SignIn />} />
+          <Route path='/sign-up' element={<SignUp />} />
+           <Route path='/forgot-password' element={<ForgotPassword />} />
+           <Route path='/offers' element={<Offers />} />
+        </Routes>
+      </Router>
+      <ToastContainer  // added
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        />
+    </>
+  );
+}
+
+export default App;
+```
+#### Google OAuth
+説明：https://firebase.google.com/docs/auth/web/google-signin
+
+```js
+import { GoogleAuthProvider } from "firebase/auth";
+
+const provider = new GoogleAuthProvider();
 ```
 ```js
+// src/components/OAuth.jsx
+import React from 'react'
+import {FcGoogle} from 'react-icons/fc'
+import {getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import {toast} from 'react-toastify'
 
+export default function OAuth() {
+
+  async function onGoogleClick() {
+      try {
+        const auth = getAuth()
+        const provider = new GoogleAuthProvider()
+        const result = await signInWithPopup(auth, provider)
+        const user = result.user
+        console.log(user);
+      } catch (error) {
+        toast.error('Could not authorize with Google')
+        console.log(error);
+      }
+  }
+
+  return (
+    <button type="button" onClick={onGoogleClick} className="flex items-center justify-center w-full bg-red-700 text-white px-7 py-3 uppercase text-sm font-medium hover:bg-red-800 active:bg-red-900 shadow-md hover:shadow-lg transition duration-150 ease-in-out rounded">
+      <FcGoogle className='text-2xl bg-white rounded-full mr-2'/>
+      Continue with Google
+    </button>
+  )
+}
 ```
-```js
 
-```
-```js
-
-```
-
-```js
-
-```
 ```js
 
 ```

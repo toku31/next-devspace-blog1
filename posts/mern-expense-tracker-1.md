@@ -564,21 +564,379 @@ react-toastify
  npm install --save react-toastify
 import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-
-```
 ```
 
-```
+### Add Transaction UI
+Homeページにフォーム入力用のモーダルを作成する
+```js
+// /src/pages/Home.jsx
+import {useState} from 'react'
+import Layout from '../components/Layout'
+import '../resources/transaction.css'
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+import Form from 'react-bootstrap/Form';
+import axios from 'axios'
+import { toast } from 'react-toastify'
+import Spinner from '../components/Spinner'
+
+function Home() {
+  const [showAddEditTransactionModal, setShowAddEditTransactionModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    amount: "",
+    type: "",
+    category: "",
+    date: "",
+    reference: "",
+    description: "",
+  })
+  // const navigate = useNavigate()
+  const {amount, type, category, date, reference, description} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    setLoading(true)
+    const values ={
+      amount: amount,
+      type: type,
+      category: category,
+      date: date,
+      reference: reference,
+      description: description,
+    }
+    console.log(values)
+
+    setFormData({
+      amount: "",
+      type: "",
+      category: "",
+      date: "",
+      reference: "",
+      description: "",
+    })
+  }
+
+  return (
+    <Layout>
+      <div className="filter d-flex justify-content-between align-item-center">
+        <div>
+
+        </div>
+        <div>
+          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>ADD NEW</button>
+        </div>
+
+      </div>
+      <div className="table-analytics">
+
+      </div>
+
+      <Modal show={showAddEditTransactionModal} onHide={()=>setShowAddEditTransactionModal(false)}>
+      <Modal.Header closeButton >
+        <Modal.Title>Add Transaction</Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body>
+        <div>
+          <Form className='transaction-form' onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="amount">
+              <Form.Label>Amount</Form.Label>
+              <Form.Control type="text" placeholder="" value={amount} onChange={handleChange} name="amount"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="type">
+              <Form.Label>Type</Form.Label>
+              <Form.Select id="type" name="type" onChange={handleChange}>
+              <option value=''></option>
+              <option value='income'>Income</option>
+              <option value='expense'>Expense</option>
+            </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="category">
+              <Form.Label>Category</Form.Label>
+              <Form.Select id="category" name="category" onChange={handleChange}>
+              <option value=''></option>
+              <option value='salary'>Salary</option>
+              <option value='food'>Food</option>
+              <option value='entertainment'>Entertainment</option>
+              <option value='learning'>Learning</option>
+              <option value='medical'>Medical</option>
+              <option value='tax'>Tax</option>
+            </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="date">
+              <Form.Label>Date</Form.Label>
+              <Form.Control type="date" placeholder="" value={date} name="date" onChange={handleChange}/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="reference">
+              <Form.Label>Reference</Form.Label>
+              <Form.Control type="text" placeholder="" name="reference" value={reference} onChange={handleChange}/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="description">
+              <Form.Label>Description</Form.Label>
+              <Form.Control type="text" name="description" placeholder="" value={description} onChange={handleChange}/>
+            </Form.Group>
+
+            <Form.Group className="mb-3 d-flex justify-content-end" controlId="description">
+            <Button className="primary" type="submit">SAVE</Button>
+            </Form.Group>
+          </Form>
+        </div>
+      </Modal.Body>
+    </Modal>
+
+    </Layout>
+  )
+}
+
+export default Home
 ```
 
-```
+```js
+// resource/transaction.css
+.filter {
+  box-shadow: 0 0 3px gray;
+  padding: 15px 20px;
+  border-radius: 10px;
+}
 
+.transaction-form label{
+  color: rgba(0, 0, 0, 0.77)!important;
+}
 ```
+### Add Transaction API
+モデルの作成
+```js
+// models/Transaction.js
+const mongoose = require('mongoose')
 
-```
-```
+const transactionSchema = mongoose.Schema(
+  {
+    amount: {
+      type: Number,
+      required: true
+    },
+    type: {
+      type: String,
+      required: true
+    },
+    category: {
+      type: String,
+      required: true
+    },
+    reference: {
+      type: String,
+      required: true
+    },
+    description: {
+      type: String,
+      required: true
+    },
+    date: {
+      type: String,
+      required: true
+    },
+  },
+)
 
+module.exports = mongoose.model('Transaction', transactionSchema)
 ```
+ルータの作成
+```js
+// routes/transactionsRoute.jsx
+const express = require('express')
+const router = express.Router()
+const Transaction = require('../models/transaction')
+
+router.post('/add-transaction', async function(req, res){
+  try {
+    const newTransaction = new Transaction(req.body);
+    const transaction = await newTransaction.save()
+    res.status(200).json(transaction)
+    // res.send('User Registered Successfully')
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+
+router.get('/get-all-transactions', async(req, res) =>{
+  try {
+    const transactions = await Transaction.find({});
+    res.status(200).json(transactions)
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+
+module.exports = router
+```
+エンドポイントの追加
+```js
+// server.js
+const express = require('express')
+const dbconnect = require('./dbConnect')
+const dotenv = require("dotenv").config()
+const port = process.env.PORT || 5000;
+const app = express();
+app.use(express.json())
+const userRoute = require('./routes/userRoute')
+const transactionRoute = require('./routes/transactionsRoute')
+
+app.use('/api/users/', userRoute)
+app.use('/api/transactions/', transactionRoute) // added
+
+// app.get('/', (req, res) => res.send('Hello World'))
+app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
+```
+Home.jsで作成したモーダルの部分を切り取って別のコンポーネントを作成する
+```js
+// src¥components/AddEditTransaction.js
+import {useState} from 'react'
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+import Form from 'react-bootstrap/Form';
+import axios from 'axios'
+import { toast } from 'react-toastify'
+import Spinner from '../components/Spinner'
+
+function AddEditTransaction(props) {
+  const {showAddEditTransactionModal, setShowAddEditTransactionModal} = props
+
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    amount: "",
+    type: "",
+    category: "",
+    date: "",
+    reference: "",
+    description: "",
+  })
+  // const navigate = useNavigate()
+  const {amount, type, category, date, reference, description} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    setLoading(true)
+    const values ={
+      amount: amount,
+      type: type,
+      category: category,
+      date: date,
+      reference: reference,
+      description: description,
+    }
+    console.log(values)
+
+    try {
+      const user = JSON.parse(localStorage.getItem('expense-tracker-user'))
+      setLoading(true)
+      const response = await axios.post('/api/transactions/add-transaction', {...values, userid: user._id})
+      console.log("transaction added successfully:", response.data) ;
+      setShowAddEditTransactionModal(false)
+      toast.success("transaction added successfully", {theme: "colored"})
+      setLoading(false)
+    } catch (error) {
+      setLoading(false)
+      toast.error('transaction failed', {theme: "colored"})
+      // throw new Error(`Something went wrong! ${error.message}`);
+    }
+
+    setFormData({
+      amount: "",
+      type: "",
+      category: "",
+      date: "",
+      reference: "",
+      description: "",
+    })
+  }
+
+  if (loading){
+    return <Spinner />
+  }
+
+  return (
+    <Modal show={showAddEditTransactionModal} onHide={()=>setShowAddEditTransactionModal(false)}>
+    <Modal.Header closeButton >
+      <Modal.Title>Add Transaction</Modal.Title>
+    </Modal.Header>
+
+    <Modal.Body>
+      <div>
+        <Form className='transaction-form' onSubmit={handleSubmit}>
+          <Form.Group className="mb-3" controlId="amount">
+            <Form.Label>Amount</Form.Label>
+            <Form.Control type="text" placeholder="" value={amount} onChange={handleChange} name="amount"/>
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="type">
+            <Form.Label>Type</Form.Label>
+            <Form.Select id="type" name="type" onChange={handleChange}>
+            <option value=''></option>
+            <option value='income'>Income</option>
+            <option value='expense'>Expense</option>
+          </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="category">
+            <Form.Label>Category</Form.Label>
+            <Form.Select id="category" name="category" onChange={handleChange}>
+            <option value=''></option>
+            <option value='salary'>Salary</option>
+            <option value='food'>Food</option>
+            <option value='entertainment'>Entertainment</option>
+            <option value='learning'>Learning</option>
+            <option value='medical'>Medical</option>
+            <option value='tax'>Tax</option>
+          </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="date">
+            <Form.Label>Date</Form.Label>
+            <Form.Control type="date" placeholder="" value={date} name="date" onChange={handleChange}/>
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="reference">
+            <Form.Label>Reference</Form.Label>
+            <Form.Control type="text" placeholder="" name="reference" value={reference} onChange={handleChange}/>
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="description">
+            <Form.Label>Description</Form.Label>
+            <Form.Control type="text" name="description" placeholder="" value={description} onChange={handleChange}/>
+          </Form.Group>
+
+          <Form.Group className="mb-3 d-flex justify-content-end" controlId="description">
+          <Button className="primary" type="submit">SAVE</Button>
+          </Form.Group>
+        </Form>
+      </div>
+    </Modal.Body>
+  </Modal>
+  )
+}
+
+export default AddEditTransaction
+
 ```
 
 ```
