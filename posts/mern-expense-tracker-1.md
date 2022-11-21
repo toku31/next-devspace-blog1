@@ -936,17 +936,22 @@ function AddEditTransaction(props) {
 }
 
 export default AddEditTransaction
+```
+### Display Transactions in Table
+```js
 
 ```
 
-```
+```js
 
 ```
 
-```
-```
-
-```
+### Date Filters 
+JavaScriptの日付操作用ライブラリmomentの利用  
+npm install moment --save
+```js
+  <tr key={transaction._id}>
+      <td>{moment(transaction.date).format('YYYY-MM-DD')}</td>
 ```
 
 ```
