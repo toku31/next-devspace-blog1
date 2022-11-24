@@ -270,7 +270,7 @@ export default function SignIn() {
 }
 ```
 ### Create Sign in Page
-Sign inページの作成
+ログインページの作成
 ```js
 // src/pages/SignIn.jsxの前半
 import { useState } from 'react'
@@ -358,155 +358,6 @@ npm install react-icons --save
 
 ```
 
-```js
-// src/components/OAuth.jsx
-import React from 'react'
-import {FcGoogle} from 'react-icons/fc'
-
-function OAuth() {
-  return (
-    <button className="flex items-center justify-center w-full bg-red-700 text-white px-7 py-3 uppercase text-sm font-medium hover:bg-red-800 active:bg-red-900 shadow-md hover:shadow-lg transition duration-150 ease-in-out rounded">
-      <FcGoogle className='text-2xl bg-white rounded-full mr-2'/>
-      Continue with Google
-    </button>
-  )
-}
-
-export default OAuth
-```
-Sign upページの作成
-```js
-// src/pages/SignUp.jsx
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import keyImgURL from '../assets/jpg/key.jpg'
-import {AiFillEyeInvisible, AiFillEye} from 'react-icons/ai'
-import OAuth from '../components/OAuth'
-
-export default function SignUp() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  })
-  const { name, email, password } = formData;
-
-  const onChange =(e)=> {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.id]: e.target.value
-    }))
-  }
-
-  return (
-    <section>
-      <h1 className="text-3xl text-center mt-6 font-bold">Sign Up</h1>
-      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
-        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
-          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
-        </div>
-        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
-          <form >
-            <input 
-              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
-              type="text" 
-              id="name" 
-              value={name} 
-              onChange={onChange}
-              placeholder="Full name"
-            />
-            <input 
-              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
-              type="email" 
-              id="email" 
-              value={email} 
-              onChange={onChange}
-              placeholder="Email address"
-            />
-            <div className='relative mb-6'>
-            <input 
-              className="w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
-              type={showPassword ? "text" : "password"}
-              id="password" 
-              value={password} 
-              onChange={onChange}
-              placeholder="Password"
-            />
-            {showPassword ? (<AiFillEyeInvisible className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) : (<AiFillEye className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) }
-            </div>
-            <div className="flex justify-between whitespace-nowrap text-sm sm:text-lg" >
-              <p className='mb-6'>Have a account?
-                <Link to="/sign-in" className='text-red-600 hover:text-red-800 transition duration-200 ease-in-out ml-1'>Sign in</Link>
-              </p>
-              <p>
-                <Link to="/forgot-password" className='text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out'>Forgot password?</Link>
-              </p>
-            </div>
-            <button className='w-full bg-blue-600 text-white px-7 py-3 text-sm font-medium uppercase rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800' type="submit">Sign up</button>
-            <div className='flex items-center my-4 before:border-t  before:flex-1 before:border-gray-300 after:border-t after:flex-1 after:border-gray-300'>
-              <p className='text-center font-semibold mx-4'>OR</p>
-            </div>
-            <OAuth />
-          </form>
-        </div>
-      </div>
-    </section>
-  )
-}
-```
-Forgot Passwordのページ作成
-```js
-// src/pages/ForgotPassword.jsx
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import keyImgURL from '../assets/jpg/key.jpg'
-import OAuth from '../components/OAuth'
-
-export default function ForgotPassword() {
-  const [email, setEmail] = useState("")
-
-  const onChange =(e)=> {
-    setEmail(e.target.value)
-    }
-
-  return (
-    <section>
-      <h1 className="text-3xl text-center mt-6 font-bold">Forgot Password</h1>
-      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
-        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
-          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
-        </div>
-        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
-          <form >
-            <input 
-              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
-              type="email" 
-              id="email" 
-              value={email} 
-              onChange={onChange}
-              placeholder="Email address"
-            />
-            <div className="flex justify-between whitespace-nowrap text-sm sm:text-lg" >
-              <p className='mb-6'>Don't have a account?
-                <Link to="/sign-up" className='text-red-600 hover:text-red-800 transition duration-200 ease-in-out ml-1'>Register</Link>
-              </p>
-              <p>
-                <Link to="/sign-in" className='text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out'>Sign in instead</Link>
-              </p>
-            </div>
-            <button className='w-full bg-blue-600 text-white px-7 py-3 text-sm font-medium uppercase rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800' type="submit">Send reset password</button>
-            <div className='flex items-center my-4 before:border-t  before:flex-1 before:border-gray-300 after:border-t after:flex-1 after:border-gray-300'>
-              <p className='text-center font-semibold mx-4'>OR</p>
-            </div>
-            <OAuth />
-          </form>
-        </div>
-      </div>
-    </section>
-  )
-}
-```
 #### Install Firebase and react-toastify
 firebaseのインストール
 ```bash
@@ -579,6 +430,7 @@ service firebase.storage {
 サイト：Firebase Authentication：https://firebase.google.com/docs/auth  
 https://firebase.google.com/docs/auth/web/start  
 user@mbp react-firebase-realtor % npm i firebase
+### Sign Upページの作成
 ```js
 // src/pages/SignUp.jsx
 import { useState } from 'react'
@@ -706,6 +558,382 @@ export default function OAuth() {
   )
 }
 ```
+
+```js
+// src/components/OAuth.jsx
+import React from 'react'
+import {FcGoogle} from 'react-icons/fc'
+
+function OAuth() {
+  return (
+    <button className="flex items-center justify-center w-full bg-red-700 text-white px-7 py-3 uppercase text-sm font-medium hover:bg-red-800 active:bg-red-900 shadow-md hover:shadow-lg transition duration-150 ease-in-out rounded">
+      <FcGoogle className='text-2xl bg-white rounded-full mr-2'/>
+      Continue with Google
+    </button>
+  )
+}
+
+export default OAuth
+```
+Sign upページの作成
+```js
+// src/pages/SignUp.jsx
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import keyImgURL from '../assets/jpg/key.jpg'
+import {AiFillEyeInvisible, AiFillEye} from 'react-icons/ai'
+import OAuth from '../components/OAuth'
+
+export default function SignUp() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+  const { name, email, password } = formData;
+
+  const onChange =(e)=> {
+    setFormData((prevState) => ({
+      ...prevState,
+      [e.target.id]: e.target.value
+    }))
+  }
+
+  return (
+    <section>
+      <h1 className="text-3xl text-center mt-6 font-bold">Sign Up</h1>
+      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
+        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
+          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
+        </div>
+        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
+          <form >
+            <input 
+              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type="text" 
+              id="name" 
+              value={name} 
+              onChange={onChange}
+              placeholder="Full name"
+            />
+            <input 
+              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type="email" 
+              id="email" 
+              value={email} 
+              onChange={onChange}
+              placeholder="Email address"
+            />
+            <div className='relative mb-6'>
+            <input 
+              className="w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type={showPassword ? "text" : "password"}
+              id="password" 
+              value={password} 
+              onChange={onChange}
+              placeholder="Password"
+            />
+            {showPassword ? (<AiFillEyeInvisible className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) : (<AiFillEye className='absolute right-3 top-3 text-xl cursor-pointer' onClick={()=>setShowPassword((prevState)=>!prevState)}/>) }
+            </div>
+            <div className="flex justify-between whitespace-nowrap text-sm sm:text-lg" >
+              <p className='mb-6'>Have a account?
+                <Link to="/sign-in" className='text-red-600 hover:text-red-800 transition duration-200 ease-in-out ml-1'>Sign in</Link>
+              </p>
+              <p>
+                <Link to="/forgot-password" className='text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out'>Forgot password?</Link>
+              </p>
+            </div>
+            <button className='w-full bg-blue-600 text-white px-7 py-3 text-sm font-medium uppercase rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800' type="submit">Sign up</button>
+            <div className='flex items-center my-4 before:border-t  before:flex-1 before:border-gray-300 after:border-t after:flex-1 after:border-gray-300'>
+              <p className='text-center font-semibold mx-4'>OR</p>
+            </div>
+            <OAuth />
+          </form>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+Forgot Passwordのページ作成
+```js
+// src/pages/ForgotPassword.jsx
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import keyImgURL from '../assets/jpg/key.jpg'
+import OAuth from '../components/OAuth'
+
+export default function ForgotPassword() {
+  const [email, setEmail] = useState("")
+
+  const onChange =(e)=> {
+    setEmail(e.target.value)
+    }
+
+  const onSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const auth = getAuth()
+      await sendPasswordResetEmail(auth, email)
+      toast.success('Email was sent')
+    } catch (error) {
+      toast.error('could not send reset password')
+    }
+  }
+
+  return (
+    <section>
+      <h1 className="text-3xl text-center mt-6 font-bold">Forgot Password</h1>
+      <div className='flex justify-center flex-wrap items-center px-6 py-12 max-w-6xl mx-auto'>
+        <div className='md:w-[67%] lg:w-[50%] mb-12 md:mb-6'>
+          <img src={keyImgURL} alt="key" className="w-full rounded-2xl"/>
+        </div>
+        <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
+          <form onSubmit={onSubmit}>
+            <input 
+              className="mb-6  w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out" 
+              type="email" 
+              id="email" 
+              value={email} 
+              onChange={onChange}
+              placeholder="Email address"
+            />
+            <div className="flex justify-between whitespace-nowrap text-sm sm:text-lg" >
+              <p className='mb-6'>Don't have a account?
+                <Link to="/sign-up" className='text-red-600 hover:text-red-800 transition duration-200 ease-in-out ml-1'>Register</Link>
+              </p>
+              <p>
+                <Link to="/sign-in" className='text-blue-600 hover:text-blue-800 transition duration-200 ease-in-out'>Sign in instead</Link>
+              </p>
+            </div>
+            <button className='w-full bg-blue-600 text-white px-7 py-3 text-sm font-medium uppercase rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800' type="submit">Send reset password</button>
+            <div className='flex items-center my-4 before:border-t  before:flex-1 before:border-gray-300 after:border-t after:flex-1 after:border-gray-300'>
+              <p className='text-center font-semibold mx-4'>OR</p>
+            </div>
+            <OAuth />
+          </form>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+test@gmail.com  
+123456
+## Profile Pageの作成
+```js
+// src/pages/profile.jsx
+import {useState} from 'react'
+import {getAuth} from 'firebase/auth'
+
+function Profile() {
+  const auth = getAuth()
+  const [formData, setFormData] = useState({
+    name: auth.currentUser.displayName,
+    email: auth.currentUser.Email
+  })
+
+  const {name, email} = formData
+
+  return (
+    <>
+      <section className="max-w-6xl max-auto flex justify-center items-center flex-col">
+        <h1 className="text-3xl text-center mt-6 font-bold">My Profile</h1>
+        <div className='w-full md:w-[50%] mt-6 px-3'>
+          <form>
+            {/* Name input */}
+             <input type="text" id="name" value={name} disabled className="mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out" />
+
+             {/* Email input */}
+             <input type="email" id="email" value={email} disabled className="mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out" />
+
+             <div className="flex justify-between items-center whitespace-nowrap text-sm sm:text-lg mb-6">
+              <p className="flex items-center">Do you want to change your name?
+                <span className='text-red-600 hover:text-red-700 transition ease-in-out duration-200 ml-1 cursor-pointer'>Edit</span>
+              </p>
+              <p className='text-blue-600 hover:text-blue-800 transition ease-in-out duration-200 cursor-pointer'>Sign out</p>
+             </div>
+          </form>
+        </div>
+        
+      </section>
+    </>
+  )
+}
+
+export default Profile
+```
+### Private route for protecting profile page and logout functionality
+react-router-dom を使って、ログイン時とログアウト時で遷移できるページのを区別する、PrivateRouteを実装する
+```js
+// App.jsx
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import Header from './components/Header';
+import ForgotPassword from './pages/ForgotPassword';
+import Home from './pages/Home';
+import Offers from './pages/Offers';
+import Profile from './pages/Profile';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import PrivateRoute from './components/PrivateRoute';
+
+function App() {
+  return (
+    <>
+      <Router>
+        <Header />
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/profile' element={<PrivateRoute />}>  // added
+            <Route path='/profile' element={<Profile />} />
+          </Route>   // added
+          <Route path='/sign-in' element={<SignIn />} />
+          <Route path='/sign-up' element={<SignUp />} />
+           <Route path='/forgot-password' element={<ForgotPassword />} />
+           <Route path='/offers' element={<Offers />} />
+        </Routes>
+      </Router>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        />
+    </>
+  );
+}
+
+export default App;
+```
+PrivateRouteの作成
+```js
+// /src/comonents/ProvateRoute.jsx
+import {Outlet, Navigate} from 'react-router-dom'
+
+function PrivateRoute() {
+  const loggedIn = false;
+  return loggedIn ? <Outlet /> : <Navigate to='/sign-in/' />
+}
+
+export default PrivateRoute
+```
+ログイン状況を確認するフックuseAuthStatus Hook を作成する  
+checkingStatusはloadingと同じ意味  
+下のuseAuthStatusは２つ値（loggedIn, checkingStatus）を返したいので、export default constとdefaultをつけることができない
+```js
+// src/hooks/useAuthStatus.jsx
+import { useEffect, useState, useRef } from 'react'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
+
+export const useAuthStatus = () => {
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [checkingStatus, setCheckingStatus] = useState(true) 
+
+  useEffect(() => {
+      const auth = getAuth()
+      console.log(auth)
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setLoggedIn(true)
+        }
+        setCheckingStatus(false)
+      })
+    }, [])
+  return { loggedIn, checkingStatus }
+}
+```
+作成したuseAuthStatusフックをPrivateRouteに実装する  
+useAuthStatusはdefault functionでないのでimportでは{}で囲む
+```js
+import {Outlet, Navigate} from 'react-router-dom'
+import { useAuthStatus } from '../hooks/useAuthStatus'
+
+function PrivateRoute() {
+  // const loggedIn = false;
+  const { loggedIn, checkingStatus } = useAuthStatus() // 実装
+  if (checkingStatus) {
+    // return <Spinner />
+    return <h3>Loading...</h3>
+  }
+  console.log('loggedIn', loggedIn);
+  return loggedIn ? <Outlet /> : <Navigate to="/sign-in" />
+}
+
+export default PrivateRoute
+
+```
+
+Profile.jsxにログアウト機能を追加
+```js
+import {useState} from 'react'
+import {getAuth} from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'　 // added
+
+function Profile() {
+  const auth = getAuth()
+  const [formData, setFormData] = useState({
+    name: auth.currentUser.displayName,
+    email: auth.currentUser.email
+  })
+
+  const {name, email} = formData
+  const navigate = useNavigate()
+
+  const onLogout = () => {  // added
+    auth.signOut()
+    navigate('/')
+  }
+
+  return (
+    <>
+      <section className="max-w-6xl max-auto flex justify-center items-center flex-col">
+        <h1 className="text-3xl text-center mt-6 font-bold">プロフィール</h1>
+        <div className='w-full md:w-[50%] mt-6 px-3'>
+          <form>
+            {/* Name input */}
+             <input type="text" id="name" value={name} disabled className="mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out" />
+
+             {/* Email input */}
+             <input type="email" id="email" value={email} disabled className="mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out" />
+
+             <div className="flex justify-between items-center whitespace-nowrap text-sm sm:text-lg mb-6">
+              <p className="flex items-center">名前を変更しますか？
+                <span className='text-red-600 hover:text-red-700 transition ease-in-out duration-200 ml-1 cursor-pointer'>編集</span>
+              </p>
+              <p onClick = {onLogout} className='text-blue-600 hover:text-blue-800 transition ease-in-out duration-200 cursor-pointer'>サインアウト</p>
+             </div>
+          </form>
+        </div>
+        
+      </section>
+    </>
+  )
+}
+
+export default Profile
+```
+
+#### プロファイルページに編集機能を追加する
+<span onClick={() => setChangeDetail((prevState)=> !prevState)}は() => をつけないと無限ループしてしまう
+```js
+
+```
+```js
+
+```
+
+
+
+
 
 ```js
 
