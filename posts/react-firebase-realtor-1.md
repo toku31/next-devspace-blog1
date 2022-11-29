@@ -924,20 +924,175 @@ export default Profile
 
 #### プロファイルページに編集機能を追加する
 <span onClick={() => setChangeDetail((prevState)=> !prevState)}は() => をつけないと無限ループしてしまう
+
+さらにProfile.jsxにonChangeやhandleSubmitを追加する
 ```js
+// src/pages/Profile.jsx
+import {useState} from 'react'
+import {getAuth, updateProfile} from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import {updateDoc, doc} from 'firebase/firestore'
+import {db} from '../firebase'
 
+function Profile() {
+  const auth = getAuth()
+  const [changeDetail, setChangeDetail] = useState(false)
+  const [formData, setFormData] = useState({
+    name: auth.currentUser.displayName,
+    email: auth.currentUser.email
+  })
+
+  const {name, email} = formData
+  const navigate = useNavigate()
+
+  const onLogout = () => {
+    auth.signOut()
+    navigate('/')
+  }
+
+  const onChange = (e)=>
+    setFormData(prevState => ({
+      ...prevState, 
+      [e.target.id]: e.target.value,
+    }))
+
+  const handleSubmit =async()=> {
+    try {
+      if (auth.currentUser.displayName !== name) {
+        // Update display name on fb
+        await updateProfile(auth.currentUser, {
+          displayName: name
+        })
+        // Update in firestore
+        const userRef = doc(db, 'users', auth.currentUser.uid)
+        await updateDoc(userRef, {
+          name: name
+        })
+      }
+      toast.success('プロフィールの変更に成功しました')
+    } catch (error) {
+      toast.error('プロフィールの変更に失敗しました')
+    }
+  }
+
+  return (
+    <>
+      <section className="max-w-6xl max-auto flex justify-center items-center flex-col">
+        <h1 className="text-3xl text-center mt-6 font-bold">プロフィール</h1>
+        <div className='w-full md:w-[50%] mt-6 px-3'>
+          <form>
+            {/* Name input */}
+            <input 
+              type="text" 
+              id="name" 
+              value={name} 
+              disabled = {!changeDetail}
+              onChange = {onChange}
+              className={`mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out ${changeDetail && "bg-red-200 focus:bg-red-200"}`}
+            />
+
+             {/* Email input */}
+             <input type="email" id="email" value={email} disabled className="mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out" />
+
+             <div className="flex justify-between items-center whitespace-nowrap text-sm sm:text-lg mb-6">
+              <p className="flex items-center">名前を変更しますか？
+                <span 
+                  onClick={() => {
+                    changeDetail && handleSubmit()
+                    setChangeDetail((prevState)=> !prevState)
+                  }}
+                  className='text-red-600 hover:text-red-700 transition ease-in-out duration-200 ml-1 cursor-pointer'>
+                  {changeDetail ? '更新' : '編集' }
+                </span>
+              </p>
+              <p onClick = {onLogout} className='text-blue-600 hover:text-blue-800 transition ease-in-out duration-200 cursor-pointer'>サインアウト</p>
+             </div>
+          </form>
+        </div>
+        
+      </section>
+    </>
+  )
+}
+
+export default Profile
 ```
+
 ```js
+// src/components/Header.jsx
+import { useEffect, useState } from 'react'
+import {useLocation, useNavigate} from 'react-router-dom'
+import {getAuth, onAuthStateChanged} from 'firebase/auth'
 
+function Header() {
+  const [pageState, setPageState] = useState('Sign in')
+  const location = useLocation()
+  console.log('location:', location)
+  const pathMachRoute=(route)=> {
+    if (route === location.pathname){
+      return true
+    }
+  }
+
+  const navigate = useNavigate();
+  const auth = getAuth()
+  
+  useEffect(() => {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setPageState('profile')
+        } else {
+          setPageState('Sign in')
+        }
+      })
+  },[auth])
+
+  return (
+    <div className ="bg-white border-b shadow-sm sticky top-0 z-50">
+      <header className='flex justify-between items-center px-3 max-w-6xl mx-auto'>
+        <div>
+          <img src="https://static.rdc.moveaws.com/images/logos/rdc-logo-default.svg" 
+            alt="logo" 
+            className="h-5 cursor-pointer"
+            onClick = {()=>navigate('/')}
+          />
+        </div>
+        <div>
+          <ul className='flex space-x-10'>
+            <li className={`cursor-pointer py-3  text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent ${pathMachRoute("/") && "text-black border-b-red-500"}`} onClick = {()=>navigate('/')}>Home</li>
+            <li className={`cursor-pointer py-3  text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent ${pathMachRoute("/offers") && "text-black border-b-red-500"}`}>Offers</li>
+            <li className={`cursor-pointer py-3  text-sm font-semibold text-gray-400 border-b-[3px] border-b-transparent ${pathMachRoute("/sign-in")| pathMachRoute("/profile") && "text-black border-b-red-500"}`} onClick = {()=>navigate('/profile')}
+            >{pageState}</li>
+          </ul>
+        </div>
+      </header>
+    </div>
+  )
+}
+
+export default Header
 ```
-
-
-
-
-
+Spinner.jsxでSpinnerコンポーネントを作成する  
+https://loading.io/からフリーSVGを取得
 ```js
+// src/components/Spinner.jsx
+import React from 'react'
+import spinner from '../assets/svg/spinner.svg'
 
+function Spinner() {
+  return (
+    <div className='bg-black bg-opacity-50 flex items-center justify-center fixed left-0 right-0 bottom-0 top-0 z-50'>
+      <div>
+        <img src={spinner} alt="Loading..." className="h-max" />
+      </div>
+    </div>
+  )
+}
+
+export default Spinner
 ```
+
 ```js
 
 ```
