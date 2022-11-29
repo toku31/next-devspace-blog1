@@ -12,7 +12,7 @@ author_image: 'https://randomuser.me/api/portraits/men/11.jpg'
 
 # Front End Setup
 ## Reat App Setup
-Goal Setter App:  https://mern-goalsetter01.herokuapp.com/  
+Goal Setter App:  https://github.com/sathyaprakash195/sheymoney-udmey 
 email:   
 password:   
 参考サイト:
@@ -939,11 +939,118 @@ export default AddEditTransaction
 ```
 ### Display Transactions in Table
 ```js
+// /pages/Home.jsx
+import {useState, useEffect} from 'react'
+import AddEditTransaction from '../components/AddEditTransaction'
+import Layout from '../components/Layout'
+import '../resources/transaction.css'
+import axios from 'axios'
+import Spinner from '../components/Spinner'
+import { toast } from 'react-toastify'
+import TransactionsTable from '../components/TransactionsTable'
 
+function Home() {
+  const [showAddEditTransactionModal, setShowAddEditTransactionModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [transactionsData, setTransactionsData] = useState([])
+
+  const getTransactions = async ()=> {
+    setLoading(true)
+    try {
+      const user = JSON.parse(localStorage.getItem('expense-tracker-user'))
+      console.log('user', user)
+      console.log('user._id', user._id)
+      // const response = await axios.get('/api/transactions/get-all-transactions')
+      // const response = await axios.get('/api/transactions/get-all-transactions', {params: {userid: user._id}})
+     const response = await axios.post(
+      '/api/transactions/get-all-transactions',
+      {userid: user._id},
+     )
+      console.log('get-all-transactions', response.data) ;
+      setTransactionsData(response.data)
+      setLoading(false)
+    } catch (error) {
+      setLoading(false)
+      toast.error('Something went wrong!', {theme: "colored"})
+    }
+  }
+
+  useEffect(() => {
+    getTransactions()
+  }, [])
+
+  if (loading){
+    return <Spinner />
+  }
+
+  return (
+    <Layout>
+      <div className="filter d-flex justify-content-between align-item-center">
+        <div>
+
+        </div>
+        <div>
+          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>ADD NEW</button>
+        </div>
+
+      </div>
+      <div className="table-analytics">
+        <TransactionsTable  transactionsData={transactionsData} />
+      </div>
+
+      {showAddEditTransactionModal && (
+    <AddEditTransaction 
+      showAddEditTransactionModal={showAddEditTransactionModal} setShowAddEditTransactionModal = {setShowAddEditTransactionModal}
+      getTransactions = {getTransactions}
+    /> )}
+
+    </Layout>
+  )
+}
+
+export default Home
 ```
 
 ```js
+// src/components/TransactionTable.js
+import React from 'react'
+import { Button, Table } from 'react-bootstrap';
+import moment from 'moment';
 
+function TransactionsTable({transactionsData}) {
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>日付</th>
+                  <th>金額</th>
+                  <th>カテゴリー</th>
+                  <th>詳細</th>
+                  <th>備考</th>
+              </tr>
+          </thead>
+          <tbody>
+              {transactionsData.map((transaction) => 
+                  <tr key={transaction._id}>
+                      <td>{moment(transaction.date).format('YYYY-MM-DD')}</td>
+                      <td>{transaction.amount}</td>
+                      <td>{transaction.category}</td>
+                      <td>{transaction.reference}</td>
+                      <td>{transaction.description}</td>
+                      <td>
+                          <Button variant="outline-secondary">編集</Button>
+                          <Button variant="outline-danger">削除</Button>
+                      </td>
+                  </tr>
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+
+export default TransactionsTable
 ```
 
 ### Date Filters 
@@ -954,29 +1061,323 @@ npm install moment --save
       <td>{moment(transaction.date).format('YYYY-MM-DD')}</td>
 ```
 
-```
+```js
+// /pages/Home.jsx
+import {useState, useEffect} from 'react'
+import AddEditTransaction from '../components/AddEditTransaction'
+import Layout from '../components/Layout'
+import '../resources/transaction.css'
+import axios from 'axios'
+import Spinner from '../components/Spinner'
+import { toast } from 'react-toastify'
+import TransactionsTable from '../components/TransactionsTable'
+import Form from 'react-bootstrap/Form';
 
-```
-
-```
-```
-
-```
-```
-
-```
-
-```
-
-```
-```
-
-```
-```
-
-```
+function Home() {
+  const [showAddEditTransactionModal, setShowAddEditTransactionModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [transactionsData, setTransactionsData] = useState([])
+  const [frequency, setFrequency] = useState('7')
 
 
+  const getTransactions = async ()=> {
+    setLoading(true)
+    try {
+      const user = JSON.parse(localStorage.getItem('expense-tracker-user'))
+      console.log('user', user)
+      console.log('user._id', user._id)
+      // const response = await axios.get('/api/transactions/get-all-transactions')
+      // const response = await axios.get('/api/transactions/get-all-transactions', {params: {userid: user._id}})
+     const response = await axios.post(
+      '/api/transactions/get-all-transactions',
+      {userid: user._id, frequency},
+     )
+      console.log('get-all-transactions', response.data) ;
+      setTransactionsData(response.data)
+      setLoading(false)
+    } catch (error) {
+      setLoading(false)
+      toast.error('Something went wrong!', {theme: "colored"})
+    }
+  }
+
+  useEffect(() => {
+    getTransactions()
+  }, [frequency])
+
+  if (loading){
+    return <Spinner />
+  }
+
+  return (
+    <Layout>
+      <div className="filter d-flex justify-content-between align-item-center">
+        <div>
+          <div className="d-flex flex flex-column">
+          <Form.Group className="mb-1" controlId="frequency">
+            <Form.Label className='text-secondary fs-5'>Select Frequency</Form.Label>
+            <Form.Select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+              <option value='7'>Last 1 Week</option>
+              <option value='30'>Last 1 Month</option>
+              <option value='365'>Last 1 Year</option>
+              <option value='custom'>Last 1 Year</option>
+            </Form.Select>
+          </Form.Group>
+          </div>
+        </div>
+        <div>
+          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>ADD NEW</button>
+        </div>
+
+      </div>
+      <div className="table-analytics">
+        <TransactionsTable  transactionsData={transactionsData} />
+      </div>
+
+      {showAddEditTransactionModal && (
+    <AddEditTransaction 
+      showAddEditTransactionModal={showAddEditTransactionModal} setShowAddEditTransactionModal = {setShowAddEditTransactionModal}
+      getTransactions = {getTransactions}
+    /> )}
+
+    </Layout>
+  )
+}
+
+export default Home
+```
+
+```js
+// transactionRoute.js
+const express = require('express')
+const router = express.Router()
+const Transaction = require('../models/transaction')
+const moment = require('moment')
+
+router.post('/add-transaction', async function(req, res){
+  try {
+    const newTransaction = new Transaction(req.body);
+    const transaction = await newTransaction.save()
+    res.status(200).json(transaction)
+    // res.send('User Registered Successfully')
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+
+router.post('/get-all-transactions', async(req, res) =>{
+  // console.log('req', req)
+  console.log('req.body', req.body)
+  // console.log('user._id', user._id)
+  now = moment()
+  // console.log('moment', now.format() )
+  try {
+    const transactions = await Transaction.find({
+      date: {
+        // $gt : moment('2022-11-12').toDate,
+        // $gt : '2022-11-12'
+        // $gt : '2022-11-01T00:00:00.000Z'
+        // $gt : '2022-11-01T00:00:00.000Z'
+        // $gt : moment().subtract(7, 'd').toDate()
+        $gt : moment().subtract(Number(req.body.frequency), 'd').toDate()
+      },
+      userid: req.body.userid
+    });
+    // const transactions = await Transaction.find({userid: "63==================a"});
+    // const transactions = await Transaction.find({});
+
+    res.status(200).json(transactions)
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+
+module.exports = router
+```
+
+
+カレンダー機能
+https://hypeserver.github.io/react-date-range/
+https://www.npmjs.com/package/react-date-range
+```js
+user@mbp client % npm install react-date-range@latest　
+npm install --save react date-fns
+```
+```js
+// src/route/transactionRoute.js
+router.post('/get-all-transactions', async(req, res) =>{
+  
+  console.log('req.body', req.body)
+  const { frequency, userid, date } = req.body
+  // console.log('user._id', user._id)
+  now = moment()
+  // console.log('moment', now.format() )
+  try {
+    const transactions = await Transaction.find({
+      // date: {
+      //   $gt : moment().subtract(Number(req.body.frequency), 'd').toDate()
+
+        // $gt : moment('2022-11-12').toDate,
+        // $gt : '2022-11-12'
+        // $gt : '2022-11-01T00:00:00.000Z'
+        // $gt : '2022-11-01T00:00:00.000Z'
+        // $gt : moment().subtract(7, 'd').toDate()
+
+        ...(frequency !== 'custom' ? { 
+          date: {
+            $gt : moment().subtract(Number(frequency), 'd').toDate(),
+          },
+        } : {
+          date: {
+            $gte : date.startDate,
+            $lte : date.endDate
+          }
+        }),
+      userid: req.body.userid
+    });
+    // const transactions = await Transaction.find({userid: "6370aa95898cac633d2e8e0a"});
+    // const transactions = await Transaction.find({});
+
+    res.status(200).json(transactions)
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+```
+```js
+// src/route/transactionRoute.js
+const express = require('express')
+const router = express.Router()
+const Transaction = require('../models/transaction')
+const moment = require('moment')
+
+router.post('/add-transaction', async function(req, res){
+  try {
+    const newTransaction = new Transaction(req.body);
+    const transaction = await newTransaction.save()
+    res.status(200).json(transaction)
+    // res.send('User Registered Successfully')
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+
+router.post('/get-all-transactions', async(req, res) =>{
+  
+  console.log('req.body::', req.body)
+  const { frequency, userid, dateRange } = req.body
+  // console.log('user._id', user._id)
+  now = moment()
+  // console.log('moment', now.format() )
+  try {
+    const transactions = await Transaction.find({
+      ...(frequency !== 'custom' ? { 
+          date: {
+            $gt : moment().subtract(Number(frequency), 'd').toDate(),
+          },
+        } : {
+          date: {
+            $gte : dateRange.startDate,
+            $lte : dateRange.endDate,
+          }
+        }),
+      userid: userid
+    });
+
+    res.status(200).json(transactions)
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+
+module.exports = router
+```
+
+```js
+// Home.js
+        <div>
+          <div className="d-flex flex flex-column">
+            {/* <h6>Select Frequency</h6> */}
+            {/* <select value={frequency} onChange={(value)=>setFrequency(value)}  class="form-select" aria-label="Default select example">
+              <option value="7">Last 1 Week</option>
+              <option value="30">Last 1 Month</option>
+              <option value="365">Last 1 Year</option>
+            </select> */}
+
+          <Form.Group className="mb-3" controlId="frequency">
+            <Form.Label className='text-secondary fs-5'>Select Frequency</Form.Label>
+            <Form.Select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+              <option value='7'>Last 1 Week</option>
+              <option value='30'>Last 1 Month</option>
+              <option value='365'>Last 1 Year</option>
+              <option value='custom'>Custom</option>
+            </Form.Select>
+            {/* https://hypeserver.github.io/react-date-range/ */}
+
+
+            {/* {frequency === 'custom' && (
+            <span onClick={()=>setOpenDate(!openDate)} 
+            className='headerSearchText'>{`${format(date[0].startDate, "M月dd日(ccc)")} -- ${format(date[0].endDate, "M月dd日(ccc)")}`}</span>
+            )} */}
+
+            {frequency === 'custom' && (
+              <div className="mt-2">
+                <DateRange
+                  editableDateInputs={true}
+                  onChange={item => setDate([item.selection])}
+                  // onChange={() => setDate(date)}
+                  moveRangeOnFirstSelection={false}
+                  ranges={date}
+                  className="date"
+                  // minDate={new Date()} 
+                  locale={ja} // 言語設定
+                />
+              </div>
+            )}
+          </Form.Group>
+         
+          </div>
+        </div>
+```
+#### react-icons
+```js
+$ npm install react-icons --save
+AiOutlineUnorderedList
+import { FaGithub } from "react-icons/fa"
+```
+#### React Circular Progressbar  
+https://www.npmjs.com/package/react-circular-progressbar
+```js
+npm install --save react-circular-progressbar
+import { CircularProgressbar } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
+```
+
+```js
+
+```
+Turn overを編集する  
+https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
+```js
+const array1 = [1, 2, 3, 4];
+
+// 0 + 1 + 2 + 3 + 4
+const initialValue = 0;
+const sumWithInitial = array1.reduce(
+  (accumulator, currentValue) => accumulator + currentValue,
+  initialValue
+);
+
+console.log(sumWithInitial);
+// expected output: 10
+```
+
+```js
+
+```
+```js
+
+```
 
 
 
