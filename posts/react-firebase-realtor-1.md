@@ -1089,1037 +1089,547 @@ function Spinner() {
     </div>
   )
 }
-
 export default Spinner
 ```
-
+#### リスト作成ページを作成する
+react-icons  
+https://react-icons.github.io/react-icons
 ```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#### SVG をコンポーネントとして import
-```javascript
-import { ReactComponent as Logo } from './logo.svg';
-const App = () => (
-  <div>
-    {/* Logo is an actual React component */}
-    <Logo />
-  </div>
-);
-```
-★★★★モバイル用のNavbar★★★★
-```javascript
-// react-house-market/src/App.js 
-import { useNavigate } from 'react-router-dom'
-import { ReactComponent as OfferIcon} from '../assets/svg/localOfferIcon.svg'
-import { ReactComponent as ExploreIcon} from '../assets/svg/exploreIcon.svg'
-import { ReactComponent as PersonOutlineIcon} from '../assets/svg/personOutlineIcon.svg'
-
-function Navbar() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const pathMatchRoute = (route) => {
-    if(route === location.pathname) {
-      return true
-    }
-  }
-
-  return (
-    <footer className='navbar'>
-      <nav className='navbarNav'>
-        <ul className="navbarListItems">
-          <li className="navbarListItem" onClick={() => navigate('/')}>
-            <ExploreIcon  fill='#2c2c2c' width='36px' heght='36px' />
-            <p>Explore</p>
-          </li>
-          <li className="navbarListItem" onClick={() => navigate('/offers')}>
-            <OfferIcon  fill='#2c2c2c' width='36px' heght='36px' />
-            <p>Offer</p>
-          </li>
-          <li className="navbarListItem" onClick={() => navigate('/profile')}>
-            <PersonOutlineIcon fill='#2c2c2c' width='36px' heght='36px' />
-            <p>Profile</p>
-          </li>
-        </ul>
-      </nav>
-    </footer>
-  )
-}
-
-export default Navbar
-```
-
-```js
-  const location = useLocation()
-
-  const pathMatchRoute = (route) => {
-    if(route === location.pathname) {  // 例　'/profile'
-      return true
-    }
-  }
-```
-
-```javascript
-     <ul className='navbarListItems'>
-          <li className='navbarListItem' >
-            <ExploreIcon  fill={pathMatchRoute('/') ? '#2c2c2c' : '#8f8f8f'} width='36px' heght='36px' onClick={() => navigate('/')}/>
-            <p>Explore</p>
-          </li>
-```
-
-
-firebaseのインストール
-```bash
-C:\react\house-marketplace>npm i firebase
-```
-config fileの作成
-~~~js
-// react-house-market/src/firebase.config.js 
-import { initializeApp } from "firebase/app";
-import { getFirestore } from 'firebase/firestore'
-
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "*****************************************",
-  authDomain: "*****************************************",
-  projectId: "**************************",
-  storageBucket: "**************************",
-  messagingSenderId: "**************************",
-  appId: "**************************"
-};
-// Initialize Firebase
-initializeApp(firebaseConfig);
-export const db = getFirestore()
-~~~
-
-firebase authentication userの追加  80
-firestore rules  Firestore Database & Storage
-```
-// FIRESTORE RULES
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Listings
-    match /listings/{listing} {
-    	allow read;
-      allow create: if request.auth != null && request.resource.data.imgUrls.size() < 7;
-    	allow delete: if resource.data.userRef == request.auth.uid;
-      allow update: if resource.data.userRef == request.auth.uid;
-    }
-
-    // Users
-    match /users/{user} {
-    	allow read;
-    	allow create;
-    	allow update: if request.auth.uid == user
-    }
-  }
-}
-```
-
-```
-// STORAGE RULES
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read;
-      allow write: if
-      request.auth != null &&
-      request.resource.size < 2 * 1024 * 1024 && //2MB
-      request.resource.contentType.matches('image/.*')
-    }
-  }
-}
-```
-
-#### Dummy Data & indexes
-Cloud Firestore(nonSQL database)  
-collection = table  
-document  = record  
-
-画像素材　splash
-https://unsplash.com/
-condoで検索
-
-FirestoreDatabase ⇒インデックスの作成
-https://console.firebase.google.com/project/house-marketpalce-app-9e335/firestore/indexes?hl=ja
-### Firebase Authentication & Profile
-John Doe: john@gmail.com　:test1234
-ReactでSVGアイコンコンポーネントを作る
-
-~~~javascript
-// react-house-market/src/pages/SignIn.jsx 
-import {useState} from 'react'
-import { useNavigate, Link} from 'react-router-dom'
-import { ReactComponent as ArrowRightIcon} from '../assets/svg/keyboardArrowRightIcon.svg'
-import visibilityIcon from '../assets/svg/visibilityIcon.svg'
-
-function SignIn() {
-  const  [showPassword, setShowPassword] = useState(false)
-  const  [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  }) 
-
-  const {email, password} = formData
-  const navigate = useNavigate()
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.id] : e.target.value,
-    }))
-  }
-
-  return (
-  <>
-    <div className="pageContainer">
-      <header>
-        <p className="pageHeader">Welcome Back!</p>
-      </header>
-
-      <form>
-        <input type="email" className='emailInput' placeholder='Email' id="email" value={email} onChange={onChange} />
-
-        <div className="passwordInputDiv">
-          <input type={showPassword ? 'text' : 'password'} className="passwordInput" placeholder='Password' id='password'  
-          value={password} onChange={onChange} />
-          <img src={visibilityIcon} alt="show password" className='showPassword'
-             onClick={() => setShowPassword((prevState) => (!prevState))} />
-        </div>
-
-        <Link to='/forgot-password' className='forgotPasswordLink'>Forgot Password</Link>
-
-        <div className="signInBar">
-          <p className="signInText">Sign In</p>
-          <button className="signInButton">
-            <ArrowRightIcon fill='#ffffff' width='34px' height='34px'/>
+// CreateListing.jsx
+ return (
+    <main className="max-w-md px-2 mx-auto">
+      <h1 className="text-3xl text-center mt-6 font-bold">リストの作成</h1>
+      <form onSubmit={onSubmit}>
+        <p className="text-lg mt-6 font-semibold">売却 / 賃貸</p>
+        <div className="flex">
+          <button
+            type="button"
+            id="type"
+            value="sale"
+            onClick={onChange}
+            className={`mr-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              type === "rent"
+                ? "bg-white text-black"
+                : "bg-slate-600 text-white"
+            }`}
+          >
+            売却
+          </button>
+          <button
+            type="button"
+            id="type"
+            value="rent"
+            onClick={onChange}
+            className={`ml-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              type === "sale"
+                ? "bg-white text-black"
+                : "bg-slate-600 text-white"
+            }`}
+          >
+            賃貸
           </button>
         </div>
-      </form>
-      {/* Google OAuth */}
-      <Link to='/sign-up' className='registerLink'>Sign Up Instead</Link>
-    </div>
-  </>
-  )
-}
-export default SignIn
-~~~
-ポイント
-~~~js
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.id] : e.target.value,
-    }))
-  }
-                    ~~ ~~ ~~
-  <input type="email" className='emailInput' placeholder='Email' id="email" value={email} onChange={onChange} />
-  <div className="passwordInputDiv">
-    <input type={showPassword ? 'text' : 'password'} className="passwordInput" placeholder='Password' id='password'  
-    value={password} onChange={onChange} />
-    <img src={visibilityIcon} alt="show password" className='showPassword'
-        onClick={() => setShowPassword((prevState) => (!prevState))} />
-  </div>
-~~~
-
-## Firebaseにユーザ登録　85
-https://firebase.google.com/docs/auth/web/start  
-npm install firebase
-~~~js
-// react-house-market/src/pages/SignUp.jsx 
-import {useState} from 'react'
-import { useNavigate, Link} from 'react-router-dom'
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth"; // 追加
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";　// 追加
-import {db} from '../firebase.config'　// 追加
-import { ReactComponent as ArrowRightIcon} from '../assets/svg/keyboardArrowRightIcon.svg'
-import visibilityIcon from '../assets/svg/visibilityIcon.svg'
-import OAuth from '../components/OAuth';
-
-function SignUp() {
-  const  [showPassword, setShowPassword] = useState(false)
-  const  [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: ''
-  }) 
-  const {name, email, password} = formData
-  const navigate = useNavigate()
-
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.id] : e.target.value,
-    }))
-  }
-
-  const onSubmit = async (e) => {
-    e.preventDefault()
-
-    try {
-      const auth = getAuth()
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-      updateProfile(auth.currentUser, {
-        displayName: name,
-      })
-
-      const formDataCopy = {...formData}
-      delete formDataCopy.password
-      formDataCopy.timestamp = serverTimestamp()
-
-      await setDoc(doc(db, 'users', user.uid), formDataCopy)
-
-      navigate('/')
-    } catch (error) {
-      // console.log(error)
-      toast.error('Something went wrong with registration')
-    }
-  }
-  return (
-  <>
-    <div className="pageContainer">
-      <header>
-        <p className="pageHeader">ようこそ！</p>
-        {/* <p className="pageHeader">Welcome Back!</p> */}
-      </header>
-
-      <form onSubmit={onSubmit}>　// 追加
-        <input type="text" className='nameInput' placeholder='名前' 
-          id="name" value={name} onChange={onChange} />
-
-        <input type="email" className='emailInput' placeholder='メールアドレス' 
-          id="email" value={email} onChange={onChange} />
-
-        <div className="passwordInputDiv">
-          <input type={showPassword ? 'text' : 'password'} className="passwordInput"
-            placeholder='メールアドレス(確認)' id='password' value={password} onChange={onChange} />
-          <img src={visibilityIcon} alt="show password" className='showPassword'
-             onClick={() => setShowPassword((prevState) => (!prevState))} />
-        </div>
-        <Link to='/forgot-password' className='forgotPasswordLink'>パスワードを忘れましたか</Link>
-
-        <div className="signUpBar">
-          <p className="signUpText">サインアップ</p>
-          <button className="signUpButton">
-            <ArrowRightIcon fill='#ffffff' width='34px' height='34px'/>
-          </button>
-        </div>
-      </form>
-
-      <OAuth />
-
-      <Link to='/sign-in' className='registerLink'>サインインする</Link>
-      {/* <Link to='/sign-in' className='registerLink'>Sign In Instead</Link> */}
-    </div>
-  </>
-  )
-}
-export default SignUp
-~~~
-
-上記のポイント
-~~~javascript
-  const onSubmit = async (e) => {
-    e.preventDefault()
-　　　　       　~ ~ ~ 
-    try {
-      const auth = getAuth()
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-      updateProfile(auth.currentUser, {
-        displayName: name,
-      })
-      navigate('/')
-    } catch (error) {
-      console.log(error)
-    }
-  }
-~~~
-
-John Doe:
-john@gmail.com:
-test1234:
-
-## Firebaseにユーザを保存
-https://firebase.google.com/docs/firestore/manage-data/add-data
-
-Code sample
-~~~javascript
-// react-house-market/src/pages/SignUp.jsx 
-import { doc, setDoc } from "firebase/firestore";
-
-// Add a new document in collection "cities"
-await setDoc(doc(db, "cities", "LA"), {
-  name: "Los Angeles",
-  state: "CA",
-  country: "USA"
-});
-~~~
-~~~js
-import { doc, setDoc, serverTimesstamp } from "firebase/firestore";
-// フォームから取得したデータ（メール、名前、パスワード）を別の変数にコピーしてその退避した変数を加工する。  
-//パスワードを削除して、タイムsスタンプを付与して、Firebaseのユーザコレクションに格納する
-const formDataCopy = {...formData}
-delete formDataCopy.password
-formDataCopy.timestamp = serverTimestamp()
-
-await setDoc(doc(db, 'users', user.uid), formDataCopy)
-
-~~~
-
-## ユーザのサインイン 87
-~~~javascript
-// react-house-market/src/pages/SignIn.jsx 
-import {useState} from 'react'
-import { useNavigate, Link} from 'react-router-dom'
-import { getAuth, signInWithEmailAndPassword} from "firebase/auth"; // 追加
-import { ReactComponent as ArrowRightIcon} from '../assets/svg/keyboardArrowRightIcon.svg'
-import visibilityIcon from '../assets/svg/visibilityIcon.svg'
-
-function SignIn() {
-  const  [showPassword, setShowPassword] = useState(false)
-  const  [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  }) 
-  const {email, password} = formData
-  const navigate = useNavigate()
-
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.id] : e.target.value,
-    }))
-  }
-
-  const onSubmit = async (e) => {
-    e.preventDefault()
-
-    try {
-      const auth = getAuth()
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      if (userCredential.user) {
-        navigate('/')
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error('Bad User Credentials')
-    }
-  }
-
-  return (
-  <>
-    <div className="pageContainer">
-      <header>
-        <p className="pageHeader">ようこそ！</p>
-        {/* <p className="pageHeader">Welcome Back!</p> */}
-      </header>
-
-      <form onSubmit={onSubmit}>　// 追加
-        <input type="email" className='emailInput' placeholder='メールアドレス' 
-          id="email" value={email} onChange={onChange} />
-
-        <div className="passwordInputDiv">
-          <input type={showPassword ? 'text' : 'password'} className="passwordInput"
-            placeholder='メールアドレス(確認)' id='password' value={password} onChange={onChange} />
-          <img src={visibilityIcon} alt="show password" className='showPassword'
-             onClick={() => setShowPassword((prevState) => (!prevState))} />
-        </div>
-        <Link to='/forgot-password' className='forgotPasswordLink'>パスワードを忘れましたか</Link>
-
-        <div className="signUpBar">
-          <p className="signUpText">サインアップ</p>
-          <button className="signUpButton">
-            <ArrowRightIcon fill='#ffffff' width='34px' height='34px'/>
-          </button>
-        </div>
-      </form>
-
-      <OAuth />
-
-      <Link to='/sign-in' className='registerLink'>サインインする</Link>
-      {/* <Link to='/sign-in' className='registerLink'>Sign In Instead</Link> */}
-    </div>
-  </>
-  )
-}
-export default SignUp
-~~~
-
-Profileページの編集
-~~~js
-react-house-market/src/pages/Profile.jsx 
-import { useState, useEffect } from 'react'
-import { getAuth, updateProfile } from 'firebase/auth'
-
-function Profile() {
-  const auth = getAuth()
-  const [user, setUser] = useState(null)
-
-  useEffect(() => {
-    console.log('profile', auth.currentUser)
-    setUser(auth.currentUser)
-  }, [])
-  return user ? <h1>{user.displayName}</h1> : 'Not Logged In' 
-}
-export default Profile
-~~~
-
-
-## 88 Alerts with ReactToastify
-https://fkhadra.github.io/react-toastify/introduction/
-
-~~~bash
-npm i react-toastify
-~~~
-
-~~~javascript
-<ToastContainer
-position="top-right"
-autoClose={5000}
-hideProgressBar={false}
-newestOnTop={false}
-closeOnClick
-rtl={false}
-pauseOnFocusLoss
-draggable
-pauseOnHover
-/>
-{/* Same as */}
-<ToastContainer />
-~~~
-Tostifyの導入例
-~~~javascript
-  import React from 'react';
-  import { ToastContainer, toast } from 'react-toastify';
-  import 'react-toastify/dist/ReactToastify.css'; // 必要
-  
-  function App(){
-    const notify = () => toast("Wow so easy!");
-
-    return (
-      <div>
-        <button onClick={notify}>Notify!</button>
-        <ToastContainer />
-      </div>
-    );
-  }
-~~~
-
-~~~javascript
-// App.js
-import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
-import {ToastContainer} from 'react-toastify'　 // 追加
-import 'react-toastify/dist/ReactToastify.css';
-import Explore from './pages/Explore'
-import Offers from './pages/Offers'
-import Profile from './pages/Profile'
-import SignIn from './pages/SignIn'
-import SignUp from './pages/SignUp'
-import ForgotPassword from './pages/ForgotPassword'
-import Navbar from './components/Navbar'
-
-function App() {
-  return (
-    <>
-      <Router>
-        <Routes>
-          <Route path='/' element={<Explore />} />
-          <Route path='/offers' element={<Offers />} />
-          <Route path='/profile' element={<Profile />} />
-          <Route path='/sign-in' element={<SignIn />} />
-          <Route path='/sign-up' element={<SignUp />} />
-          <Route path='/forgot-password' element={<ForgotPassword />} />
-        </Routes>
-        <Navbar />
-      </Router>
-      <ToastContainer />  // 追加
-    </>
-  );
-}
-export default App;
-~~~
-
-## 89 User Logout
-~~~javascript
-react-house-market/src/pages/Profile.jsx 
-import { useState, useEffect } from 'react'
-import { getAuth } from 'firebase/auth'
-import { useNavigate } from 'react-router-dom'
-
-function Profile() {
-  const auth = getAuth()
-  const [formData, setFormData] = useState({
-    name: auth.currentUser.displayName,
-    email: auth.currentUser.email,
-  })
-
-  const {name, email} = formData 
-  const navigate = useNavigate()
-
-  const onLogout = () => {
-    auth.signOut()
-    navigate('/')
-  }
-  // useEffect(() => {
-  //   console.log('profile', auth.currentUser)
-  //   setUser(auth.currentUser)
-  // }, [])
-  // return user ? <h1>{user.displayName}</h1> : 'Not Logged In' 
-  return <div className='profile'>
-    <header className='profileHeader'>
-      <p className="pageHeader">My Profile</p>
-      <button type="button" className="logOut" onClick={onLogout}>
-        Logout
-      </button>
-    </header>
-  </div> 
-}
-export default Profile
-~~~
-
-##  90 Display & Update User details
-~~~javascript
-// react-house-market/src/pages/Profile.jsx 
-import { useState, useEffect } from 'react'
-import { getAuth, updateProfile } from 'firebase/auth'
-import {updateDoc, doc} from 'firebase/firestore'
-import {db} from '../firebase.config'
-import { useNavigate, Link } from 'react-router-dom'
-import { toast } from 'react-toastify'
-
-function Profile() {
-  const auth = getAuth()
-  const [changeDetails, setChangeDetails] = useState(false)
-
-  const [formData, setFormData] = useState({
-    name: auth.currentUser.displayName,
-    email: auth.currentUser.email,
-  })
-
-  const {name, email} = formData 
-  const navigate = useNavigate()
-
-  const onLogout = () => {
-    auth.signOut()
-    navigate('/')
-  }
-
-  const onSubmit = async() => {
-    console.log(123)
-    try {
-      if (auth.currentUser.displayName !== name) {
-        // Update display name on fb
-        await updateProfile(auth.currentUser, {
-          displayName: name
-        })
-        // Update in firestore
-        const userRef = doc(db, 'users', auth.currentUser.uid)
-        await updateDoc(userRef, {
-          name: name
-        })
-      }
-    } catch(error) {
-      toast.error('Could not update profile details')
-    }
-  }
-
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.id]: e.target.value,
-    }))
-  }
- 
-  return <div className='profile'>
-    <header className='profileHeader'>
-      <p className="pageHeader">My Profile</p>
-      <button type="button" className="logOut" onClick={onLogout}>
-        Logout
-      </button>
-    </header>
-
-    <main>
-      <div className="profileDetailsHeader">
-        <p className="profileDetailsText">Personal Details</p>
-        <p className="changePersonalDetails" onClick={() => {
-          changeDetails && onSubmit()
-          setChangeDetails((prevState) => (!prevState))
-        }}>
-          {changeDetails ? 'done' : 'change'}
-        </p>
-      </div>
-
-      <div className="profileCard">
-        <form>
-          <input type="text" id="name" 
-          className={!changeDetails ? 'profileName' : 'profileNameActive'}
-          disabled={!changeDetails}
+        <p className="text-lg mt-6 font-semibold">名前</p>
+        <input
+          type="text"
+          id="name"
           value={name}
           onChange={onChange}
-          />
-
-          <input type="text" id="email" 
-          className={!changeDetails ? 'profileEmail' : 'profileEmailActive'}
-          disabled={!changeDetails}
-          value={email}
-          onChange={onChange}
-          />
-        </form>
-      </div>
-    </main>
-  </div> 
-}
-export default Profile
-~~~
-
-## 91 PrivateRoute Component & useAuthState Hook
-react-router-dom を使って、ログイン時とログアウト時でページ遷移の許可をわける、PrivateRoute(ProtectedRoute?)を実装する
-~~~javascript
-// react-house-market/src/components/PrivateRoute.jsx 
-import {Navigate, Outlet} from 'react-router-dom'
-
-const PrivateRoute = () => {
-  const loggedIn = false
-  return loggedIn ? <Outlet /> : <Navigate to='/sign-in' /> 
-}
-export default PrivateRoute
-~~~
-
-~~~js
-// App.js
-import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
-import {ToastContainer} from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css';
-import Explore from './pages/Explore'
-import Offers from './pages/Offers'
-import Profile from './pages/Profile'
-import SignIn from './pages/SignIn'
-import SignUp from './pages/SignUp'
-import ForgotPassword from './pages/ForgotPassword'
-import Navbar from './components/Navbar'
-import PrivateRoute from './components/PrivateRoute' // added
-
-function App() {
-  return (
-    <>
-      <Router>
-        <Routes>
-          <Route path='/' element={<Explore />} />
-          <Route path='/offers' element={<Offers />} />
-          <Route path='/category/:categoryName' element={<Category />} />
-          <Route path='/profile' element={<PrivateRoute />} > // added
-            <Route path='/profile' element={<Profile />} />
-          </Route>  // added
-          <Route path='/sign-in' element={<SignIn />} />
-          <Route path='/sign-up' element={<SignUp />} />
-          <Route path='/forgot-password' element={<ForgotPassword />} />
-        </Routes>
-        <Navbar />
-      </Router>
-      <ToastContainer />
-    </>
-~~~
-useAuthStatus Hook を作成する  
-checkingStatusはloadingと同じ
-~~~javascript
-// hooks/useAuthStatus.js
-import { useEffect, useState, useRef } from 'react'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
-
-export const useAuthStatus = () => {
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [checkingStatus, setCheckingStatus] = useState(true) // Loadingと同じ
-  const isMounted = useRef(true)
-
-  useEffect(() => {
-    if (isMounted) {
-      const auth = getAuth()
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          setLoggedIn(true)
-        }
-        setCheckingStatus(false)
-      })
-    }
-
-    return () => {
-      isMounted.current = false
-    }
-  }, [isMounted])
-
-  return { loggedIn, checkingStatus }
-}
-
-// Protected routes in v6
-// https://stackoverflow.com/questions/65505665/protected-route-with-firebase
-
-// Fix memory leak warning
-// https://stackoverflow.com/questions/59780268/cleanup-memory-leaks-on-an-unmounted-component-in-react-hooks
-~~~
-PrivateRouteにuseAuthStatusを取り込む
-~~~js
-import {Navigate, Outlet} from 'react-router-dom'
-import { useAuthStatus } from '../hooks/useAuthStatus'　// added
-import Spinner from './Spinner'
-
-const PrivateRoute = () => {
-  const { loggedIn, checkingStatus } = useAuthStatus() // added
-  if (checkingStatus) {
-    return <Spinner />
-    // return <h3>Loading...</h3>
-  }
-  // const loggedIn = true 91
-  return loggedIn ? <Outlet /> : <Navigate to='/sign-in' /> 
-}
-export default PrivateRoute
-~~~
-
-~~~js
-// spinner.jsx
-import React from 'react'
-
-function Spinner() {
-  return (
-    <div className='loadingSpinnerContainer'>
-      <div className="loadingSpinner"></div>
-    </div>
-  )
-}
-export default Spinner
-~~~
-spinnerのcss
-~~~css
-.loadingSpinnerContainer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 5000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.loadingSpinner {
-  width: 64px;
-  height: 64px;
-  border: 8px solid;
-  border-color: #00cc66 transparent #00cc66 transparent;
-  border-radius: 50%;
-  animation: spin 1.2s linear infinite;
-}
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-~~~
-
-## 92 Forgot Password Page
-~~~javascript
-import {useState} from 'react'
-import {Link} from 'react-router-dom'
-import {getAuth, sendPasswordResetEmail} from 'firebase/auth'
-import {toast} from 'react-toastify'
-import {ReactComponent as ArrowRightIcon} from '../assets/svg/keyboardArrowRightIcon.svg'
-
-function ForgotPassword() {
-  const [email, setEmail] = useState('')
-  const onChange = e => setEmail(e.target.value)
-  const onSubmit = async(e) => {
-    e.preventDefault()
-    try {
-      const auth = getAuth()
-      await sendPasswordResetEmail(auth, email)
-      toast.success('Email was sent')
-    }catch(error) {
-      toast.error('Could not send reset email')
-    }
-  }
-
-  return (
-  <div className='pageContainer'>
-    <header>
-      <p className="pageHeader">Forgot Password</p>
-    </header>
-    <main>
-      <form onSubmit={onSubmit}>
-        <input type='email' className='emailInput' placeholder='Email'
-          id='email' value={email} onChange={onChange}  />
-        <Link className='forgotPasswordLink' to='/sign-in'>
-          Sign In
-        </Link>
-
-        <div className="signInBar">
-          <div className="signInText">Send Reset Link</div>
-          <button className="signInButton">
-            <ArrowRightIcon fill='#ffffff' width='34px' height='34px' />
+          placeholder="名前"
+          maxLength="20"
+          minLength="2"
+          required
+          className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 mb-6"
+        />
+        <div className="flex space-x-6 mb-6">
+          <div>
+            <p className="text-lg font-semibold">寝室</p>
+            <input
+              type="number"
+              id="bedrooms"
+              value={bedrooms}
+              onChange={onChange}
+              min="1"
+              max="50"
+              required
+              className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 text-center"
+            />
+          </div>
+          <div>
+            <p className="text-lg font-semibold">浴室</p>
+            <input
+              type="number"
+              id="bathrooms"
+              value={bathrooms}
+              onChange={onChange}
+              min="1"
+              max="50"
+              required
+              className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 text-center"
+            />
+          </div>
+        </div>
+        <p className="text-lg mt-6 font-semibold">駐車場</p>
+        <div className="flex">
+          <button
+            type="button"
+            id="parking"
+            value={true}
+            onClick={onChange}
+            className={`mr-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              !parking ? "bg-white text-black" : "bg-slate-600 text-white"
+            }`}
+          >
+            有
+          </button>
+          <button
+            type="button"
+            id="parking"
+            value={false}
+            onClick={onChange}
+            className={`ml-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              parking ? "bg-white text-black" : "bg-slate-600 text-white"
+            }`}
+          >
+            無
           </button>
         </div>
+        <p className="text-lg mt-6 font-semibold">家具</p>
+        <div className="flex">
+          <button
+            type="button"
+            id="furnished"
+            value={true}
+            onClick={onChange}
+            className={`mr-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              !furnished ? "bg-white text-black" : "bg-slate-600 text-white"
+            }`}
+          >
+            有
+          </button>
+          <button
+            type="button"
+            id="furnished"
+            value={false}
+            onClick={onChange}
+            className={`ml-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              furnished ? "bg-white text-black" : "bg-slate-600 text-white"
+            }`}
+          >
+            無
+          </button>
+        </div>
+        <p className="text-lg mt-6 font-semibold">住所</p>
+        <textarea
+          type="text"
+          id="address"
+          value={address}
+          onChange={onChange}
+          placeholder="住所"
+          required
+          className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 mb-6"
+        />
+        {!geolocationEnabled && (
+          <div className="flex space-x-6 justify-start mb-6">
+            <div className="">
+              <p className="text-lg font-semibold">緯度</p>
+              <input
+                type="number"
+                id="latitude"
+                value={latitude}
+                onChange={onChange}
+                required
+                min="-90"
+                max="90"
+                className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:bg-white focus:text-gray-700 focus:border-slate-600 text-center"
+              />
+            </div>
+            <div className="">
+              <p className="text-lg font-semibold">経度</p>
+              <input
+                type="number"
+                id="longitude"
+                value={longitude}
+                onChange={onChange}
+                required
+                min="-180"
+                max="180"
+                className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:bg-white focus:text-gray-700 focus:border-slate-600 text-center"
+              />
+            </div>
+          </div>
+        )}
+        <p className="text-lg font-semibold">備考</p>
+        <textarea
+          type="text"
+          id="description"
+          value={description}
+          onChange={onChange}
+          placeholder="備考"
+          required
+          className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 mb-6"
+        />
+        <p className="text-lg font-semibold">値引</p>
+        <div className="flex mb-6">
+          <button
+            type="button"
+            id="offer"
+            value={true}
+            onClick={onChange}
+            className={`mr-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              !offer ? "bg-white text-black" : "bg-slate-600 text-white"
+            }`}
+          >
+            有
+          </button>
+          <button
+            type="button"
+            id="offer"
+            value={false}
+            onClick={onChange}
+            className={`ml-3 px-7 py-3 font-medium text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ${
+              offer ? "bg-white text-black" : "bg-slate-600 text-white"
+            }`}
+          >
+            無
+          </button>
+        </div>
+        <div className="flex items-center mb-6">
+          <div className="">
+            <p className="text-lg font-semibold">通常価格</p>
+            <div className="flex w-full justify-center items-center space-x-6">
+              <input
+                type="number"
+                id="regularPrice"
+                value={regularPrice}
+                onChange={onChange}
+                min="50"
+                max="400000000"
+                required
+                className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 text-center"
+              />
+              {type === "rent" && (
+                <div className="">
+                  <p className="text-md w-full whitespace-nowrap">¥ / 月</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {offer && (
+          <div className="flex items-center mb-6">
+            <div className="">
+              <p className="text-lg font-semibold">ディスカウント価格</p>
+              <div className="flex w-full justify-center items-center space-x-6">
+                <input
+                  type="number"
+                  id="discountedPrice"
+                  value={discountedPrice}
+                  onChange={onChange}
+                  min="50"
+                  max="400000000"
+                  required={offer}
+                  className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 text-center"
+                />
+                {type === "rent" && (
+                  <div className="">
+                    <p className="text-md w-full whitespace-nowrap">
+                      $ / Month
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="mb-6">
+          <p className="text-lg font-semibold">画像</p>
+          <p className="text-gray-600">
+            最初の画像は表紙用になります (最大 6)
+          </p>
+          <input
+            type="file"
+            id="images"
+            onChange={onChange}
+            accept=".jpg,.png,.jpeg"
+            multiple
+            required
+            className="w-full px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:bg-white focus:border-slate-600"
+          />
+        </div>
+        <button
+          type="submit"
+          className="mb-6 w-full px-7 py-3 bg-blue-600 text-white font-medium text-sm uppercase rounded shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out"
+        >
+          リストに追加する
+        </button>
       </form>
     </main>
-  </div>
   )
+```
+javascript クエスチョンマーク2つの演算子→Null合体演算子という  
+Sample
+```js
+null ?? 'hoge' // => 'hoge'
+undefined ?? 'hoge' // => 'hoge'
+false ?? 'hoge' // => false
+0 ?? 'hoge' // => 0
+'' ?? 'hoge' // => ''
+NaN ?? 'hoge' // => NaN
+```
+Null 合体演算子 (??) は論理演算子の一種です。この演算子は左辺が null または undefined の場合に右の値を返し、それ以外の場合に左の値を返します。  
+下の場合は入力値e.target.valueがTextやNumbersの時はbooleanがnullのままなので右の値のe.target.valueを採用し、trueやfalseの時はbooleanがnull または undefined以外になるので左のboolean(trueまたはfalse)を採用する
+```js
+let boolean = null
+if (e.target.value ==='true') {
+  boolean = true
 }
-export default ForgotPassword
-~~~
+if (e.target.value ==='false') {
+  boolean = false
+}
+  // Text/Booleans/Numbers
+if(!e.target.files) {
+  setFormData((prevState) => ({
+    ...prevState,
+    [e.target.id]: boolean ?? e.target.value,
+  }))
+}
+```
+```js
+// CreateListing.jsx
+  const onChange = (e) => {
+    let boolean = null
 
-## 93 Google OAuth
-https://console.firebase.google.com/project/house-marketpalce-app-9e335/authentication/providers?hl=ja  
-Google　を有効にする
+    if (e.target.value ==='true') {
+      boolean = true
+    }
 
-データは「ドキュメント」に格納し、それが「コレクション」にまとめられている。    
-ドキュメントは値にマッピングされるフィールドを含む軽量のレコードで、基本的にはJSON と同じ
-~~~js
-import {useLocation, useNavigate} from 'react-router-dom'
-import {getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
-import { doc ,setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
-import {db} from '../firebase.config'
-import {toast} from 'react-toastify'
-import googleIcon from '../assets/svg/googleIcon.svg'
-
-function OAuth() {
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  const onGoogleClick = async() => {
-    try {
-      const auth = getAuth()
-      const provider = new GoogleAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-      const user = result.user
-
-      const docRef = doc(db, 'users', user.uid)
-      const docSnap = await getDoc(docRef)
-
-      // If user dosen't ecist, create user
-      if(!docSnap.exists()) {
-        await setDoc(doc(db, 'users', user.uid), {  // 'users'はコレクション名
-          name: user.displayName,
-          email: user.email,
-          timestamp: serverTimestamp()
-        })
-      }
-      navigate('/')
-    } catch (error) {
-      toast.error('Could not authorize with Google')
+    if (e.target.value ==='false') {
+      boolean = false
+    }
+    // File
+    if(e.target.files) {
+      setFormData((prevState) => ({
+        ...prevState,
+        images: e.target.files,
+      }))
+    }
+      // Text/Booleans/Numbers
+    if(!e.target.files) {
+      setFormData((prevState) => ({
+        ...prevState,
+        [e.target.id]: boolean ?? e.target.value,
+      }))
     }
   }
 
-  return (
-    <div className='socialLogin'>
-      <p>Sign {location.pathname==='/sign-up' ? 'up' : 'in' } with</p>
-      <button className="socialIconDiv" onClick={onGoogleClick}>
-        <img className="socialIconImg" src={googleIcon} alt="google" />
-      </button>
-    </div>
+  if (loading) {
+    return <Spinner />
+  }
+```
+Google Cloud PlatForm  
+https://console.cloud.google.com/getting-started?hl=ja&pli=1  
+Geocoding API
+```js
+let geolocation = {}
+let location
+
+if (geolocationEnabled) {
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.REACT_APP_GEOCODE_API_KEY}`
   )
+
+  const data = await response.json()
+  // console.log(data)
+  geolocation.lat = data.results[0]?.geometry.location.lat ?? 0
+  geolocation.lng = data.results[0]?.geometry.location.lng ?? 0
+
+  location = 
+    data.status === 'ZERO_RESULTS'
+      ? undefined
+      : data.results[0]?.formated_address
+
+  console.log(location)
+
+  if (location === undefined || location.includes('undefined')) {
+    setLoading(false)
+    toast.error('Please enter a correct address')
+    return
+  }
+} else {
+  geolocation.lat = latitude
+  geolocation.lng = longitude
+  // location = address
+  console.log(geolocation)
 }
+```
+Cloud Storage onWebでファイルをアップロードする  
+https://firebase.google.com/docs/storage/web/upload-files  
+user@mbp react-firebase-realtor % npm i uuid
+```js
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
-export default OAuth
-~~~
+const storage = getStorage();
+const storageRef = ref(storage, 'images/rivers.jpg');
+const uploadTask = uploadBytesResumable(storageRef, file);
+// Register three observers:
+// 1. 'state_changed' observer, called any time the state changes
+// 2. Error observer, called on failure
+// 3. Completion observer, called on successful completion
+uploadTask.on('state_changed', 
+  (snapshot) => {
+    // Observe state change events such as progress, pause, and resume
+    // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+    console.log('Upload is ' + progress + '% done');
+    switch (snapshot.state) {
+      case 'paused':
+        console.log('Upload is paused');
+        break;
+      case 'running':
+        console.log('Upload is running');
+        break;
+    }
+  }, 
+  (error) => {
+    // Handle unsuccessful uploads
+  }, 
+  () => {
+    // Handle successful uploads on complete
+    // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+      console.log('File available at', downloadURL);
+    });
+  }
+);
+```
+FirebaseError: Missing or insufficient permissions.
+imageUrls=>imgUrls (ルールで allow create: if request.auth != null && request.resource.data.imageUrls.size() < 7;)  
+エラーメッセージの後は returnで返す
+```js
+  const imgUrls = await Promise.all(
+    [...images].map((image) => storeImage(image))
+  ).catch(() => {
+    setLoading(false)
+    toast.error('画像をアップロードできませんでした')
+    return // 
+  })
+
+```
+```js
+  return (
+    <>
+      <section className="max-w-6xl mx-auto flex justify-center items-center flex-col">
+        <h1 className="text-3xl text-center mt-6 font-bold">プロフィール</h1>
+        <div className='w-full md:w-[50%] mt-6 px-3'>
+          <form>
+            {/* Name input */}
+            <input 
+              type="text" 
+              id="name" 
+              value={name} 
+              disabled = {!changeDetail}
+              onChange = {onChange}
+              className={`mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out ${changeDetail && "bg-red-200 focus:bg-red-200"}`}
+            />
+
+             {/* Email input */}
+             <input type="email" id="email" value={email} disabled className="mb-6 w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition ease-in-out" />
+
+             <div className="flex justify-between items-center whitespace-nowrap text-sm sm:text-lg mb-6">
+              <p className="flex items-center">名前を変更しますか？
+                <span 
+                  onClick={() => {
+                    changeDetail && handleSubmit()
+                    setChangeDetail((prevState)=> !prevState)
+                  }}
+                  className='text-red-600 hover:text-red-700 transition ease-in-out duration-200 ml-1 cursor-pointer'>
+                  {changeDetail ? '更新' : '編集' }
+                </span>
+              </p>
+              <p onClick = {onLogout} className='text-blue-600 hover:text-blue-800 transition ease-in-out duration-200 cursor-pointer'>サインアウト</p>
+             </div>
+          </form>
+          <button type="submit" className='w-full bg-blue-600 text-white uppercase px-7 py-3 text-sm font-medium rounded shadow-md hover:bg-blue-700 transition duration-150 ease-in-out hover:shadow-lg active:bg-blue-800'>
+            <Link to="/create-listing" className="flex justify-center items-center">
+              <FcHome className='mr-2 text-3xl bg-red-200 rounded-full border-2' />
+              あなたの家を貸す/売る
+            </Link>
+          </button>
+        </div>
+      </section>
+      <div className="max-w-6xl px-3 mt-6 mx-auto">
+        {!loading && listings.length > 0 && (
+          <>
+            <h2 className="text-2xl text-center font-semibold mb-6">
+              My Listings
+            </h2>
+            <ul className="sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {listings.map((listing) => (
+                <ListingItem
+                  key={listing.id}
+                  id={listing.id}
+                  listing={listing.data}
+                  // onDelete={() => onDelete(listing.id)}
+                  // onEdit={() => onEdit(listing.id)}
+                />
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </>
+  )
+```
+react-moment  
+https://www.npmjs.com/package/react-moment  
+npm install --save moment react-moment  
+```js
+
+```
+Lazy loadingとは画像がビューポート外にある時は読み込みを実行せず、ビューポートに近づいた時に画像の読み込みを開始する、表示速度を最適化する名称のことです。  
+display:contents
+```js
+
+```
+```js
+
+```
+
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 
 
-~~~
 
-~~~
 
-~~~
 
-~~~
 
-~~~
 
-~~~
 
-~~~
 
-~~~
 
-~~~
 
-~~~
 
-~~~
+
+
+
+
