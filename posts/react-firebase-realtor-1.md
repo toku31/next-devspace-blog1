@@ -1594,10 +1594,10 @@ import {MdLocationOn} from 'react-icons/md'
 function ListingItem( { listing, id, onDelete, onEdit }) {
   return (
     // <div>Listing</div>
-    <li className='relative bg-white flex flex-col justify-between items-center shadow-md hover:shadow-xl rounded-md overflow-hidden transition-shadow duration-150 m-[10px]'>
-      <Link className="contents" to={`/category/&{listing.type}/${id}`} >
+    <li className='relative bg-white flex flex-col justify-between items-center shadow-md hover:shadow-xl rounded-md overflow-hidden transition-shadow duration-150 m-[10px]'> 
+      <Link className="contents" to={`/category/&{listing.type}/${id}`} > // ★★★ display: contents
         <img class="h-[170px] w-full object-cover hover:scale-105 transition-scale duration-200 ease-in" 
-        loading="lazy"
+        loading="lazy"  // ★★★
         src={listing.imgUrls[0]} alt={listing.name} />
         <Moment className="absolute top-2 left-2 bg-[#3377cc] text-white uppercase text-xs font-semibold rounded-md px-2 py-1 shadow-lg" fromNow>{listing.timestamp?.toDate()}</Moment>
         <div className="w-full p-[10px]">
@@ -1633,8 +1633,9 @@ function ListingItem( { listing, id, onDelete, onEdit }) {
 
 export default ListingItem
 ```
-Lazy loadingとは画像がビューポート外にある時は読み込みを実行せず、ビューポートに近づいた時に画像の読み込みを開始する、表示速度を最適化する名称のことです。  
-display: contents の値を設定すると、指定した要素のコンテンツ領域以外は描画されなくなります。 
+上のLazy loadingとは画像がビューポート外にある時は読み込みを実行せず、ビューポートに近づいた時に画像の読み込みを開始する、表示速度を最適化する名称  
+display: contents と設定すると、指定した要素のコンテンツ領域以外は描画されなくなる 
+
 #### リストの編集と削除機能を追加する
 ```js
 // Profile.jsx
@@ -2151,6 +2152,154 @@ export default function EditListing() {
 }
 
 ```
+#### Listing Pageを作成する
+Swiperを使ってスライダーを作成する  
+https://swiperjs.com/get-started
+```js
+// App.js
+  <Routes>
+    <Route path='/' element={<Home />} />
+    <Route path='/profile' element={<PrivateRoute />}>
+      <Route path='/profile' element={<Profile />} />
+    </Route>
+    <Route path='/sign-in' element={<SignIn />} />
+    <Route path='/sign-up' element={<SignUp />} />
+      <Route path='/forgot-password' element={<ForgotPassword />} />
+      <Route path='/offers' element={<Offers />} />
+      <Route path='/create-listing' element={<PrivateRoute />}>
+      <Route path='/create-listing' element={<CreateListing />} />
+      </Route>
+      <Route path='/edit-listing' element={<PrivateRoute />}>
+        <Route path='/edit-listing/:listingId' element={<EditListing />} />
+      </Route>
+      <Route path="/category/:categoryName/:listingId" element={<Listing />}/>
+  </Routes>
+```
+ $ npm install swiper
+```js
+  // import Swiper JS
+  import Swiper from 'swiper';
+  // import Swiper styles
+  import 'swiper/css';
+
+  const swiper = new Swiper(...);
+```
+```js
+// index.css
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: rgb(240, 253, 244);
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after{
+  color: #a8dadc;
+}
+```
+```js
+// src/pages/Listing.jsx
+import {useState, useEffect} from 'react'
+import {Link, useNavigate, useParams} from 'react-router-dom'
+// import {MapContainer, Marker, Popup, TileLayer} from 'react-leaflet'
+import { Swiper, SwiperSlide } from 'swiper/react';
+import SwiperCore, {EffectFade, Autoplay, Navigation, Pagination} from "swiper"
+import {FaShare} from "react-icons/fa"
+ import 'swiper/css/bundle';
+
+import {getDoc, doc} from 'firebase/firestore'
+import {getAuth} from 'firebase/auth'
+import {db} from '../firebase'
+import Spinner from '../components/Spinner'
+
+function Listing() {
+  const [listing, setListing] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [shareLinkCopied, setShareLinkCopied] = useState(false)
+
+  const navigate = useNavigate()
+  const params = useParams()
+  const auth = getAuth()
+  SwiperCore.use([Autoplay, Navigation, Pagination])
+
+  useEffect(()=> {
+    const fetchListing = async() => {
+      const docRef = doc(db, 'listings', params.listingId)
+      const docSnap = await getDoc(docRef)
+
+      if (docSnap.exists()){
+        console.log(docSnap.data())
+        setListing(docSnap.data())
+        setLoading(false)
+      }
+    }
+    fetchListing()
+  }, [navigate, params.listingId])
+
+  if (loading) {
+    return<Spinner />
+  }
+
+  return (
+    <main>
+      {/* Slider 108 */}
+    <Swiper
+      modules={[EffectFade]}
+      slidesPerView={1}
+      pagination={{ type: "progressbar" }}
+      navigation
+      effect="fade"
+      autoplay={{ delay:5000 }}
+      // style={{ height: '300px' }}
+  >
+      {listing.imgUrls.map((url, index) => {
+        return (
+              <SwiperSlide key={index}>
+                  <div
+                      className='relative w-full overflow-hidden h-[300px]'
+                      style={{
+                          background: `url(${listing.imgUrls[index]}) center no-repeat`,
+                          backgroundSize: 'cover',
+                      }}
+                  ></div>
+              </SwiperSlide>
+          );
+      })}
+    </Swiper>
+
+      <div className="fixed top-[13%] right-[3%] z-10 bg-white cursor-pointer border-2 border-gray-400 rounded-full w-12 h-12 flex justify-center items-center" 
+        onClick={() => {
+        navigator.clipboard.writeText(window.location.href)
+        setShareLinkCopied(true)
+        setTimeout(()=> {
+          setShareLinkCopied(false)
+        }, 2000)
+      }}>
+        <FaShare className='text-lg text-slate-500'/>
+      </div>
+      {shareLinkCopied && <p className='fixed top-[23%] right-[5%] font-semibold border-2 border-gray-400 rounded-md bg-white z-10 p-2'>LinkCopied!</p>}
+    </main>
+  )
+}
+
+export default Listing
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 ```js
 
 ```
@@ -2169,9 +2318,30 @@ export default function EditListing() {
 ```js
 
 ```
+```js
 
+```
+```js
 
+```
+```js
 
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 
 
 
