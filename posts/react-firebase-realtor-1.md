@@ -2370,23 +2370,22 @@ https://leafletjs.com/download.html
 leaflet.jsのCDN(css)
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
 ```
-### Homeページを作成する
+### Homeページの先頭にあるスライダーを作成する
 ```js
-// Home.jsx
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {collection, getDocs, query, where,
-        orderBy, limit} from 'firebase/firestore'
-import { db } from '../firebase'
-import { toast } from 'react-toastify'
-import Spinner from '../components/Spinner'
+// src/components/Slider.jsx
+import {useState, useEffect} from 'react'
+import {useNavigate} from 'react-router-dom'
+import {collection, getDocs, query, orderBy, limit} from 'firebase/firestore'
+import {db} from '../firebase'
 import { Swiper, SwiperSlide } from 'swiper/react';
 import SwiperCore, {EffectFade, Autoplay, Navigation, Pagination} from "swiper"
-import 'swiper/css/bundle';
+import Spinner from '../components/Spinner'
+ import 'swiper/css/bundle';
+import { toast } from 'react-toastify'
 
-function Home() {
-  const [listings, setListings] = useState(null)
+function Slider() {
   const [loading, setLoading] = useState(true)
+  const [listings, setListings] = useState(null)
   const navigate = useNavigate()
   SwiperCore.use([Autoplay, Navigation, Pagination])
 
@@ -2459,7 +2458,7 @@ function Home() {
   )
 }
 
-export default Home
+export default Slider
 ```
 ```js
 
