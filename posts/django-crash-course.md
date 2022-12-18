@@ -1,20 +1,61 @@
 ---
 title: 'Django Crash Course'
-date: 'May 5, 2021'
-excerpt: 'Django is a very powerful, high level Python framework for building web applications'
+date: 'December 18, 2022'
+excerpt: 'PythonのフレームワークであるDjangoの基本を学んでいきます'
 cover_image: '/images/posts/img3.jpg'
 category: 'Python'
-author: 'Sam Smith'
+author: 'Toku'
 author_image: 'https://randomuser.me/api/portraits/men/12.jpg'
 ---
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
+### 仮想環境の設定（Virtual Environment)
+参考：Udemyの  [Django 3.0 MasterClass - Learn How To Create Django Apps](https://www.udemy.com/course/django-30-masterclass-learn-how-to-create-django-apps/)
 
-Lorem markdownum fine incustoditam unda factura versum occuluere Aeneas, iuvat
-haec praepes [partes epulae](http://cui.com/), in egisse de. Caecisque ter
-manus. Munere in exhalat, ferre sed [habe quaeque saepe](http://ne.org/fretum)
-verba caput ferarum _nubila_? Patriam Cyparisse tamen, **saxum** fide postponere
-pavida ne omnes etiam, atque. Sonuit omina sed sine haerebat illic fit a mora
-in.
+pythonのバージョン確認
+```python
+user@mbp Django-tutorial-blog % python -m django --version 
+4.0.4
+```
+**Django Girls のチュートリアル**を参考  
+仮想環境:https://tutorial.djangogirls.org/ja/django_installation/
+```python
+$ python3 -m venv myvenv
+```
+
+```python
+user@mbp Django-tutorial-blog  % python3 -m venv venv
+user@mbp Django-tutorial-blog % source venv/bin/activate
+(venv) user@mbp Django-tutorial-blog % pip install Django
+(venv) user@mbp Django-tutorial-blog %code .
+(venv) user@mbp Django-tutorial-blog % pip freeze
+asgiref==3.5.2
+Django==4.1.4
+sqlparse==0.4.3
+(venv) user@mbp Django-tutorial-blog % django-admin startproject blog .
+(venv) user@mbp Django-tutorial-blog % python manage.py runserver
+user@mbp Django-tutorial-blog % git init
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+Lorem markdownum verba caput ferarum _nubila_? Patriam 
 
 1. Serrae enim Etruscam aquis
 2. Et premis et flumine frontem minatur oppressos

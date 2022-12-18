@@ -2460,6 +2460,8 @@ function Slider() {
 
 export default Slider
 ```
+
+FirebaseError: The query requires an index. You can create it here: => リンクをクリックする
 ```js
 
 ```
