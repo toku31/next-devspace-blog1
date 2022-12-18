@@ -169,15 +169,122 @@ def main():
 
 main()
 ~~~
+```
+>python main.py
+```
 
-~~~js
+デポジット処理
+~~~python
+def deposit():
+    while True:
+        amount = input("使うお金を入力してください? ¥")
+        if amount.isdigit():
+            amount = int(amount)
+            if amount > 0:
+                break
+            else:
+                print("金額は0以上にしてください")
+        else:
+            print("数値を入力してください")
+    return amount
 
+def main():
+    balance = deposit()
 ~~~
 
-~~~js
+ライン数の入力を促す処理
+~~~python
+def get_number_of_lines():
+    while True:
+        lines = input("1から" + str(MAX_LINES) + "までの間でライン数を入力してください")
+        if lines.isdigit():
+            lines = int(lines)
+            if 1 <= lines <= MAX_LINES:
+                break
+            else:
+                print("正しいライン数を入力してください")
+        else:
+            print("数値を入力してください")
 
+    return lines
+
+def main():
+    balance = deposit()
+    lines = get_number_of_lines()
+~~~
+各ラインに賭けるお金の入力を促す処理
+~~~python
+def get_bet():
+    while True:
+        amount = input("各ラインに賭けるお金を入力してください? ¥ ")
+        if amount.isdigit():
+            amount = int(amount)
+            if MIN_BET <= amount <= MAX_BET:
+                break
+            else:
+                print(f"金額は ¥{MIN_BET} - ¥{MAX_BET}である必要があります")
+        else:
+            print("数値を入力してください")
+
+    return amount
+
+def main():
+    balance = deposit()
+    lines = get_number_of_lines()
+    while True:
+        bet = get_bet()
+        total_bet = bet * lines
+
+        if total_bet > balance:
+            print(
+                f"You do not have enough to bet that amount, your current balance is: ${balance}")
+        else:
+            break
+
+    print(
+        f"{lines}ラインに ¥{bet} 賭けました 全賭け金は¥{total_bet}です")
 ~~~
 
-~~~js
+```python
 
-~~~
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
