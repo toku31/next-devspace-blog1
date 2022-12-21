@@ -214,6 +214,10 @@ def main():
 ~~~
 各ラインに賭けるお金の入力を促す処理
 ~~~python
+MAX_LINES = 3
+MAX_BET = 100
+MIN_BET = 1
+
 def get_bet():
     while True:
         amount = input("各ラインに賭けるお金を入力してください? ¥ ")
@@ -237,7 +241,7 @@ def main():
 
         if total_bet > balance:
             print(
-                f"You do not have enough to bet that amount, your current balance is: ${balance}")
+                f"入力した賭け金を持っていません. 現在の残高: ¥{balance}")
         else:
             break
 
@@ -246,7 +250,24 @@ def main():
 ~~~
 
 ```python
+import random
 
+ROWS = 3
+COLS = 3
+
+symbol_count = {
+    "A": 2,
+    "B": 4,
+    "C": 6,
+    "D": 8
+}
+
+symbol_value = {
+    "A": 5,
+    "B": 4,
+    "C": 3,
+    "D": 2
+}
 ```
 
 ```python
