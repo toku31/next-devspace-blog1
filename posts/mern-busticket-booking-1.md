@@ -1,7 +1,7 @@
 ---
-title: 'Mern Expense Tracker'
-date: 'November 1, 2022'
-excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使って経費追跡アプリ リをつくります。1回目はUIとバックエンドを実装していきます'
+title: 'Mern Bus Ticket Booking'
+date: 'November 2, 2022'
+excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使ってバスチケット予約アプリをつくります。Redux-Tool-Kitを使ってReduxを実装します'
 cover_image: '/images/posts/img8.jpg'
 category: 'React'
 author: 'Toku'
@@ -10,46 +10,67 @@ author_image: 'https://randomuser.me/api/portraits/men/11.jpg'
 
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 
-# Front End Setup
+### Front End Setup
+user@mbp mern-busticket-booking % nodemon server
 ## Reat App Setup
-Goal Setter App:  https://github.com/sathyaprakash195/sheymoney-udmey 
-email:   
-password:   
-参考サイト:
+Github:  https://github.com/sathyaprakash195/sheybus-udemy  
 
 MongoDB, Express, React, Node.js
 
 ~~~
-user@mbp mern-expense-tracker % npx create-react-app client
+user@mbp mern-busticket-booking % npx create-react-app client 
 >npm run server
 ~~~
 
-~~~bash
-user@mbp client % npm i antd react-router-dom aos react-redux redux axios
-~~~
-Ant Design: https://ant.design/components/overview/  
-~~~js
-import './App.css';
-import {Button} from 'antd'
-import 'antd/dist/antd.css'
-
+```js
+// App.js
 function App() {
   return (
     <div className="App">
-      <h1>Expense tracker</h1>
-      <Button type="primary">Primary Button</Button>
+      <h1>Bus Ticket booking</h1>
     </div>
   );
 }
-export default App;
-~~~
 
-Bootstrap: 
+export default App;
+```
+```js
+// public/index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>Bus Ticket Booking</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
+```
+
+~~~bash
+user@mbp client % npm i react-router-dom axios redux react-redux @reduxjs/toolkit 
+~~~
+Bootstrap CDN: 
 ```
 // public/index.html に追加
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 ```
-Google Fonts: Montserrat 
+https://remixicon.com/  
+CDN
+```
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+```
 
 ```css
 // index.css
@@ -124,26 +145,28 @@ function Layout(props) {
   }
 }
 ```
-# Backend Setup
-user@mbp mern-expense-tracker % npm init -y  
-user@mbp mern-expense-tracker % npm i nodemon mongoose express dotenv  
+#### Backend Setup
+Package.jsonの作成 : user@mbp mern-busticket-booking % npm init -y  
+user@mbp mern-busticket-booking % npm i nodemon mongoose express jsonwebtoken bcryptjs   nodemailer dotenv  
+__dotenv__  https://www.npmjs.com/package/dotenv  
 dotenvを使うと.envファイルに定義された値を環境変数として使える。システムの環境変数として値が設定されていればそちらを優先して使えるので、開発時はローカルで.envを配置し、本番ではホスティングサービスの機能で環境変数として設定することでリポジトリ内のファイルを変更せずに実行することができる
 ```js
 // server.js
 const express = require('express')
-
 const app = express();
-const port = 5000;
+const dotenv = require("dotenv").config()
+const port = process.env.PORT || 5000;
 
-app.get('/', (req, res) => res.send('Hello World'))
-app.listen(port, ()=> console.log(`Example app listening on port ${port}!`))
+app.listen(port, ()=> console.log(`listening on port ${port}!`))
 ```
-user@mbp mern-expense-tracker % nodemon server  
-mongoDB の設定  
+user@mbp mern-busticket-booking % nodemon server  
+__Backendフォルダ__ の作成  
+routers, models, config, utils, middlewears
+
+### mongoDB の設定  
 Browse Collections->Create Database  
-Database Access->Add new databaseuser  
+Database Access->Add new databaseuser でユーザ名とパスワードを設定し、Built-in-Role : Read and write to anydatabase  
 Overview->Connect->id + passwordのURLを取得  
-Built-in-Role : Read and write to anydatabase  
 ```js
 // server.js
 const express = require('express')
@@ -159,10 +182,10 @@ app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
 // .env
 NODE_ENV = development
 PORT =5000
-MONGO_URI = 'mongodb+srv://<user>:<password>@cluster========='
+MONGO_URI = 'MONGO_URI = 'mongodb+srv://<username>:<password>@cluster0.7eiib.mongodb.net/busticket-booking?retryWrites=true&w=majority'
 ```
 ```js
-// dbConnect.js
+// config/dbConfig.js
 const mongoose = require('mongoose')
 const dotenv = require("dotenv").config()
 
@@ -173,8 +196,42 @@ const connection = mongoose.connection
 connection.on('error', err => console.log(err))
 connection.on('connected', ()=> console.log('Mongo DB Connection successful'))
 ```
+上のdbConfigをserver.jsに追加
+```js
+// server.js
+const express = require('express');
+const app = express();
+const dotenv = require("dotenv").config();
+const port = process.env.PORT || 5000;
+const dbConfig = require("./config/dbConfig"); // added
+
+app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
+```
 ## User Login/Registration UI
 #### Login-Register Part1
+最初にsrc/pagesの配下にhome.js, Register.js, Login.jsを作成する。その後App.js を以下のように書く
+```js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import Register from './pages/ Register';
+import Home from './pages/Home';
+import Login from './pages/Login';
+
+function App() {
+  return (
+    <div>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />}  />
+          <Route path="/register" element={<Register />}  />
+          <Route path="/login" element={<Login />}  />
+        </Routes>
+      </Router>
+    </div>
+  );
+}
+
+export default App;
+```
 BootstrapのRegistration Form
 ```js
   <form>
