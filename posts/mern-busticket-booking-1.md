@@ -66,19 +66,20 @@ Bootstrap CDN:
 // public/index.html に追加
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 ```
-https://remixicon.com/  
-CDN
+Remix Icon CDN:  https://remixicon.com/  
 ```
+// public/index.html に追加
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
 ```
-
+フォントはGoogle FontsのMontserratを使う
 ```css
-// index.css
+// index.cssに上書き
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
 
-body {
-  margin: 0;
+* {
   font-family: 'Montserrat',sans-serif !important;
+  font-size: 16px;
+  /* background-color: aqua; */
 }
 ```
 ```js
@@ -232,7 +233,7 @@ function App() {
 
 export default App;
 ```
-BootstrapのRegistration Form
+BootstrapのRegistration Formのサンプル
 ```js
   <form>
     <h3>Sign Up</h3>
@@ -274,19 +275,14 @@ BootstrapのRegistration Form
     </p>
   </form>
 ```
-アニメーション  
-LottieFiles:  https://lottiefiles.com/search?q=money&category=animations
-web gradient: https://webgradients.com/  
-022 Morphrus Den
-
+アカウント登録ページ
 ```js
-//src/pages/Registration.js
+//src/pages/Register.js
 import {Link} from 'react-router-dom'
-import '../resources/authentication.css'
+import '../resources/auth.css'
 import {useState} from 'react'
 
 function Register() {
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -318,64 +314,51 @@ function Register() {
   }
 
   return (
-    <div className='register'>
-      <div className="row justify-content-center  align-items-center w-100 h-100">
-        <div className="col-md-5 ">
-          <div className="lottie">
-            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_06a6pf9i.json"  background="transparent" speed="1" loop autoplay></lottie-player>
+    <div className='h-screen d-flex justify-content-center align-items-center'>
+      <div className="w-400 card p-3">
+        <form onSubmit={handleSubmit}>
+          <h1 className='text-lg'>BUS TICKET - 登録</h1>
+          <hr />
+          <div className="mb-3">
+            <label>名前</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter name"
+              name='name'
+              value={name}
+              onChange={handleChange}
+            />
           </div>
-        </div>
-        <div className="col-md-5">
-          <form onSubmit={handleSubmit}>
-            <h1>EXPENSE TRACKER / REGISTER</h1>
-            <hr />
-            <div className="mb-3">
-              <label>Name</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Enter name"
-                name='name'
-                value={name}
-                onChange={handleChange}
-              />
-            </div>
-            {/* <div className="mb-3">
-              <label>Last name</label>
-              <input type="text" className="form-control" placeholder="Last name" />
-            </div> */}
-            <div className="mb-3">
-              <label>Email address</label>
-              <input
-                type="email"
-                className="form-control"
-                placeholder="Enter email"
-                name='email'
-                value={email}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-3">
-              <label>Password</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Enter password"
-                name='password'
-                value={password}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="d-grid">
-              <button type="submit" className="btn btn-primary">
-                REGISTER
-              </button>
-            </div>
-            <p className="forgot-password text-right">
-              <Link to='/login'>Already registered?, Click here login</Link>
-            </p>
-          </form>
-        </div>
+          <div className="mb-3">
+            <label>メールアドレス</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Enter email"
+              name='email'
+              value={email}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-3">
+            <label>パスワード</label>
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Enter password"
+              name='password'
+              value={password}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Link to='/login'>ここをクリックしてログイン</Link>
+            <button type="submit" className="secondary-btn">
+              登録
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
@@ -384,7 +367,7 @@ function Register() {
 export default Register
 ```
 ```js
-//src/pages/Registration.js
+//src/pages/Login.js
 import {Link} from 'react-router-dom'
 import '../resources/authentication.css'
 import {useState} from 'react'
@@ -488,6 +471,49 @@ function Login() {
 export default Login
 ```
 cssの編集
+```css
+// src/resources/global.css
+/* heights and widths */
+.h-screen {
+  height: 100vh;
+}
+
+.w-400 {
+  width: 400px;
+}
+
+/* inputs */
+input {
+  height: 40px;
+  border: 2px solid gray;
+  width: 100%;
+  padding-left: 20px;
+}
+
+/* card */
+.card {
+  border: 2px solid gray;
+  box-shadow: 0 0 2px gray;
+}
+
+/* text size */
+.text-2xl {
+  font-size: 30px;
+}
+
+.text-xl {
+  font-size: 25px;
+}
+
+.text-lg {
+  font-size: 20px;
+}
+
+.text-md {
+  font-size: 18px;
+}
+```
+
 ```css
 /* src/resources/authentication.css */
 .register{
