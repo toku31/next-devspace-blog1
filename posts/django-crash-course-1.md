@@ -1,7 +1,7 @@
 ---
-title: 'Django Crash Course'
+title: 'Django Crash Course-1'
 date: 'December 18, 2022'
-excerpt: 'PythonのフレームワークであるDjangoの基本を学んでいきます'
+excerpt: 'PythonのフレームワークであるDjangoの基本を学んでいきます。１回目は仮想環境の設定から新しいPostを作成までです'
 cover_image: '/images/posts/img3.jpg'
 category: 'Python'
 author: 'Toku'
