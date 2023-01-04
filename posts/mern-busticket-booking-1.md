@@ -73,7 +73,12 @@ Remix Icon CDN:  https://remixicon.com/
 ```
 フォントはGoogle FontsのMontserratを使う
 ```css
-// index.cssに上書き
+/* index.cssに上書き */
+:root {
+  --primary: #058359;
+  --secondary: #AC4425;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
 
 * {
@@ -366,14 +371,14 @@ function Register() {
 
 export default Register
 ```
+ログインページ
 ```js
 //src/pages/Login.js
 import {Link} from 'react-router-dom'
-import '../resources/authentication.css'
+import '../resources/auth.css'
 import {useState} from 'react'
 
 function Login() {
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -405,64 +410,40 @@ function Login() {
   }
 
   return (
-    <div className='register'>
-      <div className="row justify-content-center  align-items-center w-100 h-100">
-        <div className="col-md-4">
-          <form onSubmit={handleSubmit}>
-            <h1>EXPENSE TRACKER / LOGIN</h1>
-            <hr />
-            <div className="mb-3">
-              <label>Name</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Enter name"
-                name='name'
-                value={name}
-                onChange={handleChange}
-              />
-            </div>
-            {/* <div className="mb-3">
-              <label>Last name</label>
-              <input type="text" className="form-control" placeholder="Last name" />
-            </div> */}
-            <div className="mb-3">
-              <label>Email address</label>
-              <input
-                type="email"
-                className="form-control"
-                placeholder="Enter email"
-                name='email'
-                value={email}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-3">
-              <label>Password</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Enter password"
-                name='password'
-                value={password}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="d-grid">
-              <button type="submit" className="btn btn-primary">
-                LOGIN
-              </button>
-            </div>
-            <p className="forgot-password text-right">
-              <Link to='/register'>Not Registered Yet?, Click here register</Link>
-            </p>
-          </form>
-        </div>
-        <div className="col-md-5 ">
-          <div className="lottie">
-            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_06a6pf9i.json"  background="transparent" speed="1" loop autoplay></lottie-player>
+    <div className='h-screen d-flex justify-content-center align-items-center'>
+      <div className="w-400 card p-3">
+        <form onSubmit={handleSubmit}>
+          <h1 className='text-lg'>BUS TICKET - ログイン</h1>
+          <hr />
+          <div className="mb-3">
+            <label>メールアドレス</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Enter email"
+              name='email'
+              value={email}
+              onChange={handleChange}
+            />
           </div>
-        </div>
+          <div className="mb-3">
+            <label>パスワード</label>
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Enter password"
+              name='password'
+              value={password}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Link to='/register'>ここをクリックして登録</Link>
+            <button type="submit" className="secondary-btn">
+              ログイン
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
@@ -474,6 +455,7 @@ cssの編集
 ```css
 // src/resources/global.css
 /* heights and widths */
+
 .h-screen {
   height: 100vh;
 }
@@ -512,45 +494,34 @@ input {
 .text-md {
   font-size: 18px;
 }
-```
 
-```css
-/* src/resources/authentication.css */
-.register{
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* background-image: linear-gradient(to left, #9890e3 0%, #b1f4cf 100%); */
-  background-image: linear-gradient(to right, #88d3ce 0%, #6e45e2 100%);
-}
-
-.lottie{
-  height: 400px;
-}
-
-.register input {
-  background-color: transparent;
-  border: none;
-  border-bottom: 1px solid white;
-  color: rgba(255, 255, 255, 0.536);
-}
-
-input:focus{
-  outline: none !important;
-  box-shadow: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.784); !important;
-}
-
-label, a{
-  color: rgba(255, 255, 255, 0.536);
-}
-
-.register h1 {
-  font-size: 25px;
+/* buttons */
+.primary-btn {
+  background-color: var(--primary);
   color: white;
+  border: 0;
+  /* border-radius: 5px; */
+  padding: 10px 20px;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1), 0 6px 6px rgba(0, 0, 0, 0.1);
+}
+
+.secondary-btn {
+  background-color: var(--secondary);
+  color: white;
+  border: 0;
+  padding: 10px 20px;
+  cursor: pointer;
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.1), 0 3px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* anchor */
+a {
+  text-decoration: none;
+  color: var(--primary);
 }
 ```
+
 index.css
 ```css
 /* index.css */
@@ -566,15 +537,16 @@ body,html {
   overflow-x: hidden;
 }
 ```
-## User Login-Registration API's
-#### User Model and API's 
+## Authentication Backend
+#### User Model and Register API 
+**ユーザモデルの作成**
 ```js
-// models/user.js 
+// models/userModel.js 
 const mongoose = require('mongoose')
 
-const userSchema = mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
-    username: {
+    name: {
       type: String,
       required: true
     },
@@ -586,29 +558,49 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true
     },
-  },
-)
+  },{
+    timestamps: true
+})
 
-module.exports = mongoose.model('User', userSchema)
-// const usermodel = mongoose.model('Users', userSchema)
-// module.exports = usermodel
-~~~
-('Users', userSchema)の'Goal' はモデル名
+module.exports = mongoose.model('Users', userSchema)
 ```
-ルーター(userRoutes)の作成 　　Mern GoalSetter2を参照
+('Users', userSchema)の'Users' はモデル名  
+**ルーター(userRoute)の作成** 　Mern GoalSetter2を参照
 ```js
-// /routes/userRoutes.js
+// /routes/userRoute.js
 const express = require('express')
 const router = express.Router()
-const {
-  registerUser,
-  loginUser,
-  getMe,
-} = require('../controllers/userController')
+const User = require('../models/userModel')
+const bcrypt = require('bcryptjs')
 
-router.post('/', registerUser)
-router.post('/login', loginUser)
-router.get('/me', protect, getMe)
+// register new user
+router.post('/register', async(req, res) => {
+  try {
+    const existingUser = await User.findOne({email: req.body.email}) 
+    if (existingUser){
+      return res.send({
+        message: 'User already exists',
+        success: false,
+        data: null,
+      })
+    }
+    const hashedPassword = await bcrypt.hash(req.body.password, 10)
+    req.body.password = hashedPassword;
+    const newUser = new User(req.body)
+    await newUser.save()
+    res.send({
+      message: 'User created successfully',
+      success: true,
+      data: null,
+    })
+  } catch (error) {
+    res.send({
+      message: error.message,
+      success: false,
+      data: null,
+    })
+  }
+})
 
 module.exports = router
 ```
