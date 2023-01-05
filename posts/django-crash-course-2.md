@@ -189,27 +189,134 @@ urlpatterns = [
   </div>
 {% endblock %}
 ```
+#### ページネーションを作る
+```python
+# posts/views.py
+from django.core.paginator import Paginator # added
 
+def index(request):
+  post_list = Post.objects.all().order_by('-id')
+  paginator = Paginator(post_list, 3)
+  page = request.GET.get('page')
+  post_list = paginator.get_page(page)
+  
+  context = {
+    'posts': post_list
+  }
+  return render(request, 'posts/index.html', context)
+```
+参考：https://docs.djangoproject.com/en/4.1/topics/pagination/
+```python
+# サンプル
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+```
+index.htmlの最後に以下のページネーションを追加する
+```python
+# templates/posts/index.html
+<div class="container">
+  <div class="pagination">
+    <span class="step-links">
+        {% if posts.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ posts.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ posts.number }} of {{ posts.paginator.num_pages }}.
+        </span>
+
+        {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}">next</a>
+            <a href="?page={{ posts.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+  </div>
+</div>
+```
+### サーチ機能
+サーチのフォームにmethod="get"とname = "q" を追加する  
+ボックスに'test'と入力してクリックするとURLがhttp://localhost:8000/?q=test となる  
+```python
+# templates/base.html
+from django.db.models import Q  # added
+
+  <form class="d-flex" method="get">
+    <input class="form-control me-2" type="search" name = "q" placeholder="Search" aria-label="Search">
+    <button class="btn btn-outline-success" type="submit">Search</button>
+  </form>
+```
+icontainsと先頭にiをつけるとinsensitiveになりケースを気にしなくなる  
+Qオブジェクトは、モデルのデータの中からor検索をする時に使われる
+```python
+# posts/views.py
+def index(request):
+  post_list = Post.objects.all().order_by('-id')
+  query = request.GET.get('q')
+  if query:
+    post_list = post_list.filter(Q(title__icontains=query) | Q(content__icontains=query))
+  
+  paginator = Paginator(post_list, 2)
+  page = request.GET.get('page')
+  post_list = paginator.get_page(page)
+  
+  context = {
+    'posts': post_list
+  }
+  return render(request, 'posts/index.html', context)
+```
+サーチ結果の出力も正しくページネーションさせる方法は  
+{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}を追加する  
+URLは　http://localhost:8000/?page=2&q=text　のような形になる
+```python
+# templates/posts/index.html
+<div class="container">
+  <div class="pagination">
+    <span class="step-links">
+        {% if posts.has_previous %}
+            <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo; first</a>
+            <a href="?page={{ posts.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ posts.number }} of {{ posts.paginator.num_pages }}.
+        </span>
+
+        {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">next</a>
+            <a href="?page={{ posts.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">last &raquo;</a>
+        {% endif %}
+    </span>
+  </div>
+</div>
+```
 ```python
 
 ```
-
 ```python
 
 ```
-
 ```python
 
 ```
-
 ```python
 
 ```
-
-```python
-
-```
-
 ```python
 
 ```
