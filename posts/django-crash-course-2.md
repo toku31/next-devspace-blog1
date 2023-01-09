@@ -512,20 +512,169 @@ def logout_view(request): # added
   return redirect('index')
 ```
 localhost:8000/logoutと入力するとログアウトされる
+#### Navbarを修正する
 ```python
+# templates/base.html
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ブログページ</title>
+  <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary" style="margin-bottom: 15px">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Navbar</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Home</a>
+          </li>
+          {% if not user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'register' %}">登録</a>
+          </li>
+          {% endif %}
+          {% if user.is_authenticated %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {{user.username}}
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="{% url 'create' %}">新規投稿</a>
+                <a class="dropdown-item" href="{% url 'logout' %}">ログアウト</a>
+              </div>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'login' %}">ログイン</a>
+            </li>
+          {% endif %}
+          {% comment %} <li class="nav-item">
+            {% if user.is_authenticated %}
+              <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">{{user.username}}</a>
+            {% endif %}
+          </li> {% endcomment %}
+        </ul>
+        <form class="d-flex" method="get">
+          <input class="form-control me-2" type="search" name = "q" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+  </nav>
 
+  {% block body %}
+
+  {% endblock %}
+
+  <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+</body>
+</html>
 ```
-
+### メッセージの出力方法
+https://docs.djangoproject.com/en/4.1/ref/contrib/messages/  
 ```python
-
+# templates/messages.html
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
 ```
-
+base.htmlに上のmessages.htmlをincludeで含める
 ```python
+# templates/base.html
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ブログページ</title>
+  <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary" style="margin-bottom: 15px">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Navbar</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Home</a>
+          </li>
+          {% if not user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'register' %}">登録</a>
+          </li>
+          {% endif %}
+          {% if user.is_authenticated %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {{user.username}}
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="{% url 'create' %}">新規投稿</a>
+                <a class="dropdown-item" href="{% url 'logout' %}">ログアウト</a>
+              </div>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'login' %}">ログイン</a>
+            </li>
+          {% endif %}
+        </ul>
+        <form class="d-flex" method="get">
+          <input class="form-control me-2" type="search" name = "q" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+  {% include 'messages.html' %} # added
 
+  {% block body %}
+
+  {% endblock %}
+
+  <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+</body>
+</html>
 ```
-
+ログアウト時にメッセージを出力する
 ```python
+# users/views.py
+from django.shortcuts import render, redirect
+from .forms import LoginForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages # added
 
+def login_view(request):
+  ・・・
+
+def register_view(request):
+  ・・・
+
+def logout_view(request):
+  logout(request)
+  messages.success(request, 'ログアウトしました')
+  return redirect('index')
 ```
 
 ```python
