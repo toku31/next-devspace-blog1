@@ -11,7 +11,8 @@ author_image: 'https://randomuser.me/api/portraits/men/11.jpg'
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 
 ### Front End Setup
-user@mbp mern-busticket-booking % nodemon server
+user@mbp mern-busticket-booking % nodemon server  
+user@mbp client % npm start
 ## Reat App Setup
 Github:  https://github.com/sathyaprakash195/sheybus-udemy  
 
@@ -184,6 +185,7 @@ const app = express();
 app.get('/', (req, res) => res.send('Hello World'))
 app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
 ```
+user@mbp mern-busticket-booking % nodemon server  
 ```js
 // .env
 NODE_ENV = development
@@ -195,12 +197,12 @@ MONGO_URI = 'MONGO_URI = 'mongodb+srv://<username>:<password>@cluster0.7eiib.mon
 const mongoose = require('mongoose')
 const dotenv = require("dotenv").config()
 
-mongoose.connect(process.env.MONGO_URI, {useNewUrlParser : true, useUnifiedTopology: true})
+mongoose.connect(process.env.MONGO_URI)
 
-const connection = mongoose.connection
+const db= mongoose.connection
 
-connection.on('error', err => console.log(err))
-connection.on('connected', ()=> console.log('Mongo DB Connection successful'))
+db.on('connected', ()=> console.log('Mongo DB Connection successful'))
+db.on('error', err => console.log(err))
 ```
 上のdbConfigをserver.jsに追加
 ```js
@@ -218,7 +220,7 @@ app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
 最初にsrc/pagesの配下にhome.js, Register.js, Login.jsを作成する。その後App.js を以下のように書く
 ```js
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
-import Register from './pages/ Register';
+import Register from './pages/Register';
 import Home from './pages/Home';
 import Login from './pages/Login';
 
@@ -562,9 +564,9 @@ const userSchema = new mongoose.Schema(
     timestamps: true
 })
 
-module.exports = mongoose.model('Users', userSchema)
+module.exports = mongoose.model('User', userSchema)
 ```
-('Users', userSchema)の'Users' はモデル名  
+('User', userSchema)の'User' はモデル名  
 **ルーター(userRoute)の作成** 　Mern GoalSetter2を参照
 ```js
 // /routes/userRoute.js
@@ -607,20 +609,22 @@ module.exports = router
 server.jsにuserRouteを追加
 ```js
 // server.js
-const express = require('express')
-const dbconnect = require('./dbConnect')
-const dotenv = require("dotenv").config()
-const port = process.env.PORT || 5000;
+const express = require('express');
 const app = express();
-app.use(express.json())　// added
+const dotenv = require("dotenv").config();
+const port = process.env.PORT || 5000;
+const dbConfig = require("./config/dbConfig");
+app.use(express.json())
+
 const userRoute = require('./routes/userRoute') // added
 
 app.use('/api/users/', userRoute)  // added
-
-// app.get('/', (req, res) => res.send('Hello World')) 削除
-app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
+app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
+// app.get('/', (req, res) => res.send('Hello World'))
 ```
-#### Login Registration Testing
+
+#### User Registration API Integration
+**Proxy**の追加  
 https://www.youtube.com/watch?v=OML9f6LXUUs&t=230s
 Clientのpackage.jsonの最後にproxyを追加
 ```
@@ -634,12 +638,548 @@ Clientのpackage.jsonの最後にproxyを追加
   "proxy": "http://localhost:5000" // added
 }
 ```
-react-toastify
+react-toastifyをインストールしてApp.jsに実装する  
+user@mbp client % npm install --save react-toastify 
+```js
+// App.js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import './resources/global.css'
+import Register from './pages/ Register';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import {ToastContainer} from 'react-toastify' // added
+import 'react-toastify/dist/ReactToastify.css'  // added
+
+function App() {
+  return (
+    <div>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />}  />
+          <Route path="/register" element={<Register />}  />
+          <Route path="/login" element={<Login />}  />
+        </Routes>
+      </Router>
+      <ToastContainer   // added
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
+  );
+}
+
+export default App;
 ```
- npm install --save react-toastify
+Register.js ページにaxios をインポートしてusersデータを入力する  
+F12=>Networkで確認  
+axiosで取り込んだデータのresponseはdataプロパティ(response.data)で確認する
+```Js
+// src/pages/Register.js
+import {Link} from 'react-router-dom'
+import '../resources/auth.css'
+import {useState} from 'react'
+import axios from 'axios'  // added
+import { toast } from 'react-toastify'
+
+function Register() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+
+  const {name, email, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit= async (e) => {
+    e.preventDefault()
+    const values ={
+      name: name,
+      email: email,
+      password: password
+    }
+    console.log('values:', values)
+    try { // added
+      const response = await axios.post('/api/users/register', values)
+      if(response.success){
+        console.log("register user successfully:", response.data) ;
+        toast.success(response.data.message, {theme: "colored"})
+        // setLoading(false)
+      } else {
+        console.log("User already exists:", response.data) ;
+        toast.error(response.data.message, {theme: "colored"})
+        // setLoading(false)
+      }
+    } catch (error) {
+      // setLoading(false)
+      toast.error('ユーザ登録に失敗しました', {theme: "colored"})
+      throw new Error(`Something went wrong! ${error.message}`);
+    }
+    setFormData({
+      name: '',
+      email: '',
+      password: ''
+    })
+  }
+
+  return (
+    <div className='h-screen d-flex justify-content-center align-items-center'>
+      <div className="w-400 card p-3">
+        <form onSubmit={handleSubmit}>
+          <h1 className='text-lg'>BUS TICKET - 登録</h1>
+          <hr />
+          <div className="mb-3">
+            <label>名前</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter name"
+              name='name'
+              value={name}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-3">
+            <label>メールアドレス</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Enter email"
+              name='email'
+              value={email}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-3">
+            <label>パスワード</label>
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Enter password"
+              name='password'
+              value={password}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Link to='/login'>ここをクリックしてログイン</Link>
+            <button type="submit" className="secondary-btn">
+              登録
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default Register
+```
+ユーザーモデルにisAdminプロパティを追加する  
+MondoDBに登録したユーザを一旦削除して再度登録する
+```Js
+const mongoose = require('mongoose')
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    },
+    isAdmin: {  // added
+      type: String,
+      default: false
+    },
+  },{
+    timestamps: true
+})
+
+module.exports = mongoose.model('User', userSchema)
+```
+
+### Login API
+バックエンドのuserRoute.jsでログイン用のルータを作成する
+```Js
+const express = require('express')
+const router = express.Router()
+const User = require('../models/userModel')
+const bcrypt = require('bcryptjs')
+const jwt = require("jsonwebtoken")    // added
+// register new user
+router.post('/register', async(req, res) => {...}
+
+// login user
+router.post('/login', async(req, res) => {     // added
+  const {email, password} = req.body
+  try {
+    const userExists = await User.findOne({email}) 
+    if (!userExists){
+      console.log('User does not exist')
+      return res.send({
+        message: 'ユーザが存在しません',
+        success: false,
+        data: null,
+      })
+    }
+
+    const passwordMatch = await bcrypt.compare(password, userExists.password)
+    if (!passwordMatch){
+      return res.send({
+        message: 'パスワードが正しくないです',
+        success: false,
+        data: null,
+      })
+    }
+
+    const token = jwt.sign(
+      { userId: userExists._id}, 
+      process.env.JWT_SECRET,
+      { expiresIn: "1d"}
+    )
+    res.send({
+      message: "ログインに成功しました",
+      success: true,
+      data: token,
+    })
+  } catch (error) {
+    res.send({
+      message: error.message,
+      success: false,
+      data: null,
+    })
+  }
+});
+
+module.exports = router
+```
+.envファイルにJWT_SECRETを追加
+```Js
+NODE_ENV = development
+PORT =5000
+MONGO_URI = 'mongodb+srv://・・・@cluster0.7eiib.mongodb.net/busticket-booking?retryWrites=true&w=majority'
+JWT_SECRET = '・・・'
+```
+フロントエンドLogin.jsのhandleSubmit処理を編集する  
+取得したtokenはlocalStrageに保存する  
+取得したtokenをJWTページ(https://jwt.io/)で確認することができる
+```Js
+// src/pages/Login.js
+import {Link, useNavigate} from 'react-router-dom'
+import '../resources/auth.css'
+import {useState} from 'react'
+import axios from 'axios'
+import { toast } from 'react-toastify'
+
+function Login() {
+  const navigate = useNavigate() // added
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+
+  const {name, email, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async(e) => {
+    e.preventDefault()
+    const values ={
+      name: name,
+      email: email,
+      password: password
+    }
+    console.log(values)
+    try {
+      const response = await axios.post('/api/users/login', values)
+      if(response.data.success){
+        console.log("Login user successfully:", response.data) ;
+        toast.success(response.data.message, {theme: "colored"})
+        localStorage.setItem("token", response.data.data)
+        // setLoading(false)
+        navigate('/');
+      } else {
+        console.log("Login error:", response.data) ;
+        toast.error(response.data.message, {theme: "colored"})
+        // setLoading(false)
+      }
+    } catch (error) {
+      // setLoading(false)
+      toast.error('ログインに失敗しました', {theme: "colored"})
+      throw new Error(`Something went wrong! ${error.message}`);
+    }
+    // setFormData({
+    //   name: '',
+    //   email: '',
+    //   password: ''
+    // })
+  };
+
+  return (
+    <div className='h-screen d-flex justify-content-center align-items-center'>
+      <div className="w-400 card p-3">
+        <form onSubmit={handleSubmit}>
+          <h1 className='text-lg'>BUS TICKET - ログイン</h1>
+          <hr />
+          <div className="mb-3">
+            <label>メールアドレス</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Enter email"
+              name='email'
+              value={email}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-3">
+            <label>パスワード</label>
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Enter password"
+              name='password'
+              value={password}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Link to='/register'>ここをクリックして登録</Link>
+            <button type="submit" className="secondary-btn">
+              ログイン
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default Login
+```
+
+### Authorization part-1
+誰でもアクセスできるログイン画面や登録画面のルートはPublicRouteで指定する  
+ログイン認証したユーザのみHomeページに遷移できるようにする。  
+Homeページをリロードするたびにtokenの認証を行う。  
+コンポーネントにProtectedRoute.jsとPublicRoute.jsを作成する  
+```js
+// src/components/ProtectedRoute.js
+import React from 'react'
+
+function ProtectedRoute() {
+  return (
+    <div>ProtectedRoute</div>
+  )
+}
+
+export default ProtectedRoute
+```
+
+```Js
+// src/components/PublicRoute.js
+import React from 'react'
+
+function PublicRoute({children}) {
+  return (
+    <div>
+     {children}
+    </div>
+  )
+}
+
+export default PublicRoute
+```
+App.jsにPublicRouteとProtectedRouteを実装する
+```Js
+// App.js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import './resources/global.css'
+import Register from './pages/ Register';
+import Home from './pages/Home';
+import Login from './pages/Login';
 import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import PublicRoute from './components/PublicRoute'; // added
+import ProtectedRoute from './components/ProtectedRoute'; // added
+
+function App() {
+  return (
+    <div>
+      <Router>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>}></Route>　　// Changed
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>}  /> // Changed
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>}  />  // Changed
+        </Routes>
+      </Router>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
+  );
+}
+
+export default App;
 ```
+ProtectedRoute.jsを編集する
+```js
+// src/components/ProtectedRoute.js
+import axios from 'axios'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+function ProtectedRoute({children}) {
+  const [loading, setLoading] = useState(true)
+  const validateToken=async()=> {
+    try {
+      const response = await axios.post('/api/users/get-user-by-id', {},{
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      if(response.data.success){
+        setLoading(false)
+      }else {
+        setLoading(false)
+        navigate('/login')
+      }
+    } catch (error) {
+      setLoading(false)
+      navigate('/login')
+    }
+  }
+  const navigate = useNavigate()
+  useEffect(()=> {
+    if (localStorage.getItem('token')) {
+      validateToken()
+    } else {
+      navigate('login')
+    }
+  })
+
+  return (
+    <div>
+      {loading ? <div>...Loading</div> : <>{children}</> }
+    </div>
+  )
+}
+
+export default ProtectedRoute
+```
+バックエンドでエンドポイント/api/users/get-user-by-idのルートを作成する
+```js
+// routes/userRoute.js
+const express = require('express')
+const router = express.Router()
+const User = require('../models/userModel')
+const bcrypt = require('bcryptjs')
+const jwt = require("jsonwebtoken")
+const authMiddleware = require('../middlewares/authMiddleware')
+
+// register new user
+router.post('/register', async(req, res) => {...}
+
+// login user
+router.post('/login', async(req, res) => {...}
+
+// get user by id
+router.post('/get-user-by-id', authMiddleware, async(req, res) => {
+  try {
+    const user = await User.findById(req.body.userId)  // authMiddlewareを参照
+      res.send({
+        message: 'ユーザを取得しましました',
+        success: true,
+        data: user,
+      })
+  } catch (error) {
+    res.send({
+      message: error.message,
+      success: false,
+      data: null,
+    })
+  }
+});
+
+module.exports = router
+```
+tokenからIDを取得して認証チェックをするためミドルウェアauthMiddleware.jsの作成  
+mern-goal-setter-2のルートのプロテクトを参考
+```js
+// middleware/authMiddleware.js
+const jwt = require('jsonwebtoken')
+
+module.exports = (req, res, next) => {
+  try {
+    // Get token from header
+    const token = req.headers.authorization.split(' ')[1] // Bear△X3mkdilj~~~~
+    if (!token) {return res.status(401).send({
+      message: "認証に失敗しました",
+      success: false,
+    })}
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    req.body.userId = decoded.userId;
+    // Get user from the token　　　　パスワードを含めない ★　★　★　★　★　 ポイント１
+    // req.user = await User.findById(decoded.id).select('-password') 
+    next()
+  } catch (error) {
+    return res.status(400).send({
+      message: "認証に失敗しました",
+      success: false,
+    })
+  }
+}
+```
+
+```js
+
+```
+
+```js
+
+```
+
+```js
+
+```
+
 
 ### Add Transaction UI
 Homeページにフォーム入力用のモーダルを作成する

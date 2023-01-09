@@ -678,6 +678,60 @@ https://jquery.com/download/ のDownload the compressed, production jQuery 3.6.3
 
 ```
 #### フォームを作成する
+modelForm用いたforms.pyのExample
+~~~python
+class ReviewForm(ModelForm):
+  class Meta:
+    model = Review
+    fields = ['value', 'body']
+    
+    labels = {
+      'value':'評価してください',
+      'body': 'コメントお願いします'
+    }
+
+  def __init__(self, *args, **kwargs):
+    super(ReviewForm, self).__init__(*args, **kwargs)
+    
+    for name, field in self.fields.items():
+      field.widget.attrs.update({'class': 'form-input'})
+      
+class CategoryForm(ModelForm):
+  class Meta:
+      model = Category
+      fields = ['name']
+      
+  def __init__(self, *args, **kwargs):
+    super(CategoryForm, self).__init__(*args, **kwargs)
+    
+    self.fields['name'].widget.attrs.update(
+      { 'class': 'form-input'})
+
+class TagForm(ModelForm):
+  class Meta:
+      model = Tag
+      fields = ['name']
+      
+  def __init__(self, *args, **kwargs):
+    super(TagForm, self).__init__(*args, **kwargs)
+    
+    self.fields['name'].widget.attrs.update(
+      { 'class': 'form-input'})
+~~~
+form.pyの実装Example
+~~~html
+<form action="" method="POST">
+  {% csrf_token %}
+{% for field in form %}
+  </label>{{field.label}}</label>
+  <div class='form-field'>{{field}}</div>
+  {% endfor %}
+  <a class="btn btn-secondary" href="{% url 'urls' %}">戻る</a>
+  <input class="btn btn-primary" type="submit" value="送信">
+  </div>
+</form>
+~~~
+
 ```python
 # posts/forms.py
 from django import forms

@@ -14,7 +14,6 @@ author_image: 'https://randomuser.me/api/portraits/men/12.jpg'
 user@mbp Django-tutorial-blog % source venv/bin/activate
 (venv) user@mbp Django-tutorial-blog % python manage.py runserver
 ```
-### ログイン要求機能（Login Required FUnction)
 ```
 (venv) user@mbp Django-tutorial-blog % pip freeze
 asgiref==3.5.2
@@ -22,6 +21,8 @@ Django==4.1.4
 Pillow==9.3.0
 sqlparse==0.4.3
 ```
+id:user pass: 123
+### ログイン要求機能（Login Required FUnction)
 ログインしていない人がCreateページに遷移できないようにする=>login_requiredデコレータを使う
 ```python
 # posts/views.py
@@ -255,7 +256,6 @@ index.htmlの最後に以下のページネーションを追加する
 ```python
 # templates/base.html
 from django.db.models import Q  # added
-
   <form class="d-flex" method="get">
     <input class="form-control me-2" type="search" name = "q" placeholder="Search" aria-label="Search">
     <button class="btn btn-outline-success" type="submit">Search</button>
@@ -305,21 +305,239 @@ URLは　http://localhost:8000/?page=2&q=text　のような形になる
   </div>
 </div>
 ```
+### Users Appを作成する
+```python
+(venv) user@mbp Django-tutorial-blog % python manage.py startapp u
+sers
+```
+```python
+# settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'posts.apps.PostsConfig',
+    'users.apps.UsersConfig'  # added
+]
+```
+### ログインフォームを作成する
+formで使用するcleaned_dataってなに？  
+1forms.pyでフォームを作成  
+2フォームにデータを入力  
+3入力データをバリデート(validate)する→login_viewでform.is_valid()と書く   
+　ここでデータがフォームに適切か判断  
+4適切だった場合、cleaned_dataに入る  
+```python
+# users/forms.py
+from django import forms
+from django.contrib.auth import authenticate
+
+class LoginForm(forms.Form):
+  username = forms.CharField(max_length=100, label='ユーザ名')
+  password = forms.CharField(max_length=100, label='パスワード', widget=forms.PasswordInput)
+  
+  def clean(self):
+    username = self.cleaned_data.get('username')
+    password = self.cleaned_data.get('password')
+  
+    if username and password:
+      user = authenticate(username=username,password=password)
+      
+      if not user:
+        raise forms.ValidationError("ユーザネームまたはパスワードが不正です")
+      return super(LoginForm, self).clean()
+```
+ログインのview
+```python
+# users/views.py
+from django.shortcuts import render, redirect
+from .forms import LoginForm
+from django.contrib.auth import authenticate, login
+
+def login_view(request):
+  form = LoginForm(request.POST or None)
+  if form.is_valid():
+    username = form.cleaned_data.get('username')
+    password = form.cleaned_data.get('password')
+    
+    user = authenticate(username=username,password=password)
+    login(request, user)
+    return redirect('index')
+  
+  context = {
+    'form': form
+  }
+  
+  return render(request, 'users/login.html', context)
+```
+ログインのHtmlテンプレートを作成する
+```python
+# templates/users/login.html
+{% extends 'base.html' %}
+
+{% block body %}
+
+<div class="container">
+  <h4>ログインフォーム</h4>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type='submit' value='ログイン' >
+  </form>
+</div>
+
+{% endblock %}
+```
+### ユーザ登録用のビューとHtmlを作成する
+register_vieｗを作成
+```python
+# users/views.py
+from django.shortcuts import render, redirect
+from .forms import LoginForm
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import UserCreationForm # added
+
+def login_view(request):
+  ・・・・・・・・
+
+def register_view(request):
+  form = UserCreationForm(request.POST or None)
+  if form.is_valid():
+    username = form.cleaned_data.get('username')
+    password = form.cleaned_data.get('password')
+    user = form.save()
+    login(request, user)
+    return redirect('index')
+  else:
+    form = UserCreationForm()
+  
+  return render (request, 'users/register.html', {'form': form})
+```
+request.POST or Noneとすることで、GetのときはNoneとなり引数なしで呼び出したのと同じフォームが作れる
+```python
+# templates/users/register.html
+{% extends 'base.html' %}
+{% block body %}
+
+<div class="container">
+  <h4>登録フォーム</h4>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type='submit' value='登録' >
+  </form>
+</div>
+
+{% endblock %}
+```
+blog/urls.pyにregisterのpathを追加
+```python
+# blog/urls.py
+from django.contrib import admin
+from django.urls import path
+# from posts.views import index
+from posts.views import *
+from users.views import *
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', index, name="index"),
+    path('detail/<int:id>', detail_view, name="detail"),
+    path('delete/<int:id>', delete_view, name="delete"),
+    path('update/<int:id>', update_view, name="update"),
+    path('create/', create_view, name="create"),
+    path('login/', login_view, name="login"),
+    path('register/', register_view, name="register") # added
+    
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+blogフォルダにあるsettings.pyのLANGUAGE_CODE = 'ja'にすることで登録フォームが下記のような日本語表記になる
+```python
+登録フォーム
+ユーザー名: 
+ この項目は必須です。半角アルファベット、半角数字、@/./+/-/_ で150文字以下にしてください。
+パスワード: 
+あなたの他の個人情報と似ているパスワードにはできません。
+パスワードは最低 8 文字以上必要です。
+よく使われるパスワードにはできません。
+数字だけのパスワードにはできません。
+パスワード(確認用): 
+ 確認のため、再度パスワードを入力してください。
+```
+id: david pass: david12345
+### ログアウト用のビューを作成する
+```python
+# users/views.py
+from django.shortcuts import render, redirect
+from .forms import LoginForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
+
+def login_view(request):
+  form = LoginForm(request.POST or None)
+  if form.is_valid():
+    username = form.cleaned_data.get('username')
+    password = form.cleaned_data.get('password')
+    
+    user = authenticate(username=username,password=password)
+    login(request, user)
+    return redirect('index')
+  
+  context = {
+    'form': form
+  }
+  
+  return render(request, 'users/login.html', context)
+
+def register_view(request):
+  form = UserCreationForm(request.POST or None)
+  if form.is_valid():
+    username = form.cleaned_data.get('username')
+    password = form.cleaned_data.get('password')
+    user = form.save()
+    login(request, user)
+    return redirect('index')
+  else:
+    form = UserCreationForm()
+  
+  return render(request, 'users/register.html', {'form': form})
+
+def logout_view(request): # added
+  logout(request)
+  return redirect('index')
+```
+localhost:8000/logoutと入力するとログアウトされる
 ```python
 
 ```
+
 ```python
 
 ```
+
 ```python
 
 ```
+
 ```python
 
 ```
+
 ```python
 
 ```
+
+```python
+
+```
+
+
+
 
 
 
