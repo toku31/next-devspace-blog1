@@ -1042,7 +1042,6 @@ function Home() {
         </div>
       </Modal.Body>
     </Modal>
-
     </Layout>
   )
 }
@@ -1062,7 +1061,7 @@ export default Home
   color: rgba(0, 0, 0, 0.77)!important;
 }
 ```
-### Add Transaction API
+### Add Transaction API(Backend)
 モデルの作成
 ```js
 // models/Transaction.js
@@ -1333,10 +1332,10 @@ function Home() {
     <Layout>
       <div className="filter d-flex justify-content-between align-item-center">
         <div>
-
+          // ここで期間選択を作成する
         </div>
         <div>
-          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>ADD NEW</button>
+          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>新規追加</button>
         </div>
 
       </div>
