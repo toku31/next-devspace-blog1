@@ -485,6 +485,7 @@ body,html {
 ```
 ## User Login-Registration API's
 #### User Model and API's 
+ユーザモデルを作成する
 ```js
 // models/user.js 
 const mongoose = require('mongoose')
@@ -517,15 +518,36 @@ module.exports = mongoose.model('User', userSchema)
 // /routes/userRoutes.js
 const express = require('express')
 const router = express.Router()
-const {
-  registerUser,
-  loginUser,
-  getMe,
-} = require('../controllers/userController')
+const User = require('../models/user')
 
-router.post('/', registerUser)
-router.post('/login', loginUser)
-router.get('/me', protect, getMe)
+router.post('/login', async function(req, res){
+  try {
+    const result = await User.findOne({email: req.body.email, password: req.body.password});
+    if (result){
+      res.send(result)
+    } else {
+      res.status(500).json('Error')
+    }
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
+
+router.post('/register', async(req, res) =>{
+  try {
+    const newUser = new Users(req.body);
+    // const newUser = new User({
+    //   name: req.body.name,
+    //   email: req.body.email,
+    //   password: req.body.password
+    // })
+    const user = await newUser.save();
+    res.send('User Registered Successfully')
+    // res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json(error)
+  }
+})
 
 module.exports = router
 ```
@@ -546,9 +568,10 @@ app.use('/api/users/', userRoute)  // added
 app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
 ```
 #### Login Registration Testing
-https://www.youtube.com/watch?v=OML9f6LXUUs&t=230s
+https://www.youtube.com/watch?v=OML9f6LXUUs&t=230s    
 Clientのpackage.jsonの最後にproxyを追加
-```
+```js
+// client/package.json
     ＝＝＝省略＝＝＝
     "development": [
       "last 1 chrome version",
@@ -559,11 +582,334 @@ Clientのpackage.jsonの最後にproxyを追加
   "proxy": "http://localhost:5000" // added
 }
 ```
-react-toastify
+メッセージ出力するためにreact-toastifyをインストール
 ```
  npm install --save react-toastify
 import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+```
+登録ページでボタンをクリックするとAPIをコールしてユーザ作成する  
+axiosをインポート
+```js
+// pages/Register.js
+import {Link, useNavigate} from 'react-router-dom'
+import '../resources/authentication.css'
+import {useState, useEffect} from 'react'
+import axios from 'axios'
+import { toast } from 'react-toastify'
+import Spinner from '../components/Spinner'
+
+function Register() {
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+  const navigate = useNavigate()
+  const {name, email, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    setLoading(true)
+    const values ={
+      name: name,
+      email: email,
+      password: password
+    }
+    console.log(values)
+    try {
+      const response = await axios.post('/api/users/register', values)
+      console.log("register user successfully:", response.data) ;
+      setLoading(false)
+      toast.success("Registration successful", {theme: "colored"})
+    } catch (error) {
+      setLoading(false)
+      toast.error('Registration failed', {theme: "colored"})
+      throw new Error(`Something went wrong! ${error.message}`);
+    }
+    setFormData({
+      name: '',
+      email: '',
+      password: ''
+    })
+  }
+
+  // useEffect(() => {
+  //   if(localStorage.getItem('expense-tracker-user')){
+  //     navigate('/')
+  //   }
+  // }, [])
+
+  // if (loading){
+  //   return <Spinner />
+  // }
+
+  return (
+    <div className='register'>
+      <div className="row justify-content-center  align-items-center w-100 h-100">
+        <div className="col-md-5 ">
+          <div className="lottie">
+            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_06a6pf9i.json"  background="transparent" speed="1" loop autoplay></lottie-player>
+          </div>
+        </div>
+        <div className="col-md-5">
+          <form onSubmit={handleSubmit}>
+            <h1>EXPENSE TRACKER / 登録</h1>
+            <hr />
+            <div className="mb-3">
+              <label>Name</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter name"
+                name='name'
+                value={name}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-3">
+              <label>Email address</label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="Enter email"
+                name='email'
+                value={email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-3">
+              <label>Password</label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Enter password"
+                name='password'
+                value={password}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="d-grid">
+              <button type="submit" className="btn btn-primary">
+                登録
+              </button>
+            </div>
+            <p className="forgot-password text-right">
+              <Link to='/login'>既に登録済みですか?, ここをクリックしてログイン</Link>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Register
+```
+ログインページも同様にAPIコールでログインしてlocalStorageにパスワード以外の情報を設定する
+```js
+// pages/Login.js
+import {Link, useNavigate} from 'react-router-dom'
+import '../resources/authentication.css'
+import {useState, useEffect} from 'react'
+import axios from 'axios'
+import Spinner from '../components/Spinner'
+import { toast } from 'react-toastify'
+
+function Login() {
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+
+  const {name, email, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async(e)=> {
+    e.preventDefault()
+    setLoading(true)
+    const values ={
+      name: name,
+      email: email,
+      password: password
+    }
+    console.log(values)
+    try {
+      const response = await axios.post('/api/users/login', values)
+      console.log(response.data) ;
+      localStorage.setItem('expense-tracker-user', JSON.stringify({...response.data, password:''}))
+      toast.success("login successful", {theme: "colored"})
+      // console.log('login successful')
+      setLoading(false)
+      navigate('/')
+    } catch (error) {
+      setLoading(false)
+      toast.error('Login failed', {theme: "colored"})
+      // throw new Error(`Something went wrong! ${error.message}`);
+    }
+    setFormData({
+      name: '',
+      email: '',
+      password: ''
+    })
+  }
+
+  // useEffect(() => {
+  //   if(localStorage.getItem('expense-tracker-user')){
+  //     navigate('/')
+  //   }
+  // }, [])
+  
+  // if (loading){
+  //   return <Spinner />
+  // }
+
+  return (
+    <div className='register'>
+      {/* {loading && <Spinner /> } */}
+      <div className="row justify-content-center  align-items-center w-100 h-100">
+        <div className="col-md-4">
+          <form onSubmit={handleSubmit}>
+            <h1>EXPENSE TRACKER / ログイン</h1>
+            <hr />
+            <div className="mb-3">
+              <label>Email address</label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="Enter email"
+                name='email'
+                value={email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-3">
+              <label>Password</label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Enter password"
+                name='password'
+                value={password}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="d-grid">
+              <button type="submit" className="btn btn-primary">
+                ログイン
+              </button>
+            </div>
+            <p className="forgot-password text-right">
+              <Link to='/register'>アカウントをお持ちでありませんか?, ここをクリックして登録</Link>
+            </p>
+          </form>
+        </div>
+        <div className="col-md-5 ">
+          <div className="lottie">
+            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_06a6pf9i.json"  background="transparent" speed="1" loop autoplay></lottie-player>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Login
+```
+### Loaders, Messagesを作成する
+```
+const [loading, setLoading] = useState(false)
+```
+Spinner を作成
+```js
+// components/Spinner.js
+import spinner from '../resources/spinner.gif'
+
+function Spinner() {
+  return (
+    <div className="register">
+    {/* <div className='w-100 mt-20'> */}
+      <img width={180} className="text-center mx-auto" src={spinner} alt="Loading..." />
+    </div>
+  )
+}
+
+export default Spinner
+```
+### ProtectedRouteを作成する
+```js
+// App.js
+import './App.css';
+import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
+import Home from './pages/Home';
+import Test from './pages/Test';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+function App() {
+  return (
+    <div className="App">
+      <Router>
+        <Routes>
+          <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path='/test' element={<Test />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/register' element={<Register />} />
+        </Routes>
+      </Router>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
+  );
+}
+
+export const ProtectedRoute=(props)=>{  // added
+  if(localStorage.getItem('expense-tracker-user')){
+    // console.log('expense-tracker-user')
+    return props.children
+  }else {
+    return <Navigate to='/login' />
+  }
+}
+export default App;
+```
+また、pagesフォルダのRegister.jsとLogin.jsにuseEffectをインポートして以下を追加することで、  
+ログイン済みのユーザが登録またはログインページに行かずHomeページを開くようにする
+```js
+  useEffect(() => {
+    if(localStorage.getItem('expense-tracker-user')){
+      navigate('/')
+    }
+  }, [])
 ```
 
 ### Add Transaction UI
