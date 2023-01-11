@@ -1,16 +1,15 @@
 ---
-title: 'Django Crash Course-1'
-date: 'December 18, 2022'
-excerpt: 'PythonのフレームワークであるDjangoの基本を学んでいきます。１回目は仮想環境の設定から新しいPostを作成までです'
-cover_image: '/images/posts/img3.jpg'
+title: 'Django Fantom Blog-1'
+date: 'December 25, 2022'
+excerpt: 'PythonのフレームワークであるDjangoを使って本格的なブログサイトを作成します。１回目は仮想環境の設定から新しいPostを作成までです'
+cover_image: '/images/posts/img6.jpg'
 category: 'Python'
 author: 'Toku'
-author_image: 'https://randomuser.me/api/portraits/men/12.jpg'
+author_image: 'https://randomuser.me/api/portraits/men/7.jpg'
 ---
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
-### 仮想環境の設定（Virtual Environment)
+### プロジェクトの作成
 参考：Udemyの  [Django 3.0 MasterClass - Learn How To Create Django Apps](https://www.udemy.com/course/django-30-masterclass-learn-how-to-create-django-apps/)
-
 pythonのバージョン確認
 ```python
 user@mbp Django-tutorial-blog % python -m django --version 

@@ -989,7 +989,7 @@ export default Login
 誰でもアクセスできるログイン画面や登録画面のルートはPublicRouteで指定する  
 ログイン認証したユーザのみHomeページに遷移できるようにする。  
 Homeページをリロードするたびにtokenの認証を行う。  
-コンポーネントにProtectedRoute.jsとPublicRoute.jsを作成する  
+コンポーネントにProtectedRoute.jsとPublicRoute.jsを仮作成する  
 ```js
 // src/components/ProtectedRoute.js
 import React from 'react'
@@ -1058,7 +1058,8 @@ function App() {
 
 export default App;
 ```
-ProtectedRoute.jsを編集する
+ProtectedRoute.jsを編集する  
+認証できる人のみホームページに行けなくする　認証エラーの場合はログインページへ促す
 ```js
 // src/components/ProtectedRoute.js
 import axios from 'axios'
@@ -1078,10 +1079,14 @@ function ProtectedRoute({children}) {
         setLoading(false)
       }else {
         setLoading(false)
+        localStorage.removeItem('token') // あとで追加
+        toast.error(response.data.error)　// あとで追加
         navigate('/login')
       }
     } catch (error) {
       setLoading(false)
+      localStorage.removeItem('token') // あとで追加
+      toast.error(response.data.error)　// あとで追加
       navigate('/login')
     }
   }
@@ -1167,9 +1172,29 @@ module.exports = (req, res, next) => {
   }
 }
 ```
-
+### Authorization Part-2
+ PublicRoute.jsの編集
 ```js
+import React, { useEffect } from 'react'
+import {useNavigate} from 'react-router-dom'
 
+function PublicRoute({children}) {
+  const navigate = useNavigate()
+
+  useEffect(()=> {
+    if(localStorage.getItem('token')){
+      navigate('/')
+    }
+  })
+
+  return (
+    <div>
+     {children}
+    </div>
+  )
+}
+
+export default PublicRoute
 ```
 
 ```js
