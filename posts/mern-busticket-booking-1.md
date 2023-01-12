@@ -1185,7 +1185,7 @@ function PublicRoute({children}) {
     if(localStorage.getItem('token')){
       navigate('/')
     }
-  })
+  }, [])
 
   return (
     <div>
@@ -1196,15 +1196,183 @@ function PublicRoute({children}) {
 
 export default PublicRoute
 ```
+### Reduxのセットアップ
+alertsSliceを作成する
+```js
+// redux/alertsSlice.js
+import {createSlice} from '@reduxjs/toolkit'
+
+const alertsSlice = createSlice({
+  name: 'alerts',
+  initialState: {
+    loading : false,
+  },
+  reducers: {
+    ShowLoading : (state, action)=> {
+      state.loading = true;
+    },
+    HideLoading : (state, action) => {
+      state.loading = false;
+    }
+  }
+});
+
+export const { ShowLoading, HideLoading} = alertsSlice.actions;
+export default alertsSlice.reducer;
+```
+storeを作成する
+```js
+// redux/store.js
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import alertsSlice from './alertsSlice';
+
+const rootReducer = combineReducers({
+  alerts: alertsSlice
+});
+
+const store = configureStore({
+  reducer: rootReducer
+});
+
+export default store;
+```
+
+idex.jsに作成したstoreとproviderを実装する
+```js
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import store from './redux/store';　// added
+import { Provider } from 'react-redux' // added
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <Provider store={store} > // added
+      <App />
+    </Provider>  // added
+  </React.StrictMode>
+
+);
+reportWebVitals();
+```
+usersSliceを作成する
+```js
+// redux/usersSlice.js
+import {createSlice} from '@reduxjs/toolkit'
+
+const usersSlice = createSlice({
+  name: 'users',
+  initialState: {
+    user : null,
+  },
+  reducers: {
+    SetUser : (state, action)=> {
+      state.user = action.payload;
+    }
+  }
+});
+
+export const { SetUser } = usersSlice.actions;
+export default usersSlice.reducer;
+```
+storeにusers: usersSliceを追加する
+```js
+// redux/store.js
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import alertsSlice from './alertsSlice';
+import usersSlice from './usersSlice'; // added
+
+const rootReducer = combineReducers({
+  alerts: alertsSlice,
+  users: usersSlice,  //added
+});
+
+const store = configureStore({
+  reducer: rootReducer
+});
+
+export default store;
+```
+
+ProtectedRoute.jsにSetUserアクションを実装する
+```js
+// src/components/ProtectedRoute.js
+import axios from 'axios'
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'; // added
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { SetUser } from '../redux/usersSlice';  // added
+
+function ProtectedRoute({children}) {
+  const dispatch = useDispatch()   // added
+  const [loading, setLoading] = useState(true)
+  const validateToken= async()=> {
+    try {
+      const response = await axios.post('/api/users/get-user-by-id', {},{
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      if(response.data.success){
+        setLoading(false)
+        dispatch(SetUser(response.data.data))   // added
+      }else {
+        setLoading(false)
+        localStorage.removeItem('token')
+        toast.error(response.data.error)
+        navigate('/login')
+      }
+    } catch (error) {
+      setLoading(false)
+      localStorage.removeItem('token')
+      toast.error(error.message)
+      navigate('/login')
+    }
+  }
+  const navigate = useNavigate()
+  useEffect(()=> {
+    if (localStorage.getItem('token')) {
+      validateToken()
+    } else {
+      navigate('login')
+    }
+  })
+
+  return (
+    <div>
+      {loading ? <div>...Loading</div> : <>{children}</> }
+    </div>
+  )
+}
+export default ProtectedRoute
+```
+Homeページにログインしたユーザを表示する
+```js
+import React from 'react'
+import { useSelector } from 'react-redux'
+
+function Home() {
+  const {user} = useSelector(state => state.users)
+  console.log('user:', user)
+  return (
+    // <div>home</div>
+    <div>
+      {user && <h1>Welcome {user?.name}</h1>}
+    </div>
+  )
+}
+
+export default Home
+```
+
 
 ```js
 
 ```
-
-```js
-
-```
-
 
 ### Add Transaction UI
 Homeページにフォーム入力用のモーダルを作成する

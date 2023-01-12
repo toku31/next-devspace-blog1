@@ -22,15 +22,19 @@ $ python3 -m venv myvenv
 ```
 
 ```python
+user@mbp Django % django-admin startproject Django_fantom_blog
+# プロジェクト名にハイフンを使ってはいかない　アンダースコアならOK
+user@mbp Django % cd Django_fantom_blog
 user@mbp Django-tutorial-blog  % python3 -m venv venv
 user@mbp Django-tutorial-blog % source venv/bin/activate
 (venv) user@mbp Django-tutorial-blog % pip install Django
 (venv) user@mbp Django-tutorial-blog %code .
 (venv) user@mbp Django-tutorial-blog % pip freeze
-asgiref==3.5.2
-Django==4.1.4
+asgiref==3.6.0
+Django==4.1.5
 sqlparse==0.4.3
-(venv) user@mbp Django-tutorial-blog % django-admin startproject blog .
+(venv) user@mbp Django-tutorial-blog % django-admin startproject Django_fantom_blog .
+# プロジェクト名にハイフンを使ってはいかない　アンダースコアならOK
 (venv) user@mbp Django-tutorial-blog % python manage.py runserver
 user@mbp Django-tutorial-blog % git init
 ```
