@@ -220,6 +220,151 @@ console.log(Grade.A) // 5
 #### 4 Typescript Functions
 https://www.youtube.com/watch?v=s7kyOtFF120  
 https://github.com/gitdagray/typescript-course  
+https://github.com/gitdagray/typescript-course/tree/main/lesson04  
+~~~js
+// Type Aliases 
+type stringOrNumber = string | number
+
+type stringOrNumberArray = (string | number)[]
+
+type Guitarist = {
+    name?: string,
+    active: boolean,
+    albums: stringOrNumberArray
+}
+
+type UserId = stringOrNumber
+
+// Literal types
+let myName: 'Dave'
+
+let userName: 'Dave' | 'John' | 'Amy'
+userName = 'Amy'
+
+// functions 
+const add = (a: number, b: number): number => {
+    return a + b
+}
+
+const logMsg = (message: any): void => {
+    console.log(message)
+}
+
+logMsg('Hello!')
+logMsg(add(2, 3))
+
+let subtract = function (c: number, d: number): number {
+    return c - d
+}
+
+type mathFunction = (a: number, b: number) => number
+// interface mathFunction {
+//     (a: number, b: number): number
+// }
+
+let multiply: mathFunction = function (c, d) {
+    return c * d
+}
+
+logMsg(multiply(2, 2))
+
+// optional parameters 
+const addAll = (a: number, b: number, c?: number): number => {
+    if (typeof c !== 'undefined') {
+        return a + b + c
+    }
+    return a + b
+}
+
+// default param value
+const sumAll = (a: number = 10, b: number, c: number = 2): number => {
+    return a + b + c
+}
+
+logMsg(addAll(2, 3, 2))
+logMsg(addAll(2, 3))
+logMsg(sumAll(2, 3))
+logMsg(sumAll(undefined, 3))
+
+// Rest Parameters 
+const total = (a: number, ...nums: number[]): number => {
+    return a + nums.reduce((prev, curr) => prev + curr)
+}
+
+logMsg(total(10, 2, 3))
+
+const createError = (errMsg: string): never => {
+    throw new Error(errMsg)
+}
+
+const infinite = () => {
+    let i: number = 1
+    while (true) {
+        i++
+        if (i > 100) break
+    }
+}
+
+// custom type guard 
+const isNumber = (value: any): boolean => {
+    return typeof value === 'number'
+        ? true : false
+}
+
+// use of the never type 
+const numberOrString = (value: number | string): string => {
+    if (typeof value === 'string') return 'string'
+    if (isNumber(value)) return 'number'
+    return createError('This should never happen!')
+}
+~~~
+#### Typescript Classes 
+(from udemy) 45 Modifiers: public, private, protected  
+46 Fields
+~~~js
+class Employee {
+  age: number＝41;
+
+  protected endshift(): void {
+    console.log('Shift has been ended')
+  }
+}
+const emoloyee = new Employee();
+console.log(employee.age)  // 41
+~~~
+コンストラクタを使ってageを初期化する
+~~~js
+class Employee {
+  age: number;
+  constructor(age:number){
+    this.age = age;
+  }
+
+  protected endshift(): void {
+    console.log('Shift has been ended')
+  }
+}
+const emoloyee = new Employee(29);
+console.log(employee.age) // 29
+~~~
+
+modifierはメソッドだけでなくフィールドなどにも使える
+~~~js
+class Employee {
+  constructor(public age:number){}  // public追加
+
+  protected endshift(): void {
+    console.log('Shift has been ended')
+  }
+}
+const emoloyee = new Employee(29);
+console.log(employee.age) // 29
+~~~
+
+~~~js
+
+~~~
+
 ~~~js
 
 ~~~
