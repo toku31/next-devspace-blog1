@@ -921,17 +921,14 @@ function Login() {
       const response = await axios.post('/api/users/login', values)
       if(response.data.success){
         console.log("Login user successfully:", response.data) ;
-        toast.success(response.data.message, {theme: "colored"})
+        // toast.success(response.data.message, {theme: "colored"})
         localStorage.setItem("token", response.data.data)
-        // setLoading(false)
         navigate('/');
       } else {
         console.log("Login error:", response.data) ;
         toast.error(response.data.message, {theme: "colored"})
-        // setLoading(false)
       }
     } catch (error) {
-      // setLoading(false)
       toast.error('ログインに失敗しました', {theme: "colored"})
       throw new Error(`Something went wrong! ${error.message}`);
     }
@@ -1059,7 +1056,7 @@ function App() {
 export default App;
 ```
 ProtectedRoute.jsを編集する  
-認証できる人のみホームページに行けなくする　認証エラーの場合はログインページへ促す
+認証した人のみホームページに行けるようにする　認証エラーの場合はログインページへ促す
 ```js
 // src/components/ProtectedRoute.js
 import axios from 'axios'
@@ -1368,11 +1365,223 @@ function Home() {
 
 export default Home
 ```
+### Spinner コンポーネント
+Bootstrap Spinner:https://getbootstrap.jp/docs/5.0/components/spinners/
+```js
+<div class="spinner-border" role="status">
+  <span class="visually-hidden">Loading...</span>
+</div>
+```
+上のBootstrapを参照してLoader.jsコンポーネントを作成する
+```js
+//src/components/Loader.js
+import React from 'react'
 
+function Loader() {
+  return (
+    <div className='spinner-parent'>
+      <div class="spinner-border" role="status">
+      </div>
+    </div>
+  )
+}
+
+export default Loader
+```
+仮にApp.jsの先頭にLoaderコンポーネントを実装する
+```js
+// App.js
+function App() {
+  return (
+    <div>
+      <Loader />  // added
+      <Router>
+      </Router>
+      <ToastContainer
+        position="top-center"
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+global.cssにSpinnerのCssを追加する
+```js
+// resources/global.css
+/* Spinner / Loader */
+.spinner-parent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0,0,0,0.507);
+  z-index: 1000
+}
+.spinner-border {
+  color: white;
+  height: 80px;
+  width: 80px;
+}
+```
+useSelectorを使ってloadingの値をFetchする
+```js
+import Loader from './components/Loader';
+import { useSelector } from 'react-redux';
+
+function App() {
+  const {loading} = useSelector(state => state.alerts) // added
+
+  return (
+    <div>
+      {loading && <Loader />} // Changed
+       <Router>
+      </Router>
+      <ToastContainer
+        position="top-center"
+      />
+    </div>
+  );
+}
+
+export default App;
+
+```
+ProtectedRouteにuseSelectorでstoreのloadingの値をとってきた後にHideloading, Showloadingを適用する  
+useSelector(state=>state.alerts)のalertsはredux/storeのrootReducer内にある{alerts: alertsSlice,...} を指している  
+useEffect(()=> { }, [])の最後の [] を忘れないようにする
+```js
+// src/components/ProtectedRouter.js
+import axios from 'axios'
+import { useEffect} from 'react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux'; 
+import { SetUser } from '../redux/usersSlice';
+import { HideLoading, ShowLoading } from '../redux/alertsSlice'; // added
+
+function ProtectedRoute({children}) {
+  const dispatch = useDispatch()  
+  // const [loading, setLoading] = useState(true)
+  const {loading} = useSelector(state=>state.alerts) // added
+  const validateToken= async()=> {
+    try {
+      dispatch(ShowLoading()) // added
+      const response = await axios.post('/api/users/get-user-by-id', {},{
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      if(response.data.success){
+        console.log('data success')
+        dispatch(HideLoading())   // setLoading(false)
+        dispatch(SetUser(response.data.data))  
+      }else {
+        dispatch(HideLoading())  // setLoading(false)
+        localStorage.removeItem('token')
+        toast.error(response.data.error)
+        navigate('/login')
+      }
+    } catch (error) {
+      dispatch(HideLoading())  // setLoading(false)
+      localStorage.removeItem('token')
+      toast.error(error.message)
+      navigate('/login')
+    }
+  }
+  const navigate = useNavigate()
+  useEffect(()=> {
+    if (localStorage.getItem('token')) {
+      validateToken()
+    } else {
+      navigate('login')
+    }
+  }, [])
+
+  return (
+    <div>
+      {loading ? <div>...Loading</div> : <>{children}</> }
+    </div>
+  )
+}
+export default ProtectedRoute
+```
+pages/Login.jsとRegister.sjもuseDispatchを使ってShowLoadingとHideLoadingを設定する
+```js
+// src/pages/Login.js
+import {Link, useNavigate} from 'react-router-dom'
+import '../resources/auth.css'
+import {useState} from 'react'
+import axios from 'axios'
+import { toast } from 'react-toastify'
+import { useDispatch } from 'react-redux'
+import { HideLoading, ShowLoading } from '../redux/alertsSlice' // added
+
+function Login() {
+  const dispatch = useDispatch() // added
+  const navigate = useNavigate()
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+
+  const {name, email, password} = formData
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async(e) => {
+    e.preventDefault()
+    const values ={
+      name: name,
+      email: email,
+      password: password
+    }
+    console.log(values)
+    try {
+      dispatch(ShowLoading()) // setLoading(false)
+      const response = await axios.post('/api/users/login', values)
+      if(response.data.success){
+        console.log("Login user successfully:", response.data) ;
+        // toast.success(response.data.message, {theme: "colored"})
+        localStorage.setItem("token", response.data.data)
+        navigate('/');
+      } else {
+        dispatch(HideLoading())  // setLoading(false)
+        console.log("Login error:", response.data) ;
+        toast.error(response.data.message, {theme: "colored"})
+      }
+    } catch (error) {
+      dispatch(HideLoading()) // setLoading(false)
+      toast.error('ログインに失敗しました', {theme: "colored"})
+      throw new Error(`Something went wrong! ${error.message}`);
+    }
+  };
+
+  return (
+```
 
 ```js
 
 ```
+
+```js
+
+```
+
+```js
+
+```
+
+
 
 ### Add Transaction UI
 Homeページにフォーム入力用のモーダルを作成する
