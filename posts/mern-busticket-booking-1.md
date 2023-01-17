@@ -1568,1030 +1568,185 @@ function Login() {
 
   return (
 ```
-
+#### 画面のLayoutを作成する
+user用とadmin用で別々の画面を作成する  
+左側にサイドバーを設定する  
+pagesフォルダの直下にadminフォルダを作成しその中にAdminUsers.js AdminHome.js, AdminUsers.js を作成する
 ```js
-
-```
-
-```js
-
-```
-
-```js
-
-```
-
-
-
-### Add Transaction UI
-Homeページにフォーム入力用のモーダルを作成する
-```js
-// /src/pages/Home.jsx
-import {useState} from 'react'
-import Layout from '../components/Layout'
-import '../resources/transaction.css'
-import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
-import Form from 'react-bootstrap/Form';
-import axios from 'axios'
-import { toast } from 'react-toastify'
-import Spinner from '../components/Spinner'
-
-function Home() {
-  const [showAddEditTransactionModal, setShowAddEditTransactionModal] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    amount: "",
-    type: "",
-    category: "",
-    date: "",
-    reference: "",
-    description: "",
-  })
-  // const navigate = useNavigate()
-  const {amount, type, category, date, reference, description} = formData
-
-  const handleChange=(e)=> {
-    setFormData((prevState)=> ({
-      ...prevState,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
-  const handleSubmit=async (e)=> {
-    e.preventDefault()
-    setLoading(true)
-    const values ={
-      amount: amount,
-      type: type,
-      category: category,
-      date: date,
-      reference: reference,
-      description: description,
-    }
-    console.log(values)
-
-    setFormData({
-      amount: "",
-      type: "",
-      category: "",
-      date: "",
-      reference: "",
-      description: "",
-    })
-  }
-
-  return (
-    <Layout>
-      <div className="filter d-flex justify-content-between align-item-center">
-        <div>
-
-        </div>
-        <div>
-          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>ADD NEW</button>
-        </div>
-
-      </div>
-      <div className="table-analytics">
-
-      </div>
-
-      <Modal show={showAddEditTransactionModal} onHide={()=>setShowAddEditTransactionModal(false)}>
-      <Modal.Header closeButton >
-        <Modal.Title>Add Transaction</Modal.Title>
-      </Modal.Header>
-
-      <Modal.Body>
-        <div>
-          <Form className='transaction-form' onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="amount">
-              <Form.Label>Amount</Form.Label>
-              <Form.Control type="text" placeholder="" value={amount} onChange={handleChange} name="amount"/>
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="type">
-              <Form.Label>Type</Form.Label>
-              <Form.Select id="type" name="type" onChange={handleChange}>
-              <option value=''></option>
-              <option value='income'>Income</option>
-              <option value='expense'>Expense</option>
-            </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="category">
-              <Form.Label>Category</Form.Label>
-              <Form.Select id="category" name="category" onChange={handleChange}>
-              <option value=''></option>
-              <option value='salary'>Salary</option>
-              <option value='food'>Food</option>
-              <option value='entertainment'>Entertainment</option>
-              <option value='learning'>Learning</option>
-              <option value='medical'>Medical</option>
-              <option value='tax'>Tax</option>
-            </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="date">
-              <Form.Label>Date</Form.Label>
-              <Form.Control type="date" placeholder="" value={date} name="date" onChange={handleChange}/>
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="reference">
-              <Form.Label>Reference</Form.Label>
-              <Form.Control type="text" placeholder="" name="reference" value={reference} onChange={handleChange}/>
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="description">
-              <Form.Label>Description</Form.Label>
-              <Form.Control type="text" name="description" placeholder="" value={description} onChange={handleChange}/>
-            </Form.Group>
-
-            <Form.Group className="mb-3 d-flex justify-content-end" controlId="description">
-            <Button className="primary" type="submit">SAVE</Button>
-            </Form.Group>
-          </Form>
-        </div>
-      </Modal.Body>
-    </Modal>
-
-    </Layout>
-  )
-}
-
-export default Home
-```
-
-```js
-// resource/transaction.css
-.filter {
-  box-shadow: 0 0 3px gray;
-  padding: 15px 20px;
-  border-radius: 10px;
-}
-
-.transaction-form label{
-  color: rgba(0, 0, 0, 0.77)!important;
-}
-```
-### Add Transaction API
-モデルの作成
-```js
-// models/Transaction.js
-const mongoose = require('mongoose')
-
-const transactionSchema = mongoose.Schema(
-  {
-    amount: {
-      type: Number,
-      required: true
-    },
-    type: {
-      type: String,
-      required: true
-    },
-    category: {
-      type: String,
-      required: true
-    },
-    reference: {
-      type: String,
-      required: true
-    },
-    description: {
-      type: String,
-      required: true
-    },
-    date: {
-      type: String,
-      required: true
-    },
-  },
-)
-
-module.exports = mongoose.model('Transaction', transactionSchema)
-```
-ルータの作成
-```js
-// routes/transactionsRoute.jsx
-const express = require('express')
-const router = express.Router()
-const Transaction = require('../models/transaction')
-
-router.post('/add-transaction', async function(req, res){
-  try {
-    const newTransaction = new Transaction(req.body);
-    const transaction = await newTransaction.save()
-    res.status(200).json(transaction)
-    // res.send('User Registered Successfully')
-  } catch (error) {
-    res.status(500).json(error)
-  }
-})
-
-router.get('/get-all-transactions', async(req, res) =>{
-  try {
-    const transactions = await Transaction.find({});
-    res.status(200).json(transactions)
-  } catch (error) {
-    res.status(500).json(error)
-  }
-})
-
-module.exports = router
-```
-エンドポイントの追加
-```js
-// server.js
-const express = require('express')
-const dbconnect = require('./dbConnect')
-const dotenv = require("dotenv").config()
-const port = process.env.PORT || 5000;
-const app = express();
-app.use(express.json())
-const userRoute = require('./routes/userRoute')
-const transactionRoute = require('./routes/transactionsRoute')
-
-app.use('/api/users/', userRoute)
-app.use('/api/transactions/', transactionRoute) // added
-
-// app.get('/', (req, res) => res.send('Hello World'))
-app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
-```
-Home.jsで作成したモーダルの部分を切り取って別のコンポーネントを作成する
-```js
-// src¥components/AddEditTransaction.js
-import {useState} from 'react'
-import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
-import Form from 'react-bootstrap/Form';
-import axios from 'axios'
-import { toast } from 'react-toastify'
-import Spinner from '../components/Spinner'
-
-function AddEditTransaction(props) {
-  const {showAddEditTransactionModal, setShowAddEditTransactionModal} = props
-
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    amount: "",
-    type: "",
-    category: "",
-    date: "",
-    reference: "",
-    description: "",
-  })
-  // const navigate = useNavigate()
-  const {amount, type, category, date, reference, description} = formData
-
-  const handleChange=(e)=> {
-    setFormData((prevState)=> ({
-      ...prevState,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
-  const handleSubmit=async (e)=> {
-    e.preventDefault()
-    setLoading(true)
-    const values ={
-      amount: amount,
-      type: type,
-      category: category,
-      date: date,
-      reference: reference,
-      description: description,
-    }
-    console.log(values)
-
-    try {
-      const user = JSON.parse(localStorage.getItem('expense-tracker-user'))
-      setLoading(true)
-      const response = await axios.post('/api/transactions/add-transaction', {...values, userid: user._id})
-      console.log("transaction added successfully:", response.data) ;
-      setShowAddEditTransactionModal(false)
-      toast.success("transaction added successfully", {theme: "colored"})
-      setLoading(false)
-    } catch (error) {
-      setLoading(false)
-      toast.error('transaction failed', {theme: "colored"})
-      // throw new Error(`Something went wrong! ${error.message}`);
-    }
-
-    setFormData({
-      amount: "",
-      type: "",
-      category: "",
-      date: "",
-      reference: "",
-      description: "",
-    })
-  }
-
-  if (loading){
-    return <Spinner />
-  }
-
-  return (
-    <Modal show={showAddEditTransactionModal} onHide={()=>setShowAddEditTransactionModal(false)}>
-    <Modal.Header closeButton >
-      <Modal.Title>Add Transaction</Modal.Title>
-    </Modal.Header>
-
-    <Modal.Body>
-      <div>
-        <Form className='transaction-form' onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" controlId="amount">
-            <Form.Label>Amount</Form.Label>
-            <Form.Control type="text" placeholder="" value={amount} onChange={handleChange} name="amount"/>
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="type">
-            <Form.Label>Type</Form.Label>
-            <Form.Select id="type" name="type" onChange={handleChange}>
-            <option value=''></option>
-            <option value='income'>Income</option>
-            <option value='expense'>Expense</option>
-          </Form.Select>
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="category">
-            <Form.Label>Category</Form.Label>
-            <Form.Select id="category" name="category" onChange={handleChange}>
-            <option value=''></option>
-            <option value='salary'>Salary</option>
-            <option value='food'>Food</option>
-            <option value='entertainment'>Entertainment</option>
-            <option value='learning'>Learning</option>
-            <option value='medical'>Medical</option>
-            <option value='tax'>Tax</option>
-          </Form.Select>
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="date">
-            <Form.Label>Date</Form.Label>
-            <Form.Control type="date" placeholder="" value={date} name="date" onChange={handleChange}/>
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="reference">
-            <Form.Label>Reference</Form.Label>
-            <Form.Control type="text" placeholder="" name="reference" value={reference} onChange={handleChange}/>
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="description">
-            <Form.Label>Description</Form.Label>
-            <Form.Control type="text" name="description" placeholder="" value={description} onChange={handleChange}/>
-          </Form.Group>
-
-          <Form.Group className="mb-3 d-flex justify-content-end" controlId="description">
-          <Button className="primary" type="submit">SAVE</Button>
-          </Form.Group>
-        </Form>
-      </div>
-    </Modal.Body>
-  </Modal>
-  )
-}
-
-export default AddEditTransaction
-```
-### Display Transactions in Table
-```js
-// /pages/Home.jsx
-import {useState, useEffect} from 'react'
-import AddEditTransaction from '../components/AddEditTransaction'
-import Layout from '../components/Layout'
-import '../resources/transaction.css'
-import axios from 'axios'
-import Spinner from '../components/Spinner'
-import { toast } from 'react-toastify'
-import TransactionsTable from '../components/TransactionsTable'
-
-function Home() {
-  const [showAddEditTransactionModal, setShowAddEditTransactionModal] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [transactionsData, setTransactionsData] = useState([])
-
-  const getTransactions = async ()=> {
-    setLoading(true)
-    try {
-      const user = JSON.parse(localStorage.getItem('expense-tracker-user'))
-      console.log('user', user)
-      console.log('user._id', user._id)
-      // const response = await axios.get('/api/transactions/get-all-transactions')
-      // const response = await axios.get('/api/transactions/get-all-transactions', {params: {userid: user._id}})
-     const response = await axios.post(
-      '/api/transactions/get-all-transactions',
-      {userid: user._id},
-     )
-      console.log('get-all-transactions', response.data) ;
-      setTransactionsData(response.data)
-      setLoading(false)
-    } catch (error) {
-      setLoading(false)
-      toast.error('Something went wrong!', {theme: "colored"})
-    }
-  }
-
-  useEffect(() => {
-    getTransactions()
-  }, [])
-
-  if (loading){
-    return <Spinner />
-  }
-
-  return (
-    <Layout>
-      <div className="filter d-flex justify-content-between align-item-center">
-        <div>
-
-        </div>
-        <div>
-          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>ADD NEW</button>
-        </div>
-
-      </div>
-      <div className="table-analytics">
-        <TransactionsTable  transactionsData={transactionsData} />
-      </div>
-
-      {showAddEditTransactionModal && (
-    <AddEditTransaction 
-      showAddEditTransactionModal={showAddEditTransactionModal} setShowAddEditTransactionModal = {setShowAddEditTransactionModal}
-      getTransactions = {getTransactions}
-    /> )}
-
-    </Layout>
-  )
-}
-
-export default Home
-```
-
-```js
-// src/components/TransactionTable.js
+// pages/admin/AdminBuses.js
 import React from 'react'
-import { Button, Table } from 'react-bootstrap';
-import moment from 'moment';
 
-function TransactionsTable({transactionsData}) {
+function  AdminBuses() {
+  return (
+    <div> AdminBuses</div>
+  )
+}
+
+export default  AdminBuses
+```
+componentsフォルダの直下にDefaultLayout.jsを作成する
+```js
+// src/components/DefaultLayout.js
+import React from 'react'
+
+function DefaultLayout({children}) {
   return (
     <div>
-        <Table hover striped bordered>
-          <thead>
-              <tr>
-                  <th>日付</th>
-                  <th>金額</th>
-                  <th>カテゴリー</th>
-                  <th>詳細</th>
-                  <th>備考</th>
-              </tr>
-          </thead>
-          <tbody>
-              {transactionsData.map((transaction) => 
-                  <tr key={transaction._id}>
-                      <td>{moment(transaction.date).format('YYYY-MM-DD')}</td>
-                      <td>{transaction.amount}</td>
-                      <td>{transaction.category}</td>
-                      <td>{transaction.reference}</td>
-                      <td>{transaction.description}</td>
-                      <td>
-                          <Button variant="outline-secondary">編集</Button>
-                          <Button variant="outline-danger">削除</Button>
-                      </td>
-                  </tr>
-              )}
-          </tbody>
-        </Table>
+      <h1>Header</h1>
+      {children}
     </div>
   )
 }
 
-export default TransactionsTable
+export default DefaultLayout
 ```
-
-### Date Filters 
-JavaScriptの日付操作用ライブラリmomentの利用  
-npm install moment --save
+DefaultLayoutをProtectedRoute.jsに実装する
 ```js
-  <tr key={transaction._id}>
-      <td>{moment(transaction.date).format('YYYY-MM-DD')}</td>
-```
-
-```js
-// /pages/Home.jsx
-import {useState, useEffect} from 'react'
-import AddEditTransaction from '../components/AddEditTransaction'
-import Layout from '../components/Layout'
-import '../resources/transaction.css'
+// src/components/ProtectedRoute.js
 import axios from 'axios'
-import Spinner from '../components/Spinner'
-import { toast } from 'react-toastify'
-import TransactionsTable from '../components/TransactionsTable'
-import Form from 'react-bootstrap/Form';
+import { useEffect} from 'react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux'; 
+import { SetUser } from '../redux/usersSlice';
+import { HideLoading, ShowLoading } from '../redux/alertsSlice';
+import DefaultLayout from './DefaultLayout';  // added
 
-function Home() {
-  const [showAddEditTransactionModal, setShowAddEditTransactionModal] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [transactionsData, setTransactionsData] = useState([])
-  const [frequency, setFrequency] = useState('7')
-
-
-  const getTransactions = async ()=> {
-    setLoading(true)
-    try {
-      const user = JSON.parse(localStorage.getItem('expense-tracker-user'))
-      console.log('user', user)
-      console.log('user._id', user._id)
-      // const response = await axios.get('/api/transactions/get-all-transactions')
-      // const response = await axios.get('/api/transactions/get-all-transactions', {params: {userid: user._id}})
-     const response = await axios.post(
-      '/api/transactions/get-all-transactions',
-      {userid: user._id, frequency},
-     )
-      console.log('get-all-transactions', response.data) ;
-      setTransactionsData(response.data)
-      setLoading(false)
-    } catch (error) {
-      setLoading(false)
-      toast.error('Something went wrong!', {theme: "colored"})
-    }
-  }
-
-  useEffect(() => {
-    getTransactions()
-  }, [frequency])
-
-  if (loading){
-    return <Spinner />
-  }
+function ProtectedRoute({children}) {
+  const dispatch = useDispatch()  
+  // const [loading, setLoading] = useState(true)
+  const {loading} = useSelector(state=>state.alerts)
+  const validateToken= async()=> {...}
+ 
+  const navigate = useNavigate()
+  useEffect(()=> {
+  }, [])
 
   return (
-    <Layout>
-      <div className="filter d-flex justify-content-between align-item-center">
-        <div>
-          <div className="d-flex flex flex-column">
-          <Form.Group className="mb-1" controlId="frequency">
-            <Form.Label className='text-secondary fs-5'>Select Frequency</Form.Label>
-            <Form.Select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-              <option value='7'>Last 1 Week</option>
-              <option value='30'>Last 1 Month</option>
-              <option value='365'>Last 1 Year</option>
-              <option value='custom'>Last 1 Year</option>
-            </Form.Select>
-          </Form.Group>
-          </div>
-        </div>
-        <div>
-          <button className='primary' onClick={()=>setShowAddEditTransactionModal(true)}>ADD NEW</button>
-        </div>
-
-      </div>
-      <div className="table-analytics">
-        <TransactionsTable  transactionsData={transactionsData} />
-      </div>
-
-      {showAddEditTransactionModal && (
-    <AddEditTransaction 
-      showAddEditTransactionModal={showAddEditTransactionModal} setShowAddEditTransactionModal = {setShowAddEditTransactionModal}
-      getTransactions = {getTransactions}
-    /> )}
-
-    </Layout>
-  )
-}
-
-export default Home
-```
-
-```js
-// transactionRoute.js
-const express = require('express')
-const router = express.Router()
-const Transaction = require('../models/transaction')
-const moment = require('moment')
-
-router.post('/add-transaction', async function(req, res){
-  try {
-    const newTransaction = new Transaction(req.body);
-    const transaction = await newTransaction.save()
-    res.status(200).json(transaction)
-    // res.send('User Registered Successfully')
-  } catch (error) {
-    res.status(500).json(error)
-  }
-})
-
-router.post('/get-all-transactions', async(req, res) =>{
-  // console.log('req', req)
-  console.log('req.body', req.body)
-  // console.log('user._id', user._id)
-  now = moment()
-  // console.log('moment', now.format() )
-  try {
-    const transactions = await Transaction.find({
-      date: {
-        // $gt : moment('2022-11-12').toDate,
-        // $gt : '2022-11-12'
-        // $gt : '2022-11-01T00:00:00.000Z'
-        // $gt : '2022-11-01T00:00:00.000Z'
-        // $gt : moment().subtract(7, 'd').toDate()
-        $gt : moment().subtract(Number(req.body.frequency), 'd').toDate()
-      },
-      userid: req.body.userid
-    });
-    // const transactions = await Transaction.find({userid: "63==================a"});
-    // const transactions = await Transaction.find({});
-
-    res.status(200).json(transactions)
-  } catch (error) {
-    res.status(500).json(error)
-  }
-})
-
-module.exports = router
-```
-
-
-カレンダー機能
-https://hypeserver.github.io/react-date-range/
-https://www.npmjs.com/package/react-date-range
-```js
-user@mbp client % npm install react-date-range@latest　
-npm install --save react date-fns
-```
-```js
-// src/route/transactionRoute.js
-router.post('/get-all-transactions', async(req, res) =>{
-  
-  console.log('req.body', req.body)
-  const { frequency, userid, date } = req.body
-  // console.log('user._id', user._id)
-  now = moment()
-  // console.log('moment', now.format() )
-  try {
-    const transactions = await Transaction.find({
-      // date: {
-      //   $gt : moment().subtract(Number(req.body.frequency), 'd').toDate()
-
-        // $gt : moment('2022-11-12').toDate,
-        // $gt : '2022-11-12'
-        // $gt : '2022-11-01T00:00:00.000Z'
-        // $gt : '2022-11-01T00:00:00.000Z'
-        // $gt : moment().subtract(7, 'd').toDate()
-
-        ...(frequency !== 'custom' ? { 
-          date: {
-            $gt : moment().subtract(Number(frequency), 'd').toDate(),
-          },
-        } : {
-          date: {
-            $gte : date.startDate,
-            $lte : date.endDate
-          }
-        }),
-      userid: req.body.userid
-    });
-    // const transactions = await Transaction.find({userid: "6370aa95898cac633d2e8e0a"});
-    // const transactions = await Transaction.find({});
-
-    res.status(200).json(transactions)
-  } catch (error) {
-    res.status(500).json(error)
-  }
-})
-```
-```js
-// src/route/transactionRoute.js
-const express = require('express')
-const router = express.Router()
-const Transaction = require('../models/transaction')
-const moment = require('moment')
-
-router.post('/add-transaction', async function(req, res){
-  try {
-    const newTransaction = new Transaction(req.body);
-    const transaction = await newTransaction.save()
-    res.status(200).json(transaction)
-    // res.send('User Registered Successfully')
-  } catch (error) {
-    res.status(500).json(error)
-  }
-})
-
-router.post('/get-all-transactions', async(req, res) =>{
-  
-  console.log('req.body::', req.body)
-  const { frequency, userid, dateRange } = req.body
-  // console.log('user._id', user._id)
-  now = moment()
-  // console.log('moment', now.format() )
-  try {
-    const transactions = await Transaction.find({
-      ...(frequency !== 'custom' ? { 
-          date: {
-            $gt : moment().subtract(Number(frequency), 'd').toDate(),
-          },
-        } : {
-          date: {
-            $gte : dateRange.startDate,
-            $lte : dateRange.endDate,
-          }
-        }),
-      userid: userid
-    });
-
-    res.status(200).json(transactions)
-  } catch (error) {
-    res.status(500).json(error)
-  }
-})
-
-module.exports = router
-```
-
-```js
-// Home.js
-        <div>
-          <div className="d-flex flex flex-column">
-            {/* <h6>Select Frequency</h6> */}
-            {/* <select value={frequency} onChange={(value)=>setFrequency(value)}  class="form-select" aria-label="Default select example">
-              <option value="7">Last 1 Week</option>
-              <option value="30">Last 1 Month</option>
-              <option value="365">Last 1 Year</option>
-            </select> */}
-
-          <Form.Group className="mb-3" controlId="frequency">
-            <Form.Label className='text-secondary fs-5'>Select Frequency</Form.Label>
-            <Form.Select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-              <option value='7'>Last 1 Week</option>
-              <option value='30'>Last 1 Month</option>
-              <option value='365'>Last 1 Year</option>
-              <option value='custom'>Custom</option>
-            </Form.Select>
-            {/* https://hypeserver.github.io/react-date-range/ */}
-
-
-            {/* {frequency === 'custom' && (
-            <span onClick={()=>setOpenDate(!openDate)} 
-            className='headerSearchText'>{`${format(date[0].startDate, "M月dd日(ccc)")} -- ${format(date[0].endDate, "M月dd日(ccc)")}`}</span>
-            )} */}
-
-            {frequency === 'custom' && (
-              <div className="mt-2">
-                <DateRange
-                  editableDateInputs={true}
-                  onChange={item => setDate([item.selection])}
-                  // onChange={() => setDate(date)}
-                  moveRangeOnFirstSelection={false}
-                  ranges={date}
-                  className="date"
-                  // minDate={new Date()} 
-                  locale={ja} // 言語設定
-                />
-              </div>
-            )}
-          </Form.Group>
-         
-          </div>
-        </div>
-```
-#### react-icons
-```js
-$ npm install react-icons --save
-AiOutlineUnorderedList
-import { FaGithub } from "react-icons/fa"
-```
-#### React Circular Progressbar  
-https://www.npmjs.com/package/react-circular-progressbar
-```js
-npm install --save react-circular-progressbar
-import { CircularProgressbar } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
-```
-Total Transactionの編集
-```js
-import React from 'react'
-import  '../resources/analytics.css'
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
-
-function Analytics({transactions}) {
-  const totalTransactions = transactions.length
-  console.log(totalTransactions);
-  console.log(transactions);
-  
-  const totalIncomeTransactions = transactions.filter(transaction => transaction.type==='income')
-  console.log('total', totalIncomeTransactions.length);
-
-  const totalExpenseTransactions = transactions.filter(transaction => transaction.type==='expense')
-  console.log(totalExpenseTransactions);
-  const totalIncomeTransactionsPercentage = (totalIncomeTransactions.length/totalTransactions) * 100
-  const totalExpenseTransactionsPercentage = (totalExpenseTransactions.length/totalTransactions) * 100
-  
-  return (
-    <div className='analytics'>
-      <div className="row">
-          <div className="col-lg-4 col-md-6">
-            <div className="transactions-count">
-              <h4>Total Transactions  : {totalTransactions}</h4>
-              <hr />
-              <h5>Income: {totalIncomeTransactions.length}</h5> 
-              <h5>Expense: {totalExpenseTransactions.length}</h5>
-              <div className="progress-bars d-flex" style={{ width: 250, height: 125  }}>
-                <CircularProgressbar
-                  className='mx-1'
-                  value={totalIncomeTransactionsPercentage} 
-                  text={`${totalIncomeTransactionsPercentage.toFixed(0)}%`} 
-                  styles={buildStyles({
-                    pathColor: `rgba(0, 255, 0, ${totalIncomeTransactionsPercentage / 100})`,
-                    textColor: 'gray',
-                    trailColor: '#d6d6d6',
-                    backgroundColor: '#3e98c7'
-                  })}
-                />
-                <CircularProgressbar  
-                  value={totalExpenseTransactionsPercentage} 
-                  text={`${totalExpenseTransactionsPercentage.toFixed(0)}%`} 
-                  styles={buildStyles({
-                    pathColor: `rgba(255, 0, 0, ${totalExpenseTransactionsPercentage / 100})`,
-                    textColor: 'gray',
-                    trailColor: '#d6d6d6',
-                    backgroundColor: '#3e98c7'
-                  })}
-                />
-              </div>
-            </div>
-          </div>
-       </div>
+    <div>
+      { !loading &&  <DefaultLayout>{children}</DefaultLayout> }  // Changed
     </div>
+    // <div>
+    //   {loading ? <div>...Loading</div> : <>{children}</> } 
+    // </div>
   )
 }
 
-export default Analytics
+export default ProtectedRoute
 ```
-Turn overを編集する  
-https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
+App.jsで"/admin", "/admin/users", "/admin/buses"のパスを追加する
 ```js
-const array1 = [1, 2, 3, 4];
+import {BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import './resources/global.css'
+import Register from './pages/ Register';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import PublicRoute from './components/PublicRoute';
+import ProtectedRoute from './components/ProtectedRoute';
+import Loader from './components/Loader';
+import { useSelector } from 'react-redux';
+import AdminHome from './pages/Admin/AdminHome'
+import AdminBuses from './pages/Admin/AdminBuses';
+import AdminUsers from './pages/Admin/AdminUsers';
 
-// 0 + 1 + 2 + 3 + 4
-const initialValue = 0;
-const sumWithInitial = array1.reduce(
-  (accumulator, currentValue) => accumulator + currentValue,
-  initialValue
-);
-
-console.log(sumWithInitial);
-// expected output: 10
-```
-Analytics.js の作成
-```js
-import React from 'react'
-import  '../resources/analytics.css'
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
-import ProgressBar from 'react-bootstrap/ProgressBar';
-
-function Analytics({transactions}) {
-  const totalTransactions = transactions.length
-  // console.log(totalTransactions);
-  // console.log(transactions);
-  
-  const totalIncomeTransactions = transactions.filter(transaction => transaction.type==='income')
-  console.log('total', totalIncomeTransactions.length);
-  // const totalIncomeTransactions = transactions.filer((transaction) => {return transaction.type==='income'})
-  const totalExpenseTransactions = transactions.filter(transaction => transaction.type==='expense')
-  console.log(totalExpenseTransactions);
-  const totalIncomeTransactionsPercentage = (totalIncomeTransactions.length/totalTransactions) * 100
-  const totalExpenseTransactionsPercentage = (totalExpenseTransactions.length/totalTransactions) * 100
-
-  const totalTurnover = transactions.reduce((acc, transaction) => acc + transaction.amount, 0);
-  const totalIncomeTurnover = transactions.filter(transaction=>transaction.type==='income').reduce((acc, transaction) =>  acc + transaction.amount, 0);
-  const totalExpenseTurnover = transactions.filter(transaction=>transaction.type==='expense').reduce((acc, transaction) => acc + transaction.amount, 0);
-  const totalIncomeTurnoverPercentage = (totalIncomeTurnover/totalTurnover) * 100
-  const totalExpenseTurnoverPercentage = (totalExpenseTurnover/totalTurnover) * 100
-
-  const categories = ['salary', 'entertainment', 'food', 'travel', 'investment', 'learning', 'medical', 'tax']
-   // console.log('totalIncomeTurnover：', totalIncomeTurnover);
-  // console.log('totalExpenseTurnover：', totalExpenseTurnover);
+function App() {
+  const {loading} = useSelector(state => state.alerts)
 
   return (
-    <div className='analytics'>
-      <div className="row">
-          <div className="col-lg-4 col-md-6">
-            <div className="transactions-count">
-              <h4>Total Transactions  : {totalTransactions}</h4>
-              <hr />
-              <h5>Income: {totalIncomeTransactions.length}</h5> 
-              <h5>Expense: {totalExpenseTransactions.length}</h5>
-              <div className="progress-bars d-flex" style={{ width: 250, height: 125  }}>
-                <CircularProgressbar
-                  className='mx-1'
-                  value={totalIncomeTransactionsPercentage} 
-                  text={`${totalIncomeTransactionsPercentage.toFixed(0)}%`} 
-                  styles={buildStyles({
-                    pathColor: `rgba(0, 255, 0, ${totalIncomeTransactionsPercentage / 100})`,
-                    textColor: 'gray',
-                    trailColor: '#d6d6d6',
-                    backgroundColor: '#3e98c7'
-                  })}
-                />
-                <CircularProgressbar  
-                  value={totalExpenseTransactionsPercentage} 
-                  text={`${totalExpenseTransactionsPercentage.toFixed(0)}%`} 
-                  styles={buildStyles({
-                    pathColor: `rgba(255, 0, 0, ${totalExpenseTransactionsPercentage / 100})`,
-                    textColor: 'gray',
-                    trailColor: '#d6d6d6',
-                    backgroundColor: '#3e98c7'
-                  })}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="col-lg-4 col-md-6">
-            <div className="transactions-count">
-              <h4>Total Turnover  : {totalTurnover}</h4>
-              <hr />
-              <h5>Income: {totalIncomeTurnover}</h5> 
-              <h5>Expense: {totalExpenseTurnover}</h5>
-              <div className="progress-bars d-flex" style={{ width: 250, height: 125  }}>
-                <CircularProgressbar
-                  className='mx-1'
-                  value={totalIncomeTurnoverPercentage} 
-                  text={`${totalIncomeTurnoverPercentage.toFixed(0)}%`} 
-                  styles={buildStyles({
-                    pathColor: `rgba(0, 255, 0, ${totalIncomeTurnoverPercentage / 100})`,
-                    textColor: 'gray',
-                    trailColor: '#d6d6d6',
-                    backgroundColor: '#3e98c7'
-                  })}
-                />
-                <CircularProgressbar  
-                  value={totalExpenseTurnoverPercentage} 
-                  text={`${totalExpenseTurnoverPercentage.toFixed(0)}%`} 
-                  styles={buildStyles({
-                    pathColor: `rgba(255, 0, 0, ${totalExpenseTurnoverPercentage / 100})`,
-                    textColor: 'gray',
-                    trailColor: '#d6d6d6',
-                    backgroundColor: '#3e98c7'
-                  })}
-                />
-              </div>
-            </div>
-          </div>
+    <div>
+      {loading && <Loader />}
+      <Router>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>}></Route>
+
+          <Route path="/admin" element={<ProtectedRoute><AdminHome /></ProtectedRoute>}></Route> // added
+          <Route path="/admin/buses" element={<ProtectedRoute><AdminBuses /></ProtectedRoute>}></Route> // added
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}></Route> // added
+
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>}  />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>}  />
+        </Routes>
+      </Router>
+      <ToastContainer
+      />
+    </div>
+  );
+}
+```
+以下にアクセスして画面が正しく表示されていることを確認  
+http://localhost:3001/admin  
+http://localhost:3001/admin/buses  
+http://localhost:3001/admin/users  
+###  メニュー画面（サイドバー）
+```js
+// src/components/DefaultLayout.js
+import React from 'react'
+import '../resources/layout.css'
+
+function DefaultLayout({children}) {
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        sidebar
       </div>
-
-      <div className="row mt-4">
-        <div className="col-md-6">
-          <div className="category-analysis">
-            <h4>収入</h4>
-            {categories.map((category)=> {
-              const amount = transactions.filter(t => t.type==='income' && t.category===category).reduce((ac,t)=> ac + t.amount , 0)
-              return (
-                (amount> 0) && <div className='category-card'>
-                <h5>{category}</h5>
-              
-                <ProgressBar now={amount / totalIncomeTurnover * 100} label={`${(amount / totalIncomeTurnover * 100).toFixed(0)}%`} />
-              </div>
-              )
-            })}
-          </div>
+      <div className="body">
+        <div className="header">
+          header
         </div>
-
-        <div className="col-md-6">
-          <div className="category-analysis">
-            <h4>支出</h4>
-            {categories.map((category)=> {
-              const amount = transactions.filter(t => t.type==='expense' && t.category===category).reduce((ac,t)=> ac + t.amount , 0)
-              return (
-                (amount> 0) && <div className='category-card'>
-                <h5>{category}</h5>
-              
-                <ProgressBar now={amount / totalIncomeTurnover * 100} label={`${(amount / totalExpenseTurnover * 100).toFixed(0)}%`} />
-              </div>
-              )
-            })}
-          </div>
-        </div>
+        <div className="content">{children}</div>
       </div>
     </div>
   )
 }
 
-export default Analytics
+export default DefaultLayout
+```
+画面のCSSの編集
+```js
+// resources/layout.css
+.layout-parent{
+  display: flex;
+  height: 100%;
+  width: 100%;
+  padding: 19px;
+  height: 100vh;
+  gap:20px;
+}
+
+.body {
+  width: 100%;;
+}
+
+.header{
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.479);
+  width: 100%;
+  padding: 20px;
+}
+
+.sidebar {
+  width: 300px;
+  background-color: var(--secondary);
+  border-radius: 5px;
+}
+
+.content {
+  padding: 10px;
+}
 ```
 ```js
 
 ```
+```js
 
+```
+```js
 
+```
+```js
 
-
-
-
-
+```
 
 
 
