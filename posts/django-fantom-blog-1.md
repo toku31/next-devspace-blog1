@@ -1282,6 +1282,108 @@ index.htmlに詳細ページリンク先を追記する
   <p>{{ post.content|truncatechars:175  }}</p>
   <div class="date">
 ```
+### 各詳細ページの項目を動的に出力する
+detail.htmの中の全ての 「"img/」を「"{% static "img/」に置換する  
+detail.htmの中の全ての 「.jpg"」を「.jpg" %}"」に置換する  
+detail.htmの中の全ての 「.png"」を「.png" %}"」に置換する  
+ detail.htmlを以下のように{{ single.image.url }},{{single.title}}など編集する
+```html
+ <!-- templates/posts/detail.html -->
+ <!--================Blog Area =================-->
+  <section class="blog_area p_120 single-post-area">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8">
+      <div class="main_blog_details">
+        <img class="img-fluid" src="{{ single.image.url }}" alt="">
+        <a href="#"><h4>{{single.title}}<br /> A Discount Toner</h4></a>
+        <div class="user_details">
+          <div class="float-left">
+            <a href="#">Lifestyle</a>
+            <a href="#">Gadget</a>
+          </div>
+          <div class="float-right">
+            <div class="media">
+              <div class="media-body">
+                <h5>Mark wiens</h5>
+                <p>{{ single.publishing_date }}</p>
+              </div>
+              <div class="d-flex">
+                <img src="{% static "img/blog/user-img.jpg" %}" alt="">
+              </div>
+            </div>
+          </div>
+        </div>
+        <p>{{single.content}}</p>
+```
+### Slug Fieldを使う
+詳細ページのURLにslugを使ってhttp://127.0.0.1:8000/detail/1/titlenameのように指定する　但し日本語のサイトではslugを日本語変換するのが難しいのでuuidを使う  
+idをuuidとした時urls.pyの"path('detail/<<int:pk>>', PostDetail.as_view(), name="detail")"の<<int:pk>> => <<string:pk>> と変更する
+```python
+# posts.models.py
+from django.db import models
+from django.conf import settings
+import uuid
+# from django.template.defaultfilters import slugify
+
+class Post(models.Model):
+  title = models.CharField(verbose_name='タイトル',max_length=150)
+  content = models.TextField(verbose_name='内容')
+  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
+  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  # slug = models.SlugField(default="slug")
+    
+  def __str__(self):
+    return self.title
+  
+  # def save(self):
+  #   self.slugify(self.title)
+  #   super(self).save()
+```
+```python
+(venv) user@mbp Django-fantom-blog % python manage.py makemigrations
+(venv) user@mbp Django-fantom-blog % python manage.py migrate      
+```
+### カテゴリーモデルを作成する
+```python
+# posts/models.py
+from django.db import models
+from django.conf import settings
+import uuid
+# from django.template.defaultfilters import slugify
+
+class Category(models.Model):
+  title= models.CharField(verbose_name='タイトル', max_length=200)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
+  
+  def __str__(self):
+    return self.title
+```
+```python
+(venv) user@mbp Django-fantom-blog % python manage.py makemigrations
+(venv) user@mbp Django-fantom-blog % python manage.py migrate      
+```
+adminパネルにCategoryを表示させるためにadmin.pyを作成する
+```python
+# posts/admin.py
+from django.contrib import admin
+from .models import Post, Category
+
+class AdminPost(admin.ModelAdmin):
+  list_filter = ['publishing_date']
+  list_display = ['title', 'publishing_date']
+  search_fields = ['title', 'content']
+
+  class Meta:
+    model = Post
+    
+admin.site.register(Post, AdminPost)
+admin.site.register(Category)
+```
+
 
 ```python
 
@@ -1290,6 +1392,7 @@ index.htmlに詳細ページリンク先を追記する
 ```python
 
 ```
+
 ```python
 
 ```
