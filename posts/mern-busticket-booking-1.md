@@ -1735,15 +1735,176 @@ export default DefaultLayout
   padding: 10px;
 }
 ```
+defaultLayout.jsのサイドバーの項目を追記する  
+最初はadminMenuから  
+iconはRemix Iconを使う：https://remixicon.com/
 ```js
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
+
+function DefaultLayout({children}) {
+  const navigate = useNavigate
+  const userMenu = []
+  const adminMenu = [
+    {
+      name: 'Home',
+      path: '/admin',
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'Buses',
+      path: '/admin/buses',
+      icon: 'ri-bus-line'
+    },
+    {
+      name: 'users',
+      path: '/admin/users',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'bookings',
+      path: '/admin/bookings',
+      icon: 'ri-file-list-line'
+    },
+    {
+      name: 'logout',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+  const menuToBeRendered = adminMenu
+  const activeRoute = window.location.pathname
+
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        <div className="d-flex flex-column gap-2">
+          {menuToBeRendered.map((item, index) => {
+            return <div className='menu-item'>
+              <i className={item.icon} ></i>
+              <span onClick={()=>navigate(item.path)}>{item.name}</span>
+              </div>
+          })}
+        </div>
+      </div>
+      <div className="body">
+        <div className="header">
+          header
+        </div>
+        <div className="content">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+export default DefaultLayout
+```
+cssの編集
+```css
+ /* resources/layout.css */
+.sidebar {
+  width: 300px;
+  background-color: var(--secondary);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  padding: 10px;
+  width: 100%;
+  cursor: pointer;
+  transition: 0.2s;
+  gap: 15px;
+}
+.active-menu-item {
+  border: 2px solid white;
+}
+
+.menu-item i {
+  font-size: 20px;
+  margin-right: 10px;
+  color: white;
+}
+
+.menu-item span {
+  font-size: 18px;
+  color: white;
+}
 
 ```
 ```js
+// src/component/defaultLayout.js
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
 
-```
-```js
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const userMenu = []
+  const adminMenu = [
+    {
+      name: 'Home',
+      path: '/admin',
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'Buses',
+      path: '/admin/buses',
+      icon: 'ri-bus-line'
+    },
+    {
+      name: 'users',
+      path: '/admin/users',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'bookings',
+      path: '/admin/bookings',
+      icon: 'ri-file-list-line'
+    },
+    {
+      name: 'logout',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+  const menuToBeRendered = adminMenu
+  const activeRoute = window.location.pathname
+  console.log(activeRoute)
+              // className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        <div className="d-flex flex-column gap-2">
+          {menuToBeRendered.map((item, index) => {
+            return (
+              <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
+                <i className={item.icon} ></i>
+                <span onClick={()=>{navigate(item.path)}}>{item.name}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div className="body">
+        <div className="header">
+          header
+        </div>
+        <div className="content">{children}</div>
+      </div>
+    </div>
+  )
+}
 
+export default DefaultLayout
 ```
+テンプレートリテラル
 ```js
 
 ```
