@@ -1816,7 +1816,7 @@ cssの編集
   display: flex;
   align-items: center;
   justify-content: start;
-  padding: 10px;
+  padding: 5px 15px;
   width: 100%;
   cursor: pointer;
   transition: 0.2s;
@@ -1824,6 +1824,7 @@ cssの編集
 }
 .active-menu-item {
   border: 2px solid white;
+  border-radius: 5px;
 }
 
 .menu-item i {
@@ -1877,11 +1878,11 @@ function DefaultLayout({children}) {
   const menuToBeRendered = adminMenu
   const activeRoute = window.location.pathname
   console.log(activeRoute)
-              // className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
+
   return (
     <div className='layout-parent'>
       <div className="sidebar">
-        <div className="d-flex flex-column gap-2">
+        <div className="d-flex flex-column gap-3">
           {menuToBeRendered.map((item, index) => {
             return (
               <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
@@ -1904,10 +1905,42 @@ function DefaultLayout({children}) {
 
 export default DefaultLayout
 ```
-テンプレートリテラル
+テンプレートリテラル: CMAScriptのバージョン「ES2015」で実装された書き方  
+文字列の中に式を埋め込める
+```js
+${式}
+```
+```js
+let name = 'オレンジ';
+let cost = 100;
+
+let msg = `今日の${name}の値段は${Math.trunc(cost*1.1)}円です。`;
+console.log(msg);
+>> 今日のオレンジの値段は110円です。
+```
+
 ```js
 
 ```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+
 
 
 
