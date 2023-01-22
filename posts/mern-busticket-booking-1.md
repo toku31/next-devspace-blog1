@@ -2167,15 +2167,27 @@ export default DefaultLayout
 }
 .role {
   color: white;
-  font-size: 16px;
+  font-size: 18px;
 }
 .menu {
   margin-top: 150px;
 }
 ```
-
+#### Busの設定画面
+ページタイトルのコンポーネントを作成する
 ```js
+// src/components/pageTitle.js
+import React from 'react'
 
+function PageTitle({title}) {
+  return (
+    <div>
+     <h1 className='text-lg'>{title}</h1>
+    </div>
+  )
+}
+
+export default PageTitle
 ```
 ```js
 
