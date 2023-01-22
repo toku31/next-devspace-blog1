@@ -809,7 +809,7 @@ const userSchema = new mongoose.Schema(
       required: true
     },
     isAdmin: {  // added
-      type: String,
+      type: Boolean,
       default: false
     },
   },{
@@ -1887,7 +1887,7 @@ function DefaultLayout({children}) {
             return (
               <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
                 <i className={item.icon} ></i>
-                <span onClick={()=>{navigate(item.path)}}>{item.name}</span>
+                <span onClick={()=>navigate(item.path)}>{item.name}</span>
               </div>
             )
           })}
@@ -1918,6 +1918,261 @@ let msg = `今日の${name}の値段は${Math.trunc(cost*1.1)}円です。`;
 console.log(msg);
 >> 今日のオレンジの値段は110円です。
 ```
+### Layout Responsive
+ヘッダーにハンバーガーメニュー(ri-menu-2-fill)をつける  
+トグルで閉じるボタン(ri-close-line)もつける
+```js
+// components/defaultLayout.js
+import {useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
+
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false)
+  ・・・・
+  <div className="body">
+  <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+    {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+  </div>
+  <div className="content">{children}</div>
+```
+global.cssに iタグのフォントを追加
+```css
+// resources/global.css
+i{
+  cursor: pointer;
+  font-size: 25px;
+}
+```
+サイドバーのCSSのwidthを修正
+```css
+// resources/layout.css
+.sidebar {
+  /* width: 300px; */
+  background-color: var(--secondary);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0px 20px;
+}
+```
+ログアウトの項目をクリックするとlocalStorageの'token'を削除してログイン画面に戻るようにする
+```js
+// components/defaultLayout.js
+import {useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
+
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false) // added
+  const userMenu = []
+  const adminMenu = [
+    {
+      name: 'Home',
+      path: '/admin',
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'Buses',
+      path: '/admin/buses',
+      icon: 'ri-bus-line'
+    },
+    {
+      name: 'users',
+      path: '/admin/users',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'bookings',
+      path: '/admin/bookings',
+      icon: 'ri-file-list-line'
+    },
+    {
+      name: 'logout',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+  const menuToBeRendered = adminMenu
+  const activeRoute = window.location.pathname
+  console.log(activeRoute)
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        <div className="d-flex flex-column gap-3">
+          {menuToBeRendered.map((item, index) => {
+            return (
+              <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
+                <i className={item.icon} ></i>
+                {!collapsed && 
+                <span onClick={() => {
+                  if(item.path==="/logout"){
+                    localStorage.removeItem('token')
+                    navigate('/login')
+                    } else {
+                      navigate(item.path)
+                    }
+                  }}
+                >{item.name}</span>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div className="body">
+        <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+          {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+        </div>
+        <div className="content">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+export default DefaultLayout
+```
+ユーザ用のメニュー画面を作成する
+```js
+// components/defaultLayout.js
+import {useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
+import { useSelector } from 'react-redux';  // added
+
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false) 
+  const {user} = useSelector(state => state.users) // added
+  const userMenu = [  // added
+    {
+      name: 'Home',
+      path: '/',
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'Bookings',
+      path: '/bookings',
+      icon: 'ri-file-list-line'
+    },
+    {
+      name: 'Profile',
+      path: '/profile',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'logout',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+
+  const adminMenu = [
+    {
+      name: 'Home',
+      path: '/admin',
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'Buses',
+      path: '/admin/buses',
+      icon: 'ri-bus-line'
+    },
+    {
+      name: 'users',
+      path: '/admin/users',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'bookings',
+      path: '/admin/bookings',
+      icon: 'ri-file-list-line'
+    },
+    {
+      name: 'logout',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+  const menuToBeRendered = user?.isAdmin? adminMenu : userMenu // Changed
+  const activeRoute = window.location.pathname
+  console.log(activeRoute)
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        <div className="d-flex flex-column gap-3">
+          {menuToBeRendered.map((item, index) => {
+            return (
+              <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
+                <i className={item.icon} ></i>
+                {!collapsed && 
+                <span onClick={() => {
+                  if(item.path==="/logout"){
+                    localStorage.removeItem('token')
+                    navigate('/login')
+                    } else {
+                      navigate(item.path)
+                    }
+                  }}
+                >{item.name}</span>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div className="body">
+        <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+          {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+        </div>
+        <div className="content">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+export default DefaultLayout
+```
+サイドバーの先頭にユーザ名とロール名を追加する
+```js
+// components/defaultLayout.js
+・・・・
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <h1 className='logo'>User</h1> // added
+          <h1 className='role'>{user?.isAdmin ? 'Admin' : 'User' }</h1> // added
+        </div>
+        <div className="d-flex flex-column gap-3 menu">　 // changed
+        </div>
+      </div>
+```
+```css
+# resources/layout.css
+.sidebar {
+  /* width: 300px; */
+  background-color: var(--secondary);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: start;
+  padding: 5px 20px;
+}
+.logo {
+  color: white;
+  font-size: 20px;
+}
+.role {
+  color: white;
+  font-size: 16px;
+}
+.menu {
+  margin-top: 150px;
+}
+```
 
 ```js
 
@@ -1937,10 +2192,6 @@ console.log(msg);
 ```js
 
 ```
-```js
-
-```
-
 
 
 
