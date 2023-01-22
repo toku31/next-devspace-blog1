@@ -1621,7 +1621,7 @@ right_side.htmlに件数を表示する
       <div class="br"></div>
   </aside>
 ```
-Category別リスト(Category Deteil View)を作成する  
+### Category別リスト(Category Deteil View)を作成する  
 templateファイル, vieｗs.py、urls.pyの３セットを編集  
 templatesフォルダにcategoriesフォルダを作成し、その中にcategory_detail.htmlを作成する
 ```python
@@ -1783,24 +1783,184 @@ templatesフォルダにcategoriesフォルダを作成し、その中にcategor
   <!--================Blog Area =================-->
 {% endblock %}
 ```
+views.pyにCategoryDetail(ListView)を追加する
 ```python
+# posts/views.py
+from django.shortcuts import render, get_object_or_404
+from .models import Post, Category
+from django.views.generic import TemplateView, ListView, DetailView
 
+class IndexView(ListView):
+  template_name="posts/index.html"
+  model = Post
+  context_object_name = 'posts'
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    return context
+  
+class PostDetail(DetailView):
+  template_name="posts/detail.html"
+  model = Post
+  context_object_name = 'single'
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    return context
+
+class CategoryDetail(ListView):
+  model = Post
+  template_name="categories/category_detail.html"
+  context_object_name="posts"
+  # pk means id
+  def get_queryset(self):
+    self.category = get_object_or_404(Category, pk=self.kwargs['pk'])
+    return Post.objects.filter(category=self.category).order_by('-publishing_date')
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    self.category = get_object_or_404(Category, pk=self.kwargs['pk'])　# あとで追加
+    context['category'] = self.category　# あとで追加
+    print('CategoryDetail:', context)
+    return context
 ```
+上の def get_queryset(self)はpk(id)で抽出したデータを返してくれる  
+get_context_data(self, **kwargs)も抽出したデータを返してくれる  
+CategoryDetail: {'paginator': None, 'page_obj': None, 'is_paginated': False, 'object_list': <QuerySet [<Post: test Sed ut perspiciatis unde omnis>, <Post: Lorem ipsum dolor sit amet>]>, 'posts': <QuerySet [<Post: test Sed ut perspiciatis unde omnis>, <Post: Lorem ipsum dolor sit amet>]>, 'view': <posts.views.CategoryDetail object at 0x10f507670>, 'category': <Category: Technology>}  
+get_object_or_404とget_list_or_404は、アクセスしたレコードが存在しなかった場合に404エラーを返す
+#### Category別リストの表示
+urls.pyにCategory別リストのパスを追記する
 ```python
+# posts/urls.py
+from django.urls import path
+# from posts.views import *
+from .views import *
 
+urlpatterns = [
+    path('', IndexView.as_view(), name="index"),
+    path('detail/<str:pk>', PostDetail.as_view(), name="detail"),
+    path('category/<str:pk>', CategoryDetail.as_view(), name="category_detail") # added
+] 
 ```
+サイドバーのカテゴリーの一つをクリックするとカテゴリー別リストが表示されるようにする
+```html
+# templates/right_side.html
+<aside class="single_sidebar_widget post_category_widget">
+    <h4 class="widget_title">カテゴリー</h4>
+    <ul class="list cat-list">
+        {% post_categories as categories %}  # added
+        {% for category in categories %}   # added
+        <li>
+            <a href="{% url 'category_detail' pk=category.id %}" class="d-flex justify-content-between">
+                <p>{{ category.title }}</p>
+                <p>{{ category.post_count }}</p>  # added
+            </a>
+        </li>
+        {% endfor %}   # added
+    </ul>
+    <div class="br"></div>
+</aside>
+```
+カテゴリー別リストの先端にカテゴリー名を表示する
 ```python
-
+# posts/views.py
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    self.category = get_object_or_404(Category, pk=self.kwargs['pk'])　# 追加
+    context['category'] = self.category　# 追加
+    print('CategoryDetail:', context)
+    return context
 ```
+
+```html
+# templates/categories/category_detail.html
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>Category</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>  // Changed
+        <a href="category.html">{{ category.title }}</a> // Changed
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+```
+### Tag モデルを作成する
+Many-to-Many relationships:https://docs.djangoproject.com/en/4.1/topics/db/examples/many_to_many/  
 ```python
+# posts/models.py
+from django.db import models
+from django.conf import settings
+import uuid
+from django.template.defaultfilters import slugify
 
+class Category(models.Model):
+  title= models.CharField(verbose_name='タイトル', max_length=200)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
+  
+  def __str__(self):
+    return self.title
+  
+  def post_count(self):
+    return self.posts.all().count()
+  
+class Tag(models.Model):  # added
+  title= models.CharField(verbose_name='タイトル', max_length=150)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
+  slug = models.SlugField(editable=False, null=True, blank=True, verbose_name='Slug')
+
+  def __str__(self):
+    return self.title
+  
+  def save(self, *args, **kwargs):
+    self.slug = slugify(self.title)
+    super().save(*kwargs)
+
+class Post(models.Model):
+  title = models.CharField(verbose_name='タイトル',max_length=150)
+  content = models.TextField(verbose_name='内容')
+  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
+  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  # slug = models.SlugField(default="slug")
+  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
+  tag = models.ManyToManyField(Tag, related_name="posts" , blank=True, verbose_name='タグ')  # added
+  
+  def __str__(self):
+    return self.title
 ```
+makemigrations & migrate
 ```python
+# posts/admin.py
+from django.contrib import admin
+from .models import Post, Category, Tag # added
 
-```
-```python
+class AdminPost(admin.ModelAdmin):
+  list_filter = ['publishing_date']
+  list_display = ['title', 'publishing_date']
+  search_fields = ['title', 'content']
 
+  class Meta:
+    model = Post
+    
+admin.site.register(Post, AdminPost)
+admin.site.register(Category)
+admin.site.register(Tag) # added
 ```
+### サイドバーにTagリストを表示する
 ```python
 
 ```
