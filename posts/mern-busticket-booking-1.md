@@ -2182,24 +2182,231 @@ import React from 'react'
 function PageTitle({title}) {
   return (
     <div>
-     <h1 className='text-lg'>{title}</h1>
+     <h1 className='text-xl'>{title}</h1>
+    </div>
+  )
+}
+export default PageTitle
+```
+バス管理画面のページを編集する
+```js
+// src/pages/Admin/AdminBus.js
+function  AdminBuses() {
+  const [showBusForm, setShowBusForm] = useState(false)
+  const [actionType, setActionType] = useState('')
+  return (
+    <div>
+      <div className='d-flex justify-content-between'>
+        <PageTitle title='高速バス' />
+        <button className="primary-btn" onClick={()=>setShowBusForm(true)}>
+          バスを追加
+        </button>
+      </div>
+      {showBusForm && <BusForm  showBusForm={showBusForm} setShowBusForm ={setShowBusForm} actionType={actionType} />}
+    </div>
+  )
+}
+export default  AdminBuses
+```
+バスの入力フォームを作成する  
+React-Bootstrap: https://react-bootstrap.github.io/getting-started/introduction/  
+https://www.e-pokke.com/blog/bootstrap4-modal-width.html
+```js
+npm install react-bootstrap bootstrap
+```
+モーダル画面のサイズの設定をglobal.cssで行う
+``` css
+/* src/resources/global.css */
+.modal-dialog-fluid {
+  max-width: inherit;
+  width: 800px;
+  margin: auto;
+  margin-top: 10px;
+  /* margin-left: 300px; */
+}
+```
+
+```js
+// src/components/BusForm.js
+import {useState} from 'react'
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import Col from 'react-bootstrap/Col';
+import Form from 'react-bootstrap/Form';
+import Row from 'react-bootstrap/Row';
+import '../resources/global.css'
+import { useDispatch} from 'react-redux'; 
+import { axiosInstance } from '../helpers/axiosInstance';
+import { HideLoading, ShowLoading } from '../redux/alertsSlice';
+import { toast } from 'react-toastify';
+
+function  BusForm({showBusForm, setShowBusForm, actionType='add'}) {
+  const dispatch = useDispatch()
+
+  const [formData, setFormData] = useState({
+    name: "",
+    number: "",
+    capacity: "",
+    from: "",
+    to: "",
+    journeyDate: "",
+    departure: "",
+    arrival: "",
+    type: "",
+    fare: ""
+  })
+
+  const {name, number, capacity, from, to, journeyDate, departure, arrival, type ,fare} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    // setLoading(true)
+    const values ={
+      name: name,
+      number: number,
+      capacity: capacity,
+      from: from,
+      to: from,
+      journeyDate: journeyDate,
+      departure: departure,
+      arrival: arrival,
+      type: type,
+      fare: fare
+    }
+    console.log(values)
+
+    try {
+      dispatch(ShowLoading())
+      let response = null
+        if(actionType==='add'){
+          response = axiosInstance.post('/api/buses/add-bus', values)
+        }else{
+
+        }
+        if (response.data.success){
+          toast.success(response.data.message)
+        } else {
+          toast.error(response.data.message)
+        }
+        dispatch(HideLoading())
+    } catch (error) {
+      toast.error(error.message)
+      dispatch(HideLoading())
+    }
+
+    setFormData({
+      name: "",
+      number: "",
+      capacity: "",
+      from: "",
+      to: "",
+      journeyDate: "",
+      departure: "",
+      arrival: "",
+      type: "",
+      fare: ""
+    })
+  }
+
+  return (
+<div className="modal-80w">
+<Modal show={showBusForm} onHide={()=>setShowBusForm(false)} dialogClassName="modal-dialog-fluid ">
+      <Modal.Header closeButton >
+        <Modal.Title>バスの追加</Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body>
+        <div>
+          <Form className='transaction-form' onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="name">
+              <Form.Label>バス名</Form.Label>
+              <Form.Control type="text" placeholder="" value={name} onChange={handleChange} name="name"/>
+            </Form.Group>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="number">
+                <Form.Label>ナンバー</Form.Label>
+                <Form.Control type="text" placeholder="" value={number} onChange={handleChange} name="number"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="capacity">
+                <Form.Label>乗車人数</Form.Label>
+                <Form.Control type="text" placeholder="" value={capacity} onChange={handleChange} name="capacity"/>
+              </Form.Group>
+            </Row>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="from">
+                <Form.Label>出発地</Form.Label>
+                <Form.Control type="text" placeholder="" value={from} onChange={handleChange} name="from"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="to">
+                <Form.Label>到着地</Form.Label>
+                <Form.Control type="text" placeholder="" value={to} onChange={handleChange} name="to"/>
+              </Form.Group>
+            </Row>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="journeyDate">
+                <Form.Label>出発日</Form.Label>
+                <Form.Control type="date" placeholder="" value={journeyDate} onChange={handleChange} name="journeyDate"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="departure">
+                <Form.Label>出発時間</Form.Label>
+                <Form.Control type="text" placeholder="" value={departure} onChange={handleChange} name="departure"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="arrival">
+                <Form.Label>到着時間</Form.Label>
+                <Form.Control type="text" placeholder="" value={arrival} onChange={handleChange} name="arrival"/>
+              </Form.Group>
+            </Row>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="type">
+                <Form.Label>タイプ</Form.Label>
+                <Form.Control type="text" placeholder="" value={type} onChange={handleChange} name="type"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="fare">
+                <Form.Label>料金</Form.Label>
+                <Form.Control type="text" placeholder="" value={fare} onChange={handleChange} name="fare"/>
+              </Form.Group>
+            </Row>
+
+            <Form.Group className="mb-3 d-flex justify-content-end" controlId="save">
+            <Button className="primary" type="submit">保存</Button>
+            </Form.Group>
+          </Form>
+        </div>
+      </Modal.Body>
+    </Modal>
     </div>
   )
 }
 
-export default PageTitle
+export default  BusForm
 ```
+srcフォルダの直下にhelpersフォルダを作成してその中にaxiosInstance.jsファイルを作成する
 ```js
+// src/helpers/axiosInstance.js
+import axios from 'axios'
 
-```
-```js
-
-```
-```js
-
-```
-```js
-
+export const axiosInstance = axios.create({
+  // baseURL: "http://localhost:5000/api",  // ここはproxyで設定する
+  headers: {
+    Authorization : `Bearer ${localStorage.getItem("token")}`
+  }
+})
 ```
 ```js
 
