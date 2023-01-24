@@ -1894,6 +1894,43 @@ urlpatterns = [
       </div>
   </section>
   <!--================End Home Banner Area =================-->
+    <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <div class="blog_left_sidebar">
+                      {% for post in posts %}
+                        <article class="blog_style1">
+                          <div class="blog_img">
+                            <img class="img-fluid" src={{ post.image.url }} alt="">
+                          </div>
+                          <div class="blog_text">
+                          <div class="blog_text_inner">
+                            <a class="cat" href="#">Gadgets</a>
+                            <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title | truncatechars:150}}</h4></a>
+                            <p>{{ post.content }}</p>
+                            <div class="date">
+                              <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{post.publishing_date}}</a>
+                              <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
+                            </div>	
+                          </div>
+                          </div>
+                        </article>
+                      {% endfor %}
+                      <nav class="blog-pagination justify-content-center d-flex">
+                      <ul class="pagination">
+                        ・・・・・・・
+                      </ul>
+                  </nav>
+          </div>
+      </div>
+      {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+  <!--================Blog Area =================-->
+{% endblock %}
 ```
 ### Tag モデルを作成する
 Many-to-Many relationships:https://docs.djangoproject.com/en/4.1/topics/db/examples/many_to_many/  
@@ -1961,12 +1998,205 @@ admin.site.register(Category)
 admin.site.register(Tag) # added
 ```
 ### サイドバーにTagリストを表示する
+custom_tags.pyを編集する
+```python
+# posts/templatetags/custome_tags.py
+from django import template
+from posts.models import Category, Tag  # Changed
+
+register = template.Library()
+
+@register.simple_tag(name="post_categories")
+def all_categories():
+  return Category.objects.all()
+
+@register.simple_tag(name="tags") # added
+def all_tags():
+  return Tag.objects.all()
+```
+サイドバーのテンプレートを編集してTagリストを表示する  
+{{label.title}}は{{label}}でもOK
+```html
+<!-- templates/right_side.html -->
+    <aside class="single_sidebar_widget post_category_widget">
+        <h4 class="widget_title">カテゴリー</h4>
+        <ul class="list cat-list">
+            {% post_categories as categories %}
+            {% for category in categories %}
+            <li>
+                <a href="{% url 'category_detail' pk=category.id %}" class="d-flex justify-content-between">
+                    <p>{{ category.title }}</p>
+                    <p>{{ category.post_count }}</p>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="br"></div>
+    </aside>
+    <aside class="single-sidebar-widget tag_cloud_widget">
+        <h4 class="widget_title">タグ</h4>
+        <ul class="list">
+        {% tags as labels %}
+        {% for label in labels %}
+        <li><a href="#">{{label.title}}</a></li>
+        {% endfor %}
+        </ul>
+    </aside>
+```
+### タグ別リストを表示する
+views.pyにCategoryDetail同様にTagDetailクラスを作成する
+```python
+# posts/views.py
+class TagDetail(ListView):
+  model = Post
+  template_name="tags/tag_detail.html"
+  context_object_name="posts"
+  
+  # pk means id
+  def get_queryset(self):
+    self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
+    return Post.objects.filter(tag=self.tag).order_by('-publishing_date')
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
+    context['tag'] = self.tag
+    print('TagDetail:', context)
+    return context
+```
+urls.pyにタグ別リストページのパスを追加する
+```python
+# post.urls.py
+from django.urls import path
+# from posts.views import *
+from .views import *
+
+urlpatterns = [
+    path('', IndexView.as_view(), name="index"),
+    path('detail/<str:pk>', PostDetail.as_view(), name="detail"),
+    path('category/<str:pk>', CategoryDetail.as_view(), name="category_detail"),
+    path('tag/<slug:slug>', TagDetail.as_view(), name="tag_detail"),　# added
+] 
+```
+category_detail.htmlをコピーしてtemplates/tagsフォルダーにtag_detail.htmlを作成する
+```html
+# templates/tags/tag_detail.html
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>タグ</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+        <a href="#">{{ tag.title }}</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                <h4>{{ tag.title }}タグに{{tag.post_count}}件の投稿があります</h4> # added
+                  <div class="blog_left_sidebar">
+                      {% for post in posts %}
+                        <article class="blog_style1">
+                          <div class="blog_img">
+                            <img class="img-fluid" src={{ post.image.url }} alt="">
+                          </div>
+                          <div class="blog_text">
+                          <div class="blog_text_inner">
+                            <a class="cat" href="#">Gadgets</a>
+                            <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title | truncatechars:150}}</h4></a>
+                            <p>{{ post.content }}</p>
+                            <div class="date">
+                              <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{post.publishing_date}}</a>
+                              <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
+                            </div>	
+                          </div>
+                          </div>
+                        </article>
+                      {% endfor %}
+                      <nav class="blog-pagination justify-content-center d-flex">
+                      <ul class="pagination">
+                          <li class="page-item">
+                            <a href="#" class="page-link" aria-label="Previous">
+                              <span aria-hidden="true">
+                                <span class="lnr lnr-chevron-left"></span>
+                              </span>
+                            </a>
+                          </li>
+                          <li class="page-item"><a href="#" class="page-link">01</a></li>
+                          <li class="page-item active"><a href="#" class="page-link">02</a></li>
+                          <li class="page-item"><a href="#" class="page-link">03</a></li>
+                          <li class="page-item"><a href="#" class="page-link">04</a></li>
+                          <li class="page-item"><a href="#" class="page-link">09</a></li>
+                          <li class="page-item">
+                              <a href="#" class="page-link" aria-label="Next">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-right"></span>
+                                  </span>
+                              </a>
+                          </li>
+                      </ul>
+                  </nav>
+          </div>
+      </div>
+      {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+  <!--================Blog Area =================-->
+{% endblock %}
+```
+タグ別リストページに投稿件数を表示する  
+Tagモデルにpost_count関数を追加する
+```python
+class Tag(models.Model):
+  title= models.CharField(verbose_name='タイトル', max_length=150)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
+  slug = models.SlugField(editable=False, null=True, blank=True, verbose_name='Slug')
+
+  def __str__(self):
+    return self.title
+  
+  def save(self, *args, **kwargs):
+    self.slug = slugify(self.title)
+    super().save(*kwargs)
+    
+  def post_count(self):  # added
+    return self.posts.all().count()
+```
+```html
+# templates/tags/tag_detail.html
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+        <h4>{{ tag.title }}タグに{{tag.post_count}}件の投稿があります</h4> # added
+            <div class="blog_left_sidebar">
+                {% for post in posts %}
+                <article class="blog_style1">
+```
+####  Slider Postsを作成する
 ```python
 
 ```
+
 ```python
 
 ```
+
 ```python
 
 ```
