@@ -2191,6 +2191,10 @@ export default PageTitle
 バス管理画面のページを編集する
 ```js
 // src/pages/Admin/AdminBus.js
+import { useState } from 'react'
+import BusForm from '../../components/ BusForm'
+import PageTitle from '../../components/PageTitle'
+
 function  AdminBuses() {
   const [showBusForm, setShowBusForm] = useState(false)
   const [actionType, setActionType] = useState('')
@@ -2202,10 +2206,11 @@ function  AdminBuses() {
           バスを追加
         </button>
       </div>
-      {showBusForm && <BusForm  showBusForm={showBusForm} setShowBusForm ={setShowBusForm} actionType={actionType} />}
+      {showBusForm && <BusForm  showBusForm={showBusForm} setShowBusForm ={setShowBusForm} actionType='add' />}
     </div>
   )
 }
+
 export default  AdminBuses
 ```
 バスの入力フォームを作成する  
@@ -2240,7 +2245,9 @@ import { axiosInstance } from '../helpers/axiosInstance';
 import { HideLoading, ShowLoading } from '../redux/alertsSlice';
 import { toast } from 'react-toastify';
 
-function  BusForm({showBusForm, setShowBusForm, actionType='add'}) {
+function  BusForm({showBusForm, setShowBusForm, actionType}) {
+
+  actionType='add'
   const dispatch = useDispatch()
 
   const [formData, setFormData] = useState({
@@ -2280,23 +2287,28 @@ function  BusForm({showBusForm, setShowBusForm, actionType='add'}) {
       type: type,
       fare: fare
     }
-    console.log(values)
+    console.log('value:', values)
 
     try {
       dispatch(ShowLoading())
       let response = null
         if(actionType==='add'){
-          response = axiosInstance.post('/api/buses/add-bus', values)
+          console.log('add')
+          response = await axiosInstance.post('/api/buses/add-bus', values)
+          console.log('res:',response.data)
         }else{
-
+          console.log('else')
         }
         if (response.data.success){
+          console.log('success')
           toast.success(response.data.message)
         } else {
+          console.log('error1')
           toast.error(response.data.message)
         }
         dispatch(HideLoading())
     } catch (error) {
+      console.log('error2')
       toast.error(error.message)
       dispatch(HideLoading())
     }
@@ -2408,9 +2420,124 @@ export const axiosInstance = axios.create({
   }
 })
 ```
+### BusのAPIを作成する(Backend)
+busモデルを作成する
+```js
+// models/busModel.js
+const mongoose = require('mongoose')
+
+const busSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true
+    },
+    number: {
+      type: String,
+      required: true
+    },
+    capacity: {
+      type: Number,
+      required: true
+    },
+    from: {
+      type: String,
+      required: true
+    },
+    to: {
+      type: String,
+      required: true
+    },
+    journeyDate: {
+      type: Date,
+      required: true
+    },
+    departure: {
+      type: String,
+      required: true
+    },
+    arrival: {
+      type: String,
+      required: true
+    },
+    type: {
+      type: String,
+      required: true
+    },
+    fare: {
+      type: Number,
+      required: true
+    },
+    seatsBooked: {
+      type: Array,
+      default: []
+    },
+    status: {
+      type: String,
+      default: '発車前'
+    }
+})
+
+module.exports = mongoose.model('Bus', busSchema)
+```
+バスのルータ(busesRouter.js)を作成
+```js
+// routes/busesRoute.js
+const router = require('express').Router()
+const Bus = require('../models/busModel')
+
+// add Bus
+router.post('/add-bus', async(req, res) => {
+  try {
+    const existingBus = await Bus.findOne({number: req.body.number})
+    if (existingBus){
+      return res.status(200).send({success:false, message:'既に存在するバスです'})
+    }
+    const newBus = new Bus(req.body)
+    await newBus.save()
+    return res.status(200).send({
+      success: true,
+      message: 'Busを追加しました'
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+
+module.exports = router;
+```
+server.js にbusesRoute を追加する
+```js
+// server.js
+const express = require('express');
+const app = express();
+const dotenv = require("dotenv").config();
+const port = process.env.PORT || 5000;
+const dbConfig = require("./config/dbConfig");
+app.use(express.json())
+
+const usersRoute = require('./routes/usersRoute') 
+const busesRoute = require('./routes/busesRoute') // added
+
+app.use('/api/users/', usersRoute)  
+app.use('/api/buses/', busesRoute)  // added
+
+app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
+```
 ```js
 
 ```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+
+
 
 
 
