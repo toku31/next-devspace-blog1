@@ -2449,7 +2449,7 @@ const busSchema = new mongoose.Schema(
       required: true
     },
     journeyDate: {
-      type: Date,
+      type: String,  // DateはEdit　Bus２１でNG
       required: true
     },
     departure: {
@@ -2524,8 +2524,486 @@ app.use('/api/buses/', busesRoute)  // added
 
 app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
 ```
+### Get All Buses
+作成したバスの全リストを取得する
 ```js
+// routes/busesRoute.js
+const router = require('express').Router()
+const Bus = require('../models/busModel')
 
+// add Bus
+router.post('/add-bus', async function (req, res){
+　　・・・
+})
+
+// get all buses　　Added
+router.get('/get-all-buses', async function (req, res){
+  console.log('get-all-buses')
+  try {
+    const allBuses = await Bus.find()
+    return res.status(200).send({
+      success: true,
+      message: 'Busを全て取得しました',
+      data: allBuses
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+
+module.exports = router;
+```
+ProtectedRoute.jsの const {loading} = useSelector(state=>state.alerts)から const {user} = useSelector(state=>state.users) へ変更する  
+同時に{ !loading &&  <DefaultLayout>{children}</DefaultLayout> }から{ user &&  <DefaultLayout>{children}</DefaultLayout> }へ変更する
+```js
+function ProtectedRoute({children}) {
+  const dispatch = useDispatch()  
+  // const [loading, setLoading] = useState(true)
+  // const {loading} = useSelector(state=>state.alerts) コメントアウト
+  const {user} = useSelector(state=>state.users) // added
+  　　・・・・
+  return (
+    <div>
+      { user &&  <DefaultLayout>{children}</DefaultLayout> } // Changed
+    </div>
+  )
+
+```
+AdminBus画面のフロントエンドでAPIコールの編集  
+```js
+// pages/Admin/AdminBuses.js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import BusForm from '../../components/ BusForm'
+import PageTitle from '../../components/PageTitle'
+import { axiosInstance } from '../../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../../redux/alertsSlice';
+
+function  AdminBuses() {
+  const dispatch = useDispatch()
+  const [showBusForm, setShowBusForm] = useState(false)
+  const [actionType, setActionType] = useState('')
+  const [buses, setBuses] = useState([])
+
+  const getBuses = async()=> {
+    try {
+      dispatch(ShowLoading()) 
+      const response = await axiosInstance.post('/api/buses/get-all-buses', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bus data success:', response.data.data)
+        setBuses(response.data.data) 
+      }else {
+        console.log('bus data else:')
+        toast.error(response.data.error)
+      }
+    } catch (error) {
+      console.log('bus data error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBuses()
+  }, [])
+
+  return (
+    <div>
+      <div className='d-flex justify-content-between'>
+        <PageTitle title='高速バス' />
+        <button className="primary-btn" onClick={()=>setShowBusForm(true)}>
+          バスを追加
+        </button>
+      </div>
+
+      <div className="bus-table">
+        <BusTable  buses={buses} />
+      </div>
+      {showBusForm && <BusForm  showBusForm={showBusForm} setShowBusForm ={setShowBusForm} actionType='add' />}
+    </div>
+  )
+}
+export default  AdminBuses
+```
+BusTableコンポーネントを作成する  
+日付を表示するためmomentをインストール  
+user@mbp client % npm i moment
+```js
+// src/components/BusTable.js
+import React from 'react'
+import { Button, Table } from 'react-bootstrap';
+import moment from 'moment';
+
+function BusTable({buses}) {
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>バス名</th>
+                  <th>ナンバー</th>
+                  <th>出発地</th>
+                  <th>到着地</th>
+                  <th>出発日</th>
+                  <th>状況</th>
+                  <th>編集/削除</th>
+              </tr>
+          </thead>
+          <tbody>
+              {buses.map((bus) => 
+                  <tr key={bus._id}>
+                      <td>{bus.name}</td>
+                      <td>{bus.number}</td>
+                      <td>{bus.from}</td>
+                      <td>{bus.to}</td>
+                      <td>
+                        {moment(bus.journeyDate).format('YYYY-MM-DD')}
+                      </td>
+                      <td>{bus.satus}</td>
+                      <td>
+                          // <Button variant="outline-secondary">編集</Button>
+                          // <Button variant="outline-danger">削除</Button>
+                          <div className="d-flex gap-3">
+                            <i className='ri-delete-bin-line'></i>
+                            <i className='ri-pencil-line'></i>
+                          </div>
+                      </td>
+                  </tr>
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default BusTable
+```
+### Edit Bus バスの編集画面
+```js
+// pages/Admin/AdminBuses.js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import BusForm from '../../components/ BusForm'
+import PageTitle from '../../components/PageTitle'
+import { axiosInstance } from '../../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../../redux/alertsSlice';
+import BusTable from '../../components/BusTable';
+
+function  AdminBuses() {
+  const dispatch = useDispatch()
+  const [showBusForm, setShowBusForm] = useState(false)
+  const [buses, setBuses] = useState([])
+  const [selectedBus, setSelectedBus] = useState(null)
+
+  const getBuses = async()=> {
+    console.log('bus data success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-all-buses', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bus data success:', response.data.data)
+        setBuses(response.data.data) 
+      }else {
+        console.log('bus data else:')
+        toast.error(response.data.error)
+      }
+    } catch (error) {
+      console.log('bus data error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBuses()
+  }, [])
+
+  return (
+    <div>
+      <div className='d-flex justify-content-between'>
+        <PageTitle title='高速バス' />
+        <button className="primary-btn" onClick={()=>setShowBusForm(true)}>
+          バスを追加
+        </button>
+      </div>
+
+      <div className="bus-table">
+        <BusTable  
+          buses={buses} 
+          setSelectedBus={setSelectedBus} 
+          setShowBusForm={setShowBusForm}
+        />
+      </div>
+      {showBusForm && (
+      <BusForm  
+        showBusForm={showBusForm} 
+        setShowBusForm ={setShowBusForm} 
+        actionType={selectedBus ? 'edit' : 'add'} 
+        selectedBus={selectedBus}
+        getData = {getBuses}
+        setSelectedBus = {setSelectedBus}
+      />
+      )}
+    </div>
+  )
+}
+
+export default  AdminBuses
+```
+```js
+// components/BusForm.js
+import {useState} from 'react'
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import Col from 'react-bootstrap/Col';
+import Form from 'react-bootstrap/Form';
+import Row from 'react-bootstrap/Row';
+import '../resources/global.css'
+import { useDispatch} from 'react-redux'; 
+import { axiosInstance } from '../helpers/axiosInstance';
+import { HideLoading, ShowLoading } from '../redux/alertsSlice';
+import { toast } from 'react-toastify';
+
+function  BusForm(props) {
+
+  // actionType='add'
+  const {showBusForm, setShowBusForm, actionType, getData, selectedBus, setSelectedBus} = props
+  console.log('actionType:', actionType)
+  console.log('selectedBus:', selectedBus)
+  const dispatch = useDispatch()
+
+  const [formData, setFormData] = useState({
+    name: actionType==='add' ? "" : selectedBus.name,
+    number: actionType==='add' ? "" : selectedBus.number,
+    capacity: actionType==='add' ? "" : selectedBus.capacity,
+    from: actionType==='add' ? "" : selectedBus.from,
+    to: actionType==='add' ? "" : selectedBus.to,
+    journeyDate: actionType==='add' ? "" : selectedBus.journeyDate,
+    departure: actionType==='add' ? "" : selectedBus.departure,
+    arrival: actionType==='add' ? "" : selectedBus.arrival,
+    type: actionType==='add' ? "" : selectedBus.type,
+    fare: actionType==='add' ? "" : selectedBus.fare,
+  })
+
+  const {name, number, capacity, from, to, journeyDate, departure, arrival, type ,fare} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    // setLoading(true)
+    const values ={
+      name: name,
+      number: number,
+      capacity: capacity,
+      from: from,
+      to: from,
+      journeyDate: journeyDate,
+      departure: departure,
+      arrival: arrival,
+      type: type,
+      fare: fare
+    }
+    console.log('value:', values)
+
+    try {
+      dispatch(ShowLoading())
+      let response = null
+        if(actionType==='add'){
+          console.log('add')
+          response = await axiosInstance.post('/api/buses/add-bus', values)
+          console.log('res:',response.data)
+        }else{
+          console.log('edit')
+          response = await axiosInstance.post('/api/buses/update-bus', {
+            ...values,
+            _id: selectedBus._id,
+          })
+        }
+        if (response.data.success){
+          console.log('success')
+          toast.success(response.data.message)
+          getData()
+          setShowBusForm(false)
+          setSelectedBus(null)
+        } else {
+          console.log('error1')
+          toast.error(response.data.message)
+        }
+        dispatch(HideLoading())
+    } catch (error) {
+      console.log('error2')
+      toast.error(error.message)
+      dispatch(HideLoading())
+    }
+
+    // setFormData({
+    //   name: "",
+    //   number: "",
+    //   capacity: "",
+    //   from: "",
+    //   to: "",
+    //   journeyDate: "",
+    //   departure: "",
+    //   arrival: "",
+    //   type: "",
+    //   fare: ""
+    // })
+  }
+
+  const handleClickHide = () => {
+    setShowBusForm(false)
+    setSelectedBus(null)
+  }
+
+  return (
+<div className="modal-80w">
+<Modal 
+  show={showBusForm} 
+  // onHide={()=>setShowBusForm(false)} 
+  onHide={()=>handleClickHide()} 
+  dialogClassName="modal-dialog-fluid "
+>
+      <Modal.Header closeButton >
+        <Modal.Title>{actionType==='add' ? 'バスの追加' : 'バスの編集'}</Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body>
+        <div>
+          <Form className='transaction-form' onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="name">
+              <Form.Label>バス名</Form.Label>
+              <Form.Control type="text" placeholder="" value={name} onChange={handleChange} name="name"/>
+            </Form.Group>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="number">
+                <Form.Label>ナンバー</Form.Label>
+                <Form.Control type="text" placeholder="" value={number} onChange={handleChange} name="number"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="capacity">
+                <Form.Label>乗車人数</Form.Label>
+                <Form.Control type="text" placeholder="" value={capacity} onChange={handleChange} name="capacity"/>
+              </Form.Group>
+            </Row>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="from">
+                <Form.Label>出発地</Form.Label>
+                <Form.Control type="text" placeholder="" value={from} onChange={handleChange} name="from"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="to">
+                <Form.Label>到着地</Form.Label>
+                <Form.Control type="text" placeholder="" value={to} onChange={handleChange} name="to"/>
+              </Form.Group>
+            </Row>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="journeyDate">
+                <Form.Label>出発日</Form.Label>
+                <Form.Control type="date" placeholder="" value={journeyDate} onChange={handleChange} name="journeyDate"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="departure">
+                <Form.Label>出発時間</Form.Label>
+                <Form.Control type="text" placeholder="" value={departure} onChange={handleChange} name="departure"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="arrival">
+                <Form.Label>到着時間</Form.Label>
+                <Form.Control type="text" placeholder="" value={arrival} onChange={handleChange} name="arrival"/>
+              </Form.Group>
+            </Row>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="type">
+                <Form.Label>タイプ</Form.Label>
+                <Form.Control type="text" placeholder="" value={type} onChange={handleChange} name="type"/>
+              </Form.Group>
+
+              <Form.Group as={Col} controlId="fare">
+                <Form.Label>料金</Form.Label>
+                <Form.Control type="text" placeholder="" value={fare} onChange={handleChange} name="fare"/>
+              </Form.Group>
+            </Row>
+
+            <Form.Group className="mb-3 d-flex justify-content-end" controlId="save">
+            <Button className="primary" type="submit">保存</Button>
+            </Form.Group>
+          </Form>
+        </div>
+      </Modal.Body>
+    </Modal>
+    </div>
+  )
+}
+
+export default  BusForm
+```
+BackendでUpdate busを追加する
+```js
+const router = require('express').Router()
+const authMiddleware = require('../middlewares/authMiddleware')
+const Bus = require('../models/busModel')
+
+// add Bus
+router.post('/add-bus', async function (req, res){
+  console.log('add-bus')
+  try {
+    const existingBus = await Bus.findOne({number: req.body.number})
+    if (existingBus){
+      return res.status(200).send({success:false, message:'既に存在するバスです'})
+    }
+    const newBus = new Bus(req.body)
+    await newBus.save()
+    return res.status(200).send({
+      success: true,
+      message: 'Busを追加しました'
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+
+// Update bus 21　added
+router.post('/update-bus', authMiddleware, async function (req, res){
+  console.log('update-bus')
+  try {
+    await Bus.findByIdAndUpdate(req.body._id, req.body)
+    return res.status(200).send({
+      success: true,
+      message: 'Busを更新しました'
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+
+// get all buses
+router.post('/get-all-buses', async function (req, res){
+  console.log('get-all-buses')
+  try {
+    const buses = await Bus.find()
+    return res.status(200).send({
+      success: true,
+      message: 'Busを全て取得しました',
+      data: buses
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+
+module.exports = router;
 ```
 ```js
 
@@ -2536,6 +3014,16 @@ app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
 ```js
 
 ```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+
 
 
 

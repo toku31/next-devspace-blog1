@@ -47,6 +47,9 @@ Static Files Directory の作成
 https://docs.djangoproject.com/en/4.1/howto/static-files/
 ```python
 # settings.py
+LANGUAGE_CODE = 'ja'
+TIME_ZONE = 'Asia/Tokyo'
+
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [  # add
     BASE_DIR / "static", # または　os.path.join(BASE_DIR, 'static')
@@ -2189,14 +2192,375 @@ class Tag(models.Model):
                 <article class="blog_style1">
 ```
 ####  Slider Postsを作成する
+Postモデルにslider_post を追加する
+```python
+# posts/models.py
+class Post(models.Model):
+  title = models.CharField(verbose_name='タイトル',max_length=150)
+  content = models.TextField(verbose_name='内容')
+  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
+  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  # slug = models.SlugField(default="slug")
+  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
+  tag = models.ManyToManyField(Tag, related_name="posts" , blank=True, verbose_name='タグ')
+  slider_post = models.BooleanField(default=False, verbose_name='スライダー')  # added
+  
+  
+  def __str__(self):
+    return self.title
+```
+makemigrations & migrate  
+views.pyのIndexViewのcontextにslider_postsを追加する
+```python
+# posts/views.py
+class IndexView(ListView):
+  template_name="posts/index.html"
+  model = Post
+  context_object_name = 'posts'
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    # context['categories'] = Category.object.all()
+    context['slider_posts'] = Post.objects.all().filter(slider_post=True)
+    return context
+```
+templates/posts/index.htmlのスライダー部分を編集する
+```python
+<img src="{% static "img/post-slider/post-s-1.jpg" %}" alt="">は以下のように編集
+<img src="{{ post.image.url}}" alt="">
+タグを全て表示するときは、{% for tag in post.tag.all %}　を使う
+```
+テンプレートのスライダー部分
+```html
+# templates/posts/index.html
+<section class="post_slider_area">
+    <div class="post_slider_inner owl-carousel">
+        {% for post in slider_posts %}
+        <div class="item">
+            <div class="post_s_item">
+                <div class="post_img">
+                    <img src="{{ post.image.url}}" alt="">
+                </div>
+                <div class="post_text">
+                    {% for tag in post.tag.all %}　# added ★★★★★
+                    <a class="cat" href="{% url 'tag_detail' slug=tag.slug %}">{{ tag.title }}</a>
+                    {% endfor %}
+                    <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title }}</h4></a>
+                    <p>{{ post.content | truncatechars:150 }}<</p>
+                    <div class="date">
+                        <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> {{post.publishing_date}}</a>
+                        <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+```
+### Users Appを作成する
+```python
+(venv) user@mbp Django-fantom-blog % python manage.py startapp users
+```
+usersフォルダの直下にurls.pyを作成する  
+このときapp_name="users"を追加する
+```python
+# users/urls.py
+from django.urls import path
+
+app_name="users"  # added
+urlpatterns = [
+    path('', ),   ## www.website.com/users/detail, www.website.com/detail
+] 
+```
+Django_fantom_blogのurls.pyに'users.urls'を追加する
+```python
+# Django_fantom_blog/urls.py
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('posts.urls')),
+    path('users/', include('users.urls')),  # www.website.com/users/register added
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+```
+### User Creation Formを作成する
+登録用のフォームを作成する
+```python
+# users/forms.py
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django import forms
+
+class RegisterForm(UserCreationForm):
+  username = forms.CharField(max_length=50)
+  email = forms.EmailField(max_length=50)
+  password1 = forms.CharField()
+  password2 = forms.CharField()
+  
+  class Meta(UserCreationForm):
+    model = User
+    fields = ('username', 'email', 'password1', 'password2' )
+```
+views.pyにRegisterViewを作成する
+```python
+# users/RegisterView.py
+from django.shortcuts import render
+from django.views.generic import CreateView
+from .forms import RegisterForm
+
+class RegisterView(CreateView):
+  template_name = 'users/register.html'
+  form_class = RegisterForm
+  success_url = '/'
+```
+templates/users/Register.htmlを作成する
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+</head>
+<body>
+  
+</body>
+</html>
+```
+urls.pyにパスを登録する
+```python
+from django.urls import path
+from .views import *
+
+app_name="users"
+urlpatterns = [
+    path('register/', RegisterView.as_view(), name="register")
+] 
+```
+users Appを登録
+```python
+Django_fantom_blog/settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'posts.apps.PostsConfig',
+    'users.apps.UsersConfig', // added
+]
+```
+#### Register Html Fileを作成する
+elements.htmlを参照する
+```html
+<!-- templates/users/register.html -->
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>登録</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <h2 style="text-align: center; color:blue">登録</h2>
+                  <div class="blog_left_sidebar">
+                    <form method='post'>
+                      {% csrf_token %}
+                      {% if form.errors %}
+                        <div id="errors">
+                          <div class="inners">
+                            <p style="color:red">以下のエラーがあります</p>
+                            <ul>
+                              {% for field in form %}
+                                {% if field.errors %}
+                                <li>{{form.label }}: {{field.errors|striptags }}</li>
+                                {% endif %}
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        </div>
+                      {% endif %}
+                      {# {{ form.as_p }} #}
+                      <div class="mt-10">
+                        <input type="text" name="username" placeholder="名前" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
+                      </div>
+                      <div class="mt-10">
+                        <input type="text" name="email" placeholder="メールアドレス" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
+                      </div>
+                      <div class="mt-10">
+                        <input type="password" name="password1" placeholder="パスワード" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
+                      </div>
+                      <div class="mt-10">
+                        <input type="password" name="password2" placeholder="パスワード(確認)" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
+                      </div>
+                      <input type="submit" class="genric-btn success circle" style="float:right;margin-top:30px;" value="登録" >
+                    </form> 
+                  </div>
+              </div>
+             {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+{% endblock %}
+```
+### LoginViewとLogoutViewを作成する
+```python
+# users/views.py
+from django.contrib.auth.views import LoginView, LogoutView
+from django.views.generic import CreateView
+from .forms import RegisterForm
+
+class RegisterView(CreateView):
+  template_name = 'users/register.html'
+  form_class = RegisterForm
+  success_url = '/'
+  
+class UserLoginView(LoginView):
+  template_name = 'users/login.html'
+
+class UserLogoutView(LogoutView):
+  template_name = 'users/login.html'
+```
+ログインのテンプレート
+```html
+<!-- templates/users/login.html -->
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>ログイン</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                {% if not user.is_authenticated %}
+                  <h2 style="text-align: center; color:blue">ログイン</h2>
+                  <div class="blog_left_sidebar">
+                    <form method='post'>
+                      {% csrf_token %}
+                      {% if form.errors %}
+                        <div id="errors">
+                          <div class="inners">
+                            <p style="color:red">以下のエラーがあります</p>
+                            <ul>
+                              {% for field in form %}
+                                {% if field.errors %}
+                                <li>{{form.label }}: {{field.errors|striptags }}</li>
+                                {% endif %}
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        </div>
+                      {% endif %}
+                      {# {{ form.as_p }} #}
+                      <div class="mt-10">
+                        <input type="text" name="username" placeholder="名前" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
+                      </div>
+                      <div class="mt-10">
+                        <input type="password" name="password" placeholder="パスワード" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
+                      </div>
+                      <input type="submit" class="genric-btn success circle" style="float:right;margin-top:30px;" value="ログイン" >
+                    </form> 
+                  </div>
+                {% else %}
+                  <h2 style="color:red;">既にログイン済みです</h2>
+                {% endif %}
+              </div>
+             {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+{% endblock %}
+```
+```python
+# users/urls.py
+from django.urls import path
+from .views import *
+
+app_name="users"
+urlpatterns = [
+    path('register/', RegisterView.as_view(), name="register"),
+    path('login/', UserLoginView.as_view(), name="login"),
+    path('logout/', UserLogoutView.as_view(), name="logout")
+] 
+```
+Django_fantom_blog/setting.pyの最後にLOGOUT_REDIRECT_URLとLOGIN_REDIRECT_URLを追加するだけでリダイレクトしてくれる
+```python
+# Django_fantom_blog/setting.py
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGOUT_REDIRECT_URL = '/' # added
+LOGIN_REDIRECT_URL = '/'  # added
+```
 ```python
 
 ```
-
 ```python
 
 ```
+```python
 
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
 ```python
 
 ```
