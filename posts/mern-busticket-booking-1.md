@@ -1,5 +1,5 @@
 ---
-title: 'Mern Bus Ticket Booking'
+title: 'Mern Bus Ticket Booking-1'
 date: 'November 2, 2022'
 excerpt: 'MERNスタック(MongoDB, Express, React, Node.js)を使ってバスチケット予約アプリをつくります。Redux-Tool-Kitを使ってReduxを実装します'
 cover_image: '/images/posts/img8.jpg'
@@ -683,13 +683,16 @@ F12=>Networkで確認
 axiosで取り込んだデータのresponseはdataプロパティ(response.data)で確認する
 ```Js
 // src/pages/Register.js
-import {Link} from 'react-router-dom'
+import {Link, useNavigate} from 'react-router-dom'
 import '../resources/auth.css'
 import {useState} from 'react'
 import axios from 'axios'  // added
 import { toast } from 'react-toastify'
+// import { useDispatch } from 'react-redux'
+// import { HideLoading, ShowLoading } from '../redux/alertsSlice'
 
 function Register() {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -718,7 +721,8 @@ function Register() {
       if(response.success){
         console.log("register user successfully:", response.data) ;
         toast.success(response.data.message, {theme: "colored"})
-        // setLoading(false)
+        // dispatch(HideLoading())// setLoading(false)
+        navigate('/login')
       } else {
         console.log("User already exists:", response.data) ;
         toast.error(response.data.message, {theme: "colored"})
@@ -2804,7 +2808,7 @@ function  BusForm(props) {
       number: number,
       capacity: capacity,
       from: from,
-      to: from,
+      to: to,
       journeyDate: journeyDate,
       departure: departure,
       arrival: arrival,
@@ -2951,6 +2955,7 @@ export default  BusForm
 ```
 BackendでUpdate busを追加する
 ```js
+// route/busesRoute.js
 const router = require('express').Router()
 const authMiddleware = require('../middlewares/authMiddleware')
 const Bus = require('../models/busModel')
@@ -3005,14 +3010,177 @@ router.post('/get-all-buses', async function (req, res){
 
 module.exports = router;
 ```
+### Delete Bus バスの削除
+BackendでDelete busを追加する
 ```js
+// route/busesRoute.js
+// delete bus
+router.post('/delete-bus', authMiddleware, async function (req, res){
+  console.log('delete-bus')
+  try {
+    const buses = await Bus.findOneAndDelete(req.body._id)
+    return res.status(200).send({
+      success: true,
+      message: 'Busを削除しました',
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+```
+バス管理画面から削除をAPIコールする
+```js
+// pages/Admin/AdminBuses.js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import BusForm from '../../components/ BusForm'
+import PageTitle from '../../components/PageTitle'
+import { axiosInstance } from '../../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../../redux/alertsSlice';
+import BusTable from '../../components/BusTable';
 
+function  AdminBuses() {
+  const dispatch = useDispatch()
+  const [showBusForm, setShowBusForm] = useState(false)
+  // const [actionType, setActionType] = useState('')
+  const [buses, setBuses] = useState([])
+  const [selectedBus, setSelectedBus] = useState(null)
+
+  const getBuses = async()=> {
+    console.log('bus data success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-all-buses', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bus data success:', response.data.data)
+        setBuses(response.data.data) 
+      }else {
+        console.log('bus data else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('bus data error:')
+      toast.error(error.message)
+    }
+  }
+
+  const deleteBus = async(id) => { // added
+    console.log('bus data success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/delete-bus', {_id: id})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bus deleted')
+        getBuses()
+        toast.success(response.data.message)
+      }else {
+        console.log('bus delete else')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('bus delete error')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBuses()
+  }, [])
+
+  return (
+    <div>
+      <div className='d-flex justify-content-between'>
+        <PageTitle title='高速バス' />
+        <button className="primary-btn" onClick={()=>setShowBusForm(true)}>
+          バスを追加
+        </button>
+      </div>
+
+      <div className="bus-table">
+        <BusTable  
+          buses={buses} 
+          setSelectedBus={setSelectedBus} 
+          setShowBusForm={setShowBusForm}
+          deleteBus = {deleteBus}  // added
+        />
+      </div>
+      {showBusForm && (
+      <BusForm  
+        showBusForm={showBusForm} 
+        setShowBusForm ={setShowBusForm} 
+        actionType={selectedBus ? 'edit' : 'add'} 
+        selectedBus={selectedBus}
+        getData = {getBuses}
+        setSelectedBus = {setSelectedBus}
+      />
+      )}
+    </div>
+  )
+}
+
+export default  AdminBuses
 ```
 ```js
+// components/BusTable.js
+import React from 'react'
+import { Table } from 'react-bootstrap';
+import moment from 'moment';
 
-```
-```js
-
+function BusTable({buses, setSelectedBus, setShowBusForm, deleteBus}) {
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>バス名</th>
+                  <th>ナンバー</th>
+                  <th>出発地</th>
+                  <th>到着地</th>
+                  <th>出発日</th>
+                  <th>状況</th>
+                  <th>編集/削除</th>
+              </tr>
+          </thead>
+          <tbody>
+              {buses.map((bus) => 
+                  <tr key={bus._id}>
+                      <td>{bus.name}</td>
+                      <td>{bus.number}</td>
+                      <td>{bus.from}</td>
+                      <td>{bus.to}</td>
+                      <td>
+                        {moment(bus.journeyDate).format('YYYY-MM-DD')}
+                      </td>
+                      <td>{bus.status}</td>
+                      <td>
+                          {/* <Button variant="outline-secondary">編集</Button>
+                          <Button variant="outline-danger">削除</Button> */}
+`                          <div className="d-flex gap-3">
+                            <i 
+                              className='ri-pencil-line' 
+                              onClick={()=> {
+                                setSelectedBus(bus);
+                                setShowBusForm(true);
+                              }}></i>
+                              <i 
+                                className='ri-delete-bin-line'
+                                onClick={()=> {  // added
+                                  deleteBus(bus._id);
+                                }}></i>
+                          </div>`
+                      </td>
+                  </tr>
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
 ```
 ```js
 
