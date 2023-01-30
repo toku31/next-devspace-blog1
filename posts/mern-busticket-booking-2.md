@@ -96,8 +96,11 @@ export default Home
 ```js
 // Bus.js
 import React from 'react'
+import {useNavigate} from 'react-router-dom'
 
 function Bus({bus}) {
+  const navigate = useNavigate()
+
   return (
     <div className='card p-2'>
       <h1 className='text-lg'> {bus.name}</h1>
@@ -123,7 +126,7 @@ function Bus({bus}) {
           <p className='text-sm'>出発日：</p>
           <p className='text-sm'>{bus.journeyDate}</p>
         </div>
-        <h1 className="text-lg underline">予約する</h1>
+        <h1 className="text-lg underline" onClick={()=>navigate(`/book-now/${bus._id}`)}>予約する</h1>
       </div>
     </div>
   )
