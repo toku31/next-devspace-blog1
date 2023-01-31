@@ -152,15 +152,188 @@ h1, p {
   padding: 10px 0px;
 }
 ```
+### 予約ページを作成する
+BookNow.jsをpagesフォルダに作成する
 ```js
+// pages/book-now.js
+import React from 'react'
+
+function BookNow() {
+  return (
+    <div>BookNow</div>
+  )
+}
+
+export default BookNow
 
 ```
+App.jsにルートパスを追加する
 ```js
+import {BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import './resources/global.css'
+import Register from './pages/ Register';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import PublicRoute from './components/PublicRoute';
+import ProtectedRoute from './components/ProtectedRoute';
+import Loader from './components/Loader';
+import { useSelector } from 'react-redux';
+import AdminHome from './pages/Admin/AdminHome'
+import AdminBuses from './pages/Admin/AdminBuses';
+import AdminUsers from './pages/Admin/AdminUsers';
+import BookNow from './pages/BookNow';
 
+function App() {
+  const {loading} = useSelector(state => state.alerts)
+
+  return (
+    <div>
+      {loading && <Loader />}
+      <Router>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>}></Route>
+          <Route path="/book-now/:id" element={<ProtectedRoute><BookNow /></ProtectedRoute>}></Route>  // added
+
+          <Route path="/admin" element={<ProtectedRoute><AdminHome /></ProtectedRoute>}></Route>
+          <Route path="/admin/buses" element={<ProtectedRoute><AdminBuses /></ProtectedRoute>}></Route>
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}></Route>
+
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>}  />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>}  />
+        </Routes>
+      </Router>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
+  );
+}
+
+export default App;
 ```
-
+バス情報取得のAPIエンドポイント(Backend)
 ```js
+// pages/book-now.js
+const router = require('express').Router()
+const authMiddleware = require('../middlewares/authMiddleware')
+const Bus = require('../models/busModel')
 
+// add Bus
+router.post('/add-bus', async function (req, res){
+     ...
+})
+
+// Update bus 21
+router.post('/update-bus', authMiddleware, async function (req, res){
+     ...
+})
+
+// delete bus
+router.post('/delete-bus', authMiddleware, async function (req, res){
+     ...
+})
+
+
+// get all buses
+router.post('/get-all-buses', authMiddleware, async function (req, res){
+     ...
+})
+
+// get-bus-by-id
+router.post('/get-bus-by-id', authMiddleware, async function (req, res){
+  console.log('get-bus-buses')
+  try {
+    const bus = await Bus.findById(req.body._id)
+    return res.status(200).send({
+      success: true,
+      message: 'Busを取得しました',
+      data: bus
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+
+module.exports = router;
+```
+予約ページでバス情報取得のAPIコール(frontend)
+```js
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import { useDispatch } from 'react-redux'
+import { toast } from 'react-toastify';
+import { Grid, Col, Row} from 'react-bootstrap';
+import { useParams } from 'react-router-dom';
+
+function BookNow() {
+
+  const params = useParams()
+  const dispatch = useDispatch()
+  const [bus, setBus] = useState(null)
+
+  const getBus = async()=> {
+    // console.log('getbus success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-bus-by-id', {_id : params.id})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('getbus success:', response.data.data)
+        setBus(response.data.data) 
+      }else {
+        console.log('getbus else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('getbus error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBus()
+  }, [])
+
+  return (
+    <div>
+      {bus &&
+        <Row className='mt-3'>
+            <Col lg={6} xs={12} sm={12}>
+              <h1 className="text-xl text-secondary">{bus.name}</h1>
+              <h1 className="text-md">{bus.from}-{bus.to}</h1>
+              <hr />
+
+              <div>
+                <h1 className="text-lg"><b>出発日</b>: {bus.journeyDate}</h1>
+                <h1 className="text-lg"><b>料金</b>: ¥{bus.fare}</h1>
+                <h1 className="text-lg"><b>出発時刻</b>: {bus.departure}</h1>
+                <h1 className="text-lg"><b>到着時刻</b>: {bus.arrival}</h1>
+              </div>
+            </Col>
+            <Col lg={6} xs={12} sm={12}>
+
+            </Col>
+        </Row>
+      }
+    </div>
+  )
+}
+
+export default BookNow
 ```
 
 

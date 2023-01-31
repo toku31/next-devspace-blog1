@@ -124,6 +124,7 @@ urlpatterns = [
     path('post-create', CreatePostView.as_view(), name="create_post"),　# added
 ] 
 ```
+### 作成したPostを保存する
 ```python
 
 ```
