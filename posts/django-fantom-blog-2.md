@@ -71,7 +71,7 @@ login.htmlをコピーして編集する
               <div class="col-lg-8">
                   <h2 style="text-align: center; color:blue">投稿作成</h2>
                   <div class="blog_left_sidebar">
-                    <form method='post'>
+                    <form method='post' enctype="multipart/form-data">
                       {% csrf_token %}
                       {% if form.errors %}
                         <div id="errors">
@@ -126,8 +126,45 @@ urlpatterns = [
 ```
 ### 作成したPostを保存する
 ```python
+# posts.views.py
+from django.shortcuts import get_object_or_404
+from .models import Post, Category, Tag
+from django.views.generic import ListView, DetailView, CreateView
+from .forms import PostCreationForm
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+from django.template.defaultfilters import slugify
+from django.urls import reverse
 
+@method_decorator(login_required(login_url='users/login'), name='dispatch')
+class CreatePostView(CreateView):
+    template_name = 'posts/create-post.html'
+    form_class = PostCreationForm
+    models = Post
+    
+    def get_success_url(self):
+      return reverse('detail', kwargs={"pk":self.object.id})
+    
+    def form_valid(self, form):
+      form.instance.user = self.request.user
+      form.save()
+      
+      tags = self.request.POST.get('tag').split(',')
+      
+      for tag in tags:
+        current_tag = Tag.objects.filter(slug=slugify(tag))
+        if current_tag.count() < 1:
+          pass
+          # new_tag = Tag.objects.create(title=tag)
+          # form.instance.tag.add(new_tag)
+        else:
+          existed_tag = Tag.objects.get(slug=slugify(tag))
+          form.instance.tag.add(existed_tag)
+      return super(CreatePostView, self).form_valid(form)
 ```
+tags = self.request.POST.get('tag').split(',') のところのget('tag')のtagは、 create-post.htmlのinput type="text" name="tag" のnameから持ってきている。またsplit関数はリストを返のでtagsはリストになる  
+uccess_urlとget_success_urlおよびreverseとreverse_lazyの使い分け
+https://btj0.com/blog/django/success_url-get_success_url-reverse-reverse_lazy/
 ```python
 
 ```
