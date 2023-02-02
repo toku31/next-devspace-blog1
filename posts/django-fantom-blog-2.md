@@ -9,8 +9,7 @@ author_image: 'https://randomuser.me/api/portraits/men/7.jpg'
 ---
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 ### Post Creation Formを作成する
-参考：Udemyの  [Django 3.0 MasterClass - Learn How To Create Django Apps](https://www.udemy.com/course/django-30-masterclass-learn-how-to-create-django-apps/)
-
+参考：Udemyの  [Django 3.0 MasterClass - Learn How To Create Django Apps](https://www.udemy.com/course/django-30-masterclass-learn-how-to-create-django-apps/)  
 ```python
 user@mbp Django-fantom-blog % source venv/bin/activate
 (venv) user@mbp Django-fantom-blog % python manage.py runserver

@@ -9,8 +9,8 @@ author_image: 'https://randomuser.me/api/portraits/men/11.jpg'
 ---
 
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
-
 ###　バスの予約
+https://github.com/sathyaprakash195/sheybus-udemy  
 user@mbp mern-busticket-booking % nodemon server  
 user@mbp client % npm start
 #### バスを全て表示する
@@ -152,7 +152,7 @@ h1, p {
   padding: 10px 0px;
 }
 ```
-### 予約ページを作成する
+### 予約ページを作成する1
 BookNow.jsをpagesフォルダに作成する
 ```js
 // pages/book-now.js
@@ -335,8 +335,99 @@ function BookNow() {
 
 export default BookNow
 ```
+### 予約ページを作成する2
+```js
+import React from 'react'
+import { Col, Row} from 'react-bootstrap';
+import '../resources/bus.css'
 
+function SeatSelection({selectedSeats, setSelectedSeats, bus}) {
+  console.log('selectedSeats1', selectedSeats)
+  const capacity = bus.capacity
+  const selectOrUnselectSeats = (seatNumber)=> {
+    if (selectedSeats.includes(seatNumber)) {
+      setSelectedSeats(selectedSeats.filter((seat)=> seat !== seatNumber))
+    } else {
+      setSelectedSeats([...selectedSeats, seatNumber])
+    }
+  }
 
+  return (
+    <div>
+      <div className="bus-container">
+        <Row style={{gap:'10px 0px'}}>
+          {Array.from(Array(capacity).keys()).map((seat) => {
+            let seatClass=''
+            console.log('selectedSeats', selectedSeats)
+            if(selectedSeats.includes(seat + 1)){
+              seatClass='selected-seat'
+            }
+            return (
+              <Col sm={3}>
+              <div 
+                className={`seat ${seatClass}`}
+                onClick={()=>selectOrUnselectSeats(seat + 1)}
+              >
+                {seat + 1}
+              </div>
+            </Col>
+            )
+          })}
+        </Row>
+      </div>
+    </div>
+  )
+}
+
+export default SeatSelection
+```
+```css
+/* bus.css */
+.bus-container {
+  width: 300px;
+  border: 2px solid gray;
+  padding: 10px;
+}
+
+.seat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border: 1px solid gray;
+  border-radius: 2px;
+}
+
+.selected-seat {
+  background-color: green;
+  color:white
+}
+
+.booked-seat {
+  background-color: gray;
+  color: white
+}
+```
+
+```js
+
+```
+
+```js
+
+```
+
+```js
+
+```
+
+```js
+
+```
+
+```js
+
+```
 
 
 
