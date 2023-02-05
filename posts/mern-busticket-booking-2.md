@@ -269,6 +269,7 @@ module.exports = router;
 ```
 予約ページでバス情報取得のAPIコール(frontend)
 ```js
+// pages/BookNow.js
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { axiosInstance } from '../helpers/axiosInstance'
@@ -336,7 +337,9 @@ function BookNow() {
 export default BookNow
 ```
 ### 予約ページを作成する2
+バスのシート選択画面を作成する
 ```js
+// components/SeatSelection.js
 import React from 'react'
 import { Col, Row} from 'react-bootstrap';
 import '../resources/bus.css'
@@ -361,7 +364,10 @@ function SeatSelection({selectedSeats, setSelectedSeats, bus}) {
             console.log('selectedSeats', selectedSeats)
             if(selectedSeats.includes(seat + 1)){
               seatClass='selected-seat'
+            }else if (bus.seatsBooked.includes(seat + 1)){
+              seatClass='booked-seat'
             }
+
             return (
               <Col sm={3}>
               <div 
@@ -381,8 +387,9 @@ function SeatSelection({selectedSeats, setSelectedSeats, bus}) {
 
 export default SeatSelection
 ```
+選択すると緑色に変わるようにCSSを編集
 ```css
-/* bus.css */
+/* resources/bus.css */
 .bus-container {
   width: 300px;
   border: 2px solid gray;
@@ -405,29 +412,330 @@ export default SeatSelection
 
 .booked-seat {
   background-color: gray;
-  color: white
+  color: white;
+  pointer-events: none;
+  cursor: disabled;
 }
 ```
+予約画面にシートのコンポーネントを取り込む
+```js
+// Pages/BookNow.js
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import { useDispatch } from 'react-redux'
+import { toast } from 'react-toastify';
+import { Grid, Col, Row} from 'react-bootstrap';
+import { useParams } from 'react-router-dom';
+import SeatSelection from '../components/SeatSelection';
 
+function BookNow() {
+
+  const params = useParams()
+  const dispatch = useDispatch()
+  const [bus, setBus] = useState(null)
+  const [selectedSeats, setSelectedSeats] = useState([])
+
+  const getBus = async()=> {
+    // console.log('getbus success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-bus-by-id', {_id : params.id})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('getbus success:', response.data.data)
+        setBus(response.data.data) 
+      }else {
+        console.log('getbus else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('getbus error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBus()
+  }, [])
+
+  return (
+    <div>
+      {bus &&
+        <Row className='mt-3'>
+            <Col lg={6} xs={12} sm={12}>
+              <h1 className="text-xl text-secondary">{bus.name}</h1>
+              <h1 className="text-md">{bus.from}-{bus.to}</h1>
+              <hr />
+
+              <div>
+                <h1 className="text-lg"><b>出発日</b>: {bus.journeyDate}</h1>
+                <h1 className="text-lg"><b>料金</b>: ¥{bus.fare}</h1>
+                <h1 className="text-lg"><b>出発時刻</b>: {bus.departure}</h1>
+                <h1 className="text-lg"><b>到着時刻</b>: {bus.arrival}</h1>
+              </div>
+              <hr />
+
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl">
+                  <b>選択したシート</b>: {selectedSeats.join(",")}
+                </h1>
+                <h1 className="text-2xl mt-2">
+                  料金：<b>¥{bus.fare * selectedSeats.length}</b>
+                </h1>
+              </div>
+              <button className='secondary-btn mt-3'>予約する</button>
+            </Col>
+            <Col lg={6} xs={12} sm={12}>
+                <SeatSelection  
+                  selectedSeats = {selectedSeats}
+                  setSelectedSeats = {setSelectedSeats}
+                  bus = {bus}
+                />
+            </Col>
+        </Row>
+      }
+    </div>
+  )
+}
+
+export default BookNow
+```
+### Booking APIを作成する
+```js
+// models.bookingModel.js
+const mongoose = require('mongoose')
+
+const bookingSchema = new mongoose.Schema(
+  {
+    bus: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Bus',
+      require: true
+    },
+    user: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+      require: true
+    },
+    seats: {
+      type: Array,
+      require: true
+    },
+    transactionId : {
+      type: String,
+      require: true
+    }
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = mongoose.model('Booking', bookingSchema)
+```
+/routes/userRoute.jsを参考
+```js
+// routes/bookingsRoute.js
+const router = require('express').Router();
+const Booking = require('../models/bookingModel')
+const Bus = require('../models/busModel')
+
+// Book a seat
+router.post('/book-seat', async(req, res) => {
+  try {
+    // 新規予約を作成する
+    const newBooking = new Booking({
+      ...req.body,
+      transactionId: '1234'
+    })
+    await newBooking.save()
+    // 予約シートをBusモデルに保存する
+    const bus = Bus.findById(req.body.busId);
+    bus.seatsBooked = [...bus.seatsBooked, ...req.body.seats];
+    await bus.save()
+
+    res.status(200).send({
+      message: 'Booking successful',
+      success: true,
+      data: newBooking,
+    })
+  } catch (error) {
+    res.status(500).send({
+      message: 'Booking failed',
+      success: false,
+      data: error,
+    })
+  }
+})
+module.exports = router;
+```
+server.jsにルートを登録する
+```js
+// server.js
+const express = require('express');
+const app = express();
+const dotenv = require("dotenv").config();
+const port = process.env.PORT || 5000;
+const dbConfig = require("./config/dbConfig");
+app.use(express.json())
+
+const usersRoute = require('./routes/usersRoute') 
+const busesRoute = require('./routes/busesRoute') 
+const bookingsRoute = require('./routes/bookingsRoute') 
+
+app.use('/api/users/', usersRoute)  
+app.use('/api/buses/', busesRoute) 
+app.use('/api/bookings/', bookingsRoute)  // added
+
+app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
+```
+
+```js
+// pages/BookNow.js
+import { useEffect, useState } from 'react'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import { useDispatch } from 'react-redux'
+import { toast } from 'react-toastify';
+import { Grid, Col, Row} from 'react-bootstrap';
+import { useParams } from 'react-router-dom';
+import SeatSelection from '../components/SeatSelection';
+
+function BookNow() {
+
+  const params = useParams()
+  const dispatch = useDispatch()
+  const [bus, setBus] = useState(null)
+  const [selectedSeats, setSelectedSeats] = useState([])
+
+  const getBus = async()=> {
+    // console.log('getbus success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-bus-by-id', {_id : params.id})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('getbus success:', response.data.data)
+        setBus(response.data.data) 
+        // console.log(bus)
+      }else {
+        console.log('getbus else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('getbus error:')
+      toast.error(error.message)
+    }
+  }
+
+  const bookNow = async ()=> {
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/book-seat', {
+        busId : bus._id,
+        seats: selectedSeats,
+      })
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookNow success:', response.data.data)
+        toast.success(response.data.message)
+      }else {
+        console.log('bookNow else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('bookNow error:')
+      toast.error(error.message)
+    }
+  };
+
+  useEffect(()=> {
+    getBus()
+  }, [])
+
+  return (
+    <div>
+      {bus &&
+        <Row className='mt-3'>
+            <Col lg={6} xs={12} sm={12}>
+              <h1 className="text-xl text-secondary">{bus.name}</h1>
+              <h1 className="text-md">{bus.from}-{bus.to}</h1>
+              <hr />
+
+              <div>
+                <h1 className="text-lg"><b>出発日</b>: {bus.journeyDate}</h1>
+                <h1 className="text-lg"><b>料金</b>: ¥{bus.fare}</h1>
+                <h1 className="text-lg"><b>出発時刻</b>: {bus.departure}</h1>
+                <h1 className="text-lg"><b>到着時刻</b>: {bus.arrival}</h1>
+                <h1 className="text-lg"><b>残座席</b>: {bus.capacity - bus.seatsBooked.length}</h1>
+              </div>
+              <hr />
+
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl">
+                  選択した座席: {selectedSeats.join(",")}
+                </h1>
+                <h1 className="text-2xl mt-2">
+                  料金：¥{bus.fare * selectedSeats.length}
+                </h1>
+                <hr />
+                 <button 
+                  className={`btn btn-primary ${(selectedSeats.length===0) && 'disabled-btn' }`}
+                  onClick={()=>bookNow()}
+                >予約する</button>
+              </div>
+            </Col>
+            <Col lg={6} xs={12} sm={12}>
+                <SeatSelection  
+                  selectedSeats = {selectedSeats}
+                  setSelectedSeats = {setSelectedSeats}
+                  bus = {bus}
+                />
+            </Col>
+        </Row>
+      }
+    </div>
+  )
+}
+export default BookNow
+```
+### Payment Part1 Stripeを使う
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 ```js
 
 ```
 
-```js
-
-```
-
-```js
-
-```
-
-```js
-
-```
-
-```js
-
-```
 
 
 

@@ -135,6 +135,14 @@ from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 
+class IndexView(ListView):
+
+class PostDetail(DetailView):
+
+class CategoryDetail(ListView):
+
+class TagDetail(ListView):
+
 @method_decorator(login_required(login_url='users/login'), name='dispatch')
 class CreatePostView(CreateView):
     template_name = 'posts/create-post.html'
@@ -149,21 +157,192 @@ class CreatePostView(CreateView):
       form.save()
       
       tags = self.request.POST.get('tag').split(',')
+      # for tag in tags:
+      #   tag, created = Tag.objects.get_or_create(title=tag)
+      #   form.instance.tags.add(tag)
+      #   return super(CreatePostView, self).form_valid(form)
       
       for tag in tags:
         current_tag = Tag.objects.filter(slug=slugify(tag))
         if current_tag.count() < 1:
-          pass
-          # new_tag = Tag.objects.create(title=tag)
-          # form.instance.tag.add(new_tag)
+          create_tag = Tag.objects.create(title=tag)
+          create_tag.slug = slugify(create_tag.title)
+          create_tag.save()
+          form.instance.tag.add(create_tag)
+          print('create')
         else:
           existed_tag = Tag.objects.get(slug=slugify(tag))
           form.instance.tag.add(existed_tag)
+          print('exist')
       return super(CreatePostView, self).form_valid(form)
 ```
 tags = self.request.POST.get('tag').split(',') のところのget('tag')のtagは、 create-post.htmlのinput type="text" name="tag" のnameから持ってきている。またsplit関数はリストを返のでtagsはリストになる  
+Tagモデルの def save(self, *args, **kwargs): は「Cannot force both insert and updating in model saving」のエラーが出たのでコメントアウトした  
 uccess_urlとget_success_urlおよびreverseとreverse_lazyの使い分け
-https://btj0.com/blog/django/success_url-get_success_url-reverse-reverse_lazy/
+https://btj0.com/blog/django/success_url-get_success_url-reverse-reverse_lazy/  
+### Crispy formsをインストールする
+https://django-crispy-forms.readthedocs.io/en/latest/  
+
+```python
+(venv) user@mbp Django-fantom-blog % pip install django-crispy-forms 
+```
+```python
+# Django_fantom_blog/settings.py
+INSTALLED_APPS = (
+    ...
+    'crispy_forms',
+)
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+```
+https://django-crispy-forms.readthedocs.io/en/latest/filters.html  
+以下のように使う
+```python
+{% load crispy_forms_tags %}
+
+<form method="post" class="my-class">
+    {{ my_formset|crispy }}
+</form>
+```
+### Post Update Formを作成する
+FormHelperを使う  
+https://django-crispy-forms.readthedocs.io/en/latest/form_helper.html
+```python
+from crispy_forms.helper import FormHelper
+
+class ExampleForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+```
+```python
+# post/forms.py
+from .models import *
+from django import forms
+from crispy_forms.helper import FormHelper, Field, Submit
+from crispy_forms.layout import Layout,
+
+class PostCreationForm(forms.ModelForm):
+  ・・・
+class PostUpdateForm(forms.ModelForm):
+  def __init__(self, *args, **kwargs):
+    super(PostUpdateForm, self).__init__(*args, **kwargs)
+    self.helper = FormHelper()
+    self.helper.form_method='post'
+    self.helper.field_class='mt-10'
+    self.helper.layout = Layout(
+      Field("title", css_class="single-input", placeholder="Title"),
+      Field("category", css_class="single-input"),
+      Field("content", css_class="single-input", placeholder="Content"),
+      Field("image", css_class="single-input"),
+      Field("tag", css_class="single-input", placeholder="Your Tags", value=self.instance.post_tag())
+    )
+    self.helper.add_input(Submit('submit', '更新', css_class="generic-btn success circle"))
+  
+  tag = forms.CharField()  # あとで追加
+  class Meta:
+    model=Post
+    fields = ['title', 'category', 'content', 'image']
+```
+### Post Update Template Fileを作成する
+最初にUpdatePostViewを作成
+```python
+# posts/views.py
+from .models import Post, Category, Tag
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from .forms import PostCreationForm, PostUpdateForm
+
+class UpdatePostView(UpdateView):
+  model = Post
+  template_name="posts/post-update.html"
+  form_class=PostUpdateForm
+  from django.urls import reverse
+
+  def get_success_url(self):
+    return reverse('detail', kwargs={"pk":self.object.id})
+```
+次にurls.pyにパスを追加
+```python
+# posts/urls.py
+from django.urls import path
+# from posts.views import *
+from .views import *
+
+urlpatterns = [
+    path('', IndexView.as_view(), name="index"),
+    path('detail/<str:pk>', PostDetail.as_view(), name="detail"),
+    path('post-update/<str:pk>', UpdatePostView.as_view(), name="post_update"), # added
+    path('category/<str:pk>', CategoryDetail.as_view(), name="category_detail"),
+    path('tag/<slug:slug>', TagDetail.as_view(), name="tag_detail"),
+    path('post-create', CreatePostView.as_view(), name="create_post"),
+] 
+```
+テンプレートファイルを作成する  
+{% load crispy_forms_tags %}や {% crispy form %}を以下のように挿入する
+```html
+# templates/posts/post-update.html
+{% extends 'base.html'%}
+{% load static %}
+{% load crispy_forms_tags %} # added
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>投稿作成</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <h2 style="text-align: center; color:blue">投稿作成</h2>
+                  <div class="blog_left_sidebar">
+                    {% crispy form %}  # added
+                  </div>
+              </div>
+             {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+{% endblock %}
+```
+http://localhost:8000/post-update/1eaf4204-3c91-4a65-b988-a7712dba91b8 を入力すると編集画面が表示される  
+タグを編集画面に表示させるため,forms.pyのPostUpdateFormにtag = forms.CharField()を追加し、また以下のようにPostモデルにpost_tagを追加する  
+またforms.pyのPostUpdateFormクラスあるtagのFieldにvalue=self.instance.post_tag()を追加する  
+Field("tag", css_class="single-input", placeholder="Your Tags",value=self.instance.post_tag())
+```python
+# posts/models.py
+class Post(models.Model):
+  title = models.CharField(verbose_name='タイトル',max_length=150)
+  content = models.TextField(verbose_name='内容')
+  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
+  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  # slug = models.SlugField(default="slug")
+  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
+  tag = models.ManyToManyField(Tag, related_name="posts" , blank=True, verbose_name='タグ')
+  slider_post = models.BooleanField(default=False, verbose_name='スライダー')
+    
+  def __str__(self):
+    return self.title
+  
+  def post_tag(self):　# added
+    return ','.join(str(tag) for tag in self.tag.all())
+```
+### Postを更新する
 ```python
 
 ```
@@ -173,4 +352,87 @@ https://btj0.com/blog/django/success_url-get_success_url-reverse-reverse_lazy/
 ```python
 
 ```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+
+
 

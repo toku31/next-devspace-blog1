@@ -550,15 +550,15 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      require: true
     },
     email: {
       type: String,
-      required: true
+      require: true
     },
     password: {
       type: String,
-      required: true
+      require: true
     },
   },{
     timestamps: true
@@ -802,15 +802,15 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      require: true
     },
     email: {
       type: String,
-      required: true
+      require: true
     },
     password: {
       type: String,
-      required: true
+      require: true
     },
     isAdmin: {  // added
       type: Boolean,
@@ -2434,43 +2434,43 @@ const busSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true
+      require: true
     },
     number: {
       type: String,
-      required: true
+      require: true
     },
     capacity: {
       type: Number,
-      required: true
+      require: true
     },
     from: {
       type: String,
-      required: true
+      require: true
     },
     to: {
       type: String,
-      required: true
+      require: true
     },
     journeyDate: {
       type: String,  // DateはEdit　Bus２１でNG
-      required: true
+      require: true
     },
     departure: {
       type: String,
-      required: true
+      require: true
     },
     arrival: {
       type: String,
-      required: true
+      require: true
     },
     type: {
       type: String,
-      required: true
+      require: true
     },
     fare: {
       type: Number,
-      required: true
+      require: true
     },
     seatsBooked: {
       type: Array,
