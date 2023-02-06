@@ -343,11 +343,56 @@ class Post(models.Model):
     return ','.join(str(tag) for tag in self.tag.all())
 ```
 ### Postを更新する
+他のログインした人がpost-updateのURLを叩いても編集できないように以下のdef get(self, request, *args, **kwargs)のようなチェック機能を追加する
 ```python
+# post/views.py
+from django.http import HttpResponseRedirect
+ ・・・
+@method_decorator(login_required(login_url='users/login'), name='dispatch')
+class UpdatePostView(UpdateView):
+  model = Post
+  template_name="posts/post-update.html"
+  form_class=PostUpdateForm
 
+  def get_success_url(self):
+    return reverse('detail', kwargs={"pk":self.object.id})
+  
+  def form_valid(self, form):
+    form.instance.user = self.request.user
+    form.instance.tag.clear()
+    tags = self.request.POST.get('tag').split(',')
+    for tag in tags:
+      current_tag = Tag.objects.filter(slug=slugify(tag))
+      if current_tag.count() < 1:
+        newTag = Tag.objects.create(title=tag)
+        newTag.slug = slugify(newTag.title)
+        newTag.save()
+        form.instance.tag.add(newTag)
+        print('create')
+      else:
+        existed_tag = Tag.objects.get(slug=slugify(tag))
+        form.instance.tag.add(existed_tag)
+        print('exist')
+    return super(UpdatePostView, self).form_valid(form)
+    
+  def get(self, request, *args, **kwargs):
+    self.object = self.get_object()
+    
+    if self.object.user != request.user:
+      return HttpResponseRedirect('/')
+    return super(UpdatePostView, self).get(request, *args, **kwargs)
 ```
+### 削除とアップデートボタンを作成する
+投稿の詳細画面に更新と削除ボタンを作成する  
+class PostDetail(DetailView):   
+  context_object_name = 'single'
 ```python
-
+`# templates/posts/detail.html
+  <p>{{single.content}}</p>
+  {% if single.user == request.user %}
+  <a href="{% url 'post_update' single.pk %}" class="genric-btn info circle">更新</a>
+  <a href="{% url 'post_update' single.pk %}" class="genric-btn danger circle">削除</a>
+  {% endif %}
 ```
 ```python
 
