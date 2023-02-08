@@ -705,22 +705,199 @@ function BookNow() {
 export default BookNow
 ```
 ### Payment Part1 Stripeを使う
+Stripeのアカウントを作成する  
+React Stripe Checkout Component  
+https://github.com/azmenak/react-stripe-checkout
 ```js
+npm install react-stripe-checkout
+```
+frontendの実装例
+```js
+import React from 'react'
+import StripeCheckout from 'react-stripe-checkout';
 
+export default class TakeMoney extends React.Component {
+  onToken = (token) => {
+    fetch('/save-stripe-token', {
+      method: 'POST',
+      body: JSON.stringify(token),
+    }).then(response => {
+      response.json().then(data => {
+        alert(`We are in business, ${data.email}`);
+      });
+    });
+  }
+  // ...
+  render() {
+    return (
+      // ...
+      <StripeCheckout
+        token={this.onToken}
+        stripeKey="my_PUBLISHABLE_stripekey"
+      />
+    )
+  }
+}
+```
+上の例のようにBookNow.jsにStripeのフロントエンドを実装する
+```js
+// pages/BookNow.js
+import { useEffect, useState } from 'react'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import { useDispatch } from 'react-redux'
+import { toast } from 'react-toastify';
+import { Grid, Col, Row} from 'react-bootstrap';
+import { useParams } from 'react-router-dom';
+import SeatSelection from '../components/SeatSelection';
+import StripeCheckout from 'react-stripe-checkout'; // added
+
+function BookNow() {
+
+  const params = useParams()
+  const dispatch = useDispatch()
+  const [bus, setBus] = useState(null)
+  const [selectedSeats, setSelectedSeats] = useState([])
+
+  const getBus = async()=> {
+    // console.log('getbus success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-bus-by-id', {_id : params.id})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('getbus success:', response.data.data)
+        setBus(response.data.data) 
+        // console.log(bus)
+      }else {
+        console.log('getbus else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('getbus error:')
+      toast.error(error.message)
+    }
+  }
+
+  const bookNow = async ()=> {
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/book-seat', {
+        busId : bus._id,
+        seats: selectedSeats,
+      })
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookNow success:', response.data.data)
+        toast.success(response.data.message)
+      }else {
+        console.log('bookNow else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('bookNow error:')
+      toast.error(error.message)
+    }
+  };
+
+  const onToken = (token) => {
+    console.log(token)
+  }
+
+  useEffect(()=> {
+    getBus()
+  }, [])
+
+  // {bus && console.log('bookedSeats', bus.journeyDate)}
+  return (
+    <div>
+      {bus &&
+        <Row className='mt-3'>
+            <Col lg={6} xs={12} sm={12}>
+              <h1 className="text-xl text-secondary">{bus.name}</h1>
+              <h1 className="text-md">{bus.from}-{bus.to}</h1>
+              <hr />
+
+              <div>
+                <h1 className="text-lg"><b>出発日</b>: {bus.journeyDate}</h1>
+                <h1 className="text-lg"><b>料金</b>: ¥{bus.fare}</h1>
+                <h1 className="text-lg"><b>出発時刻</b>: {bus.departure}</h1>
+                <h1 className="text-lg"><b>到着時刻</b>: {bus.arrival}</h1>
+                <h1 className="text-lg"><b>残座席</b>: {bus.capacity - bus.seatsBooked.length}</h1>
+              </div>
+              <hr />
+
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl">
+                  選択した座席: {selectedSeats.join(",")}
+                </h1>
+                <h1 className="text-2xl mt-2">
+                  料金：¥{bus.fare * selectedSeats.length}
+                </h1>
+                <hr />
+
+                <StripeCheckout
+                  token={onToken}
+                  stripeKey="・・・公開キー・・・"
+                >
+                  <button // 座席を選択したら予約ボタンの色がグレーから青になる
+                    className={`btn btn-primary ${(selectedSeats.length===0) && 'disabled-btn' }`}
+                    // onClick={()=>bookNow()}
+                  >予約する</button>
+                </StripeCheckout>
+              </div>
+            </Col>
+            <Col lg={6} xs={12} sm={12}>
+                <SeatSelection  
+                  selectedSeats = {selectedSeats}
+                  setSelectedSeats = {setSelectedSeats}
+                  bus = {bus}
+                />
+            </Col>
+        </Row>
+      }
+    </div>
+  )
+}
+export default BookNow
+```
+test@gmail.com  
+4242 4242 4242 4242  
+12/25 123
+#### Payment Part2 Backend
+npm stripe
+https://www.npmjs.com/package/stripe
+```js
+user@mbp mern-busticket-booking % npm install stripe 
 ```
 ```js
-
+user@mbp mern-busticket-booking % npm i uuid
 ```
+Stripeのプライベートキーを.envファイルに書く　stripe_key = '・・・・'
 ```js
-
-```
-```js
-
-```
-```js
-
-```
-```js
+// routes/bookingRoutes.js
+// make payment
+router.post('/make-payment', authMiddleware, async(req, res) => {
+  try {
+    const {token, amount} = req.body;
+    const customer = await stripe.customers.create({
+      email: token.email,
+      source: token.id
+    })
+    const payment = await stripe.charges.create({
+      amount: amount,
+      currency: "yen",
+      customer: customer.id,
+      receipt_email: token.email,
+    }, {
+      idempotencyKey: uuid(),
+    })
+  } catch (error) {
+    
+  }
+})
 
 ```
 ```js

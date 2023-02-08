@@ -389,25 +389,154 @@ class PostDetail(DetailView):
 ```python
 `# templates/posts/detail.html
   <p>{{single.content}}</p>
-  {% if single.user == request.user %}
+  {% if single.user == request.user %}　# ログインした人が作成したPostのみ表示できるようする
   <a href="{% url 'post_update' single.pk %}" class="genric-btn info circle">更新</a>
   <a href="{% url 'post_update' single.pk %}" class="genric-btn danger circle">削除</a>
   {% endif %}
 ```
+### Postを削除する
 ```python
+# posts/views.py
+class DeletePostView(DeleteView):
+  model = Post
+  success_url = '/'
+  template_name = 'posts/delete.html'
+  
+  def delete(self, request, *args, **kwargs):
+    self.object = self.get_object()
+    if self.object.user == request.user:
+      self.object.delete()
+      return HttpResponseRedirect(self.success_url) # homeに戻る
+    else:
+      return HttpResponseRedirect(self.success_url)
+      # return HttpResponseRedirect()
 
+  # 投稿してない人が削除画面を見れないようにする
+  def get(self, request, *args, **kwargs):
+    self.object = self.get_object()
+    if self.object.user != request.user:
+      return HttpResponseRedirect('/')
+    return super(DeletePostView, self).get(request, *args, **kwargs)
 ```
 ```python
+# posts/urls.py
+from django.urls import path
+from .views import *
 
+urlpatterns = [
+    path('', IndexView.as_view(), name="index"),
+    path('detail/<str:pk>', PostDetail.as_view(), name="detail"),
+    path('post-update/<str:pk>', UpdatePostView.as_view(), name="post_update"),
+    path('post-delete/<str:pk>', DeletePostView.as_view(), name="post_delete"),  # added
+    path('category/<str:pk>', CategoryDetail.as_view(), name="category_detail"),
+    path('tag/<slug:slug>', TagDetail.as_view(), name="tag_detail"),
+    path('post-create', CreatePostView.as_view(), name="create_post"),
+] 
 ```
 ```python
-
+`# templates/posts/detail.html
+    <p>{{single.content}}</p>
+    {% if single.user == request.user %}
+    <a href="{% url 'post_update' single.pk %}" class="genric-btn info circle">更新</a>
+    <a href="{% url 'post_delete' single.pk %}" class="genric-btn danger circle">削除</a> # changed
+    {% endif %}
 ```
-```python
+削除用テンプレートhtmlを作成する(post-update.htmlをコピー)  
+下の a href="{% url 'detail' object.pk %}" はDeletePostViewでpost.pkを使えないからobject.pkを使う  
 
+```html
+`# templates/posts/delete.html
+{% extends 'base.html'%}
+{% load static %}
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>投稿削除</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <h2 style="text-align: center; color:blue">投稿削除</h2>
+                  <div class="blog_left_sidebar">
+                    <form method="post">
+                      {% csrf_token %}
+                      <a href="{% url 'detail' object.pk %}" class="genric-btn info circle">No</a>
+                      <button type="submit" class="genric-btn danger circle">Yes</button>
+                    </form>
+                  </div>
+
+              </div>
+             {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+{% endblock %}
 ```
-```python
-
+### Navbarを編集する
+```html
+  <!--================Header Menu Area =================-->
+  <header class="header_area">
+      <div class="logo_part">
+        <div class="container">
+          <a class="logo" href="#"><img src="{% static "img/logo.png" %}" alt=""></a>
+        </div>
+      </div>
+<div class="main_menu">
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <a class="navbar-brand logo_h" href="{% url 'index' %}"><img src="{% static "img/logo.png" %}" alt=""></a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse offset" id="navbarSupportedContent">
+        <ul class="nav navbar-nav menu_nav">
+          <li class="nav-item active"><a class="nav-link" href="{% url 'index' %}">ホーム</a></li> 
+          <li class="nav-item"><a class="nav-link" href="category.html">カテゴリー</a></li>
+          <li class="nav-item"><a class="nav-link" href="archive.html">Archive</a></li>
+                          {% if user.is_authenticated %}
+          <li class="nav-item submenu dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{user.username}}</a>
+            <ul class="dropdown-menu">
+              <li class="nav-item"><a class="nav-link" href="{% url 'create_post' %}">投稿の追加</a></li>
+              <li class="nav-item"><a class="nav-link" href="elements.html">パスワードの変更</a></li>
+              <li class="nav-item"><a class="nav-link" href="elements.html">プロフィール</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'users:logout' %}">ログアウト</a></li>
+            </ul>
+          </li> 
+                          {% else %}
+                          <li class="nav-item"><a class="nav-link" href="{% url 'users:register' %}">登録</a></li>
+                          <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">ログイン</a></li>
+                          {% endif %}
+          <li class="nav-item"><a class="nav-link" href="contact.html">お問合せ</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right ml-auto">
+          <li class="nav-item"><a href="#" class="search"><i class="lnr lnr-magnifier"></i></a></li>
+        </ul>
+      </div> 
+    </div>
+  </nav>
+</div>
+  </header>
+  <!--================Header Menu Area =================-->
+{% block content %}
 ```
 ```python
 
