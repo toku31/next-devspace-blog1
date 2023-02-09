@@ -538,18 +538,86 @@ urlpatterns = [
   <!--================Header Menu Area =================-->
 {% block content %}
 ```
+### 人気順投稿リストを作成する
 ```python
+# Posts/models.py
+class Post(models.Model):
+  title = models.CharField(verbose_name='タイトル',max_length=150)
+  content = models.TextField(verbose_name='内容')
+  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
+  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  # slug = models.SlugField(default="slug")
+  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
+  tag = models.ManyToManyField(Tag, related_name="posts" , blank=True, verbose_name='タグ')
+  slider_post = models.BooleanField(default=False, verbose_name='スライダー')
+  hit = models.PositiveIntegerField(default=0) # added
 
+  def __str__(self):
+    return self.title
+  
+  def post_tag(self):
+    return ','.join(str(tag) for tag in self.tag.all())
+```
+makemirations & migrateを実行  
+F関数を使ってDjangoで効率よくquerysetのカウントアップを行う  
+https://tksmml.hatenablog.com/entry/2019/08/05/170000
+```python
+# posts/views.py
+from django.db.models import F # added F関数
+
+class PostDetail(DetailView):
+  template_name="posts/detail.html"
+  model = Post
+  context_object_name = 'single'
+  
+  def get(self, request, *args, **kwargs):  # added
+    self.hit = Post.objects.filter(id=self.kwargs['pk'].update(hit=F('hit')+1))
+    return super(PostDetail,self).get(request, *args, **kwargs)
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    return context
 ```
 ```python
+# posts/templatetags/custom_tags.py
+from django import template
+from posts.models import Category, Tag, Post
 
-```
-```python
+register = template.Library()
 
-```
-```python
+@register.simple_tag(name="post_categories")
+def all_categories():
+  return Category.objects.all()
 
+@register.simple_tag(name="tags")
+def all_tags():
+  return Tag.objects.all()
+
+@register.simple_tag(name="hit_posts")  # added
+def hit_posts():
+  return Post.objects.order_by('-hit')[:5]
 ```
+右サイドのhtmlを編集する
+```html
+ <!-- right_side.html -->
+  <aside class="single_sidebar_widget popular_post_widget">
+      <h3 class="widget_title">人気 投稿</h3>
+      {% hit_posts as posts %}
+      {% for post in posts %}
+      <div class="media post_item">
+          <img src="{{ post.image.url }}" alt="post" style="width: 100px; height:60px">
+          <div class="media-body">
+              <a href="{% url 'detail' post.id %}"><h3>{{ post.title }}</h3></a>
+              <p>閲覧回数: {{ post.hit }}</p>
+          </div>
+      </div>
+      {% endfor %}
+      <div class="br"></div>
+  </aside>
+```
+### テンプレートのタグを表示する
 ```python
 
 ```

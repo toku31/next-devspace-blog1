@@ -878,6 +878,18 @@ user@mbp mern-busticket-booking % npm i uuid
 Stripeのプライベートキーを.envファイルに書く　stripe_key = '・・・・'
 ```js
 // routes/bookingRoutes.js
+const router = require('express').Router();
+const Booking = require("../models/bookingModel")
+const Bus = require('../models/busModel')
+const authMiddleware = require('../middlewares/authMiddleware')
+const stripe = require('stripe')(process.env.stripe_key)
+const uuid = require('uuid')
+
+// Book a seat
+router.post('/book-seat', authMiddleware, async(req, res) => {
+  ・・・
+})
+
 // make payment
 router.post('/make-payment', authMiddleware, async(req, res) => {
   try {
