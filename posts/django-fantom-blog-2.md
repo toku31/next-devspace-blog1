@@ -618,29 +618,200 @@ def hit_posts():
   </aside>
 ```
 ### テンプレートのタグを表示する
+詳細画面のタグを表示する  
+singleはviews.pyのPostDetail(DetailView)で定義しているcontext_object_name 
+```html
+<!-- templates/posts/detail.html -->
+  <a href="#"><h4>{{single.title}}</h4></a>
+  <div class="user_details">
+    <div class="float-left">
+      {% for tag in single.tag.all %}
+      <a href="{% url 'tag_detail' tag.slug %}">{{ tag.title }}</a>
+      {% endfor %}
+    </div>
+```
+homeページのタグを表示する  
+下記のpostは {% for post in posts %} のpost 
 ```python
-
+<!-- templates/posts/index.html -->
+  <div class="blog_text_inner">
+    {% for tag in post.tag.all %}　// added
+      <a class="cat" href="#">{{ tag.title }}</a>  // changed
+    {% endfor %}  // added
+      <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title }}</h4></a>
+      <p>{{ post.content|truncatechars:175  }}</p>
+      <div class="date">
+          <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{ post.publishing_date }}</a>
+          <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
+      </div>
+  </div>
+```
+カテゴリー別ページとタグ別ページのタグを表示する  
+```python
+# templates/categories/category_detail.html
+# <a class="cat" href="#">Gadgets</a> # 削除
+{% for tag in post.tag.all %}　# added
+  <a class="cat" href="#">{{ tag.title }}</a>
+{% endfor %}
 ```
 ```python
-
+# templates/tags/tag_detail.html
+# <a class="cat" href="#">Gadgets</a>　　 # 削除
+{% for tag in post.tag.all %}　# added
+  <a class="cat" href="#">{{ tag.title }}</a>
+{% endfor %}
 ```
+### 前の投稿と次の投稿を表示する
+詳細ページから前の投稿と次の投稿に遷移できるようにする  
+現在表示されているPostのidはself.kwargs['pk']で表すことができる  
+ltはless thanを意味する
 ```python
-
+# post/views.py
+class PostDetail(DetailView):
+  template_name="posts/detail.html"
+  model = Post
+  context_object_name = 'single'
+  
+  def get(self, request, *args, **kwargs):
+    self.hit = Post.objects.filter(id=self.kwargs['pk']).update(hit=F('hit')+1)
+    return super(PostDetail,self).get(request, *args, **kwargs)
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    context['Previous'] = Post.objects.filer(id__lt=self.kwargs['pk']).order_by('-pk').first() # added
+    context['Next'] = Post.objects.filer(id__gt=self.kwargs['pk']).order_by('pk').first()  # added
+    return context
 ```
-```python
+details.htmlのnavigation-areaを編集する
+```html
+# templates/tags/tag_detail.html
+<div class="navigation-area">
+  <div class="row">
+      {% if previous %}
+      <div class="col-lg-6 col-md-6 col-12 nav-left flex-row d-flex justify-content-start align-items-center">
+          <div class="thumb">
+              <a href="{% url 'detail' previous.pk %}"><img class="img-fluid" src="{{ previous.image.url }}" style={width:60px; hight:60px} alt=""></a>
+          </div>
+          <div class="arrow">
+              <a href="{% url 'detail' previous.pk %}"><span class="lnr text-white lnr-arrow-left"></span></a>
+          </div>
+          <div class="detials">
+              <p>Prev Post</p>
+              <a href="{% url 'detail' previous.pk %}"><h4>{{ previous.title }}</h4></a>
+          </div>
+      </div>
+      {% else %}
+      <div class="col-lg-6 col-md-6 col-12 nav-left flex-row d-flex justify-content-start align-items-center">
+          <div class="thumb">
+              <a href="#"><img class="img-fluid" src="{% static "img/blog/prev.jpg" %}" alt=""></a>
+          </div>
+          <div class="arrow">
+              <a href="#"><span class="lnr text-white lnr-arrow-left"></span></a>
+          </div>
+          <div class="detials">
+              <p>No Prev Post</p>
+              <a href="#"><h4>No Prev Post</h4></a>
+          </div>
+      </div>
+      {% endif %}
 
+      {% if next %}
+      <div class="col-lg-6 col-md-6 col-12 nav-right flex-row d-flex justify-content-end align-items-center">
+          <div class="detials">
+              <p>Next Post</p>
+              <a href="{% url 'detail' next.pk %}"><h4>{{ next.title }}</h4></a>
+          </div>
+          <div class="arrow">
+              <a href="{% url 'detail' next.pk %}"><span class="lnr text-white lnr-arrow-right"></span></a>
+          </div>
+          <div class="thumb">
+              <a href="{% url 'detail' next.pk %}"><img class="img-fluid" src="{{ next.image.url }}" alt="" style={width:60px; hight:60px}></a>
+          </div>										
+      </div>
+      {% else %}
+      <div class="col-lg-6 col-md-6 col-12 nav-right flex-row d-flex justify-content-end align-items-center">
+          <div class="detials">
+              <p>No Next Post</p>
+              <a href="#"><h4>No Next Post</h4></a>
+          </div>
+          <div class="arrow">
+              <a href="#"><span class="lnr text-white lnr-arrow-right"></span></a>
+          </div>
+          <div class="thumb">
+              <a href="#"><img class="img-fluid" src="{% static "img/blog/next.jpg" %}" alt=""></a>
+          </div>										
+      </div>	
+      {% endif %}
+  </div>
+</div>
 ```
-```python
+### ページネーションを作成する
+index.htmlを編集する
+```html
+<!-- templates/posts/index.html -->
+{% if is_paginated %}
+<nav class="blog-pagination justify-content-center d-flex">
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+          <a href="?page={{ page_obj.has_previous_page_number }}" class="page-link" aria-label="Previous">
+              <span aria-hidden="true">
+                  <span class="lnr lnr-chevron-left"></span>
+              </span>
+          </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <a href="#" class="page-link" aria-label="Previous">
+            <span aria-hidden="true">
+                <span class="lnr lnr-chevron-left"></span>
+            </span>
+        </a>
+      </li>
+      {% endif %}
 
+      {% for i in paginator.page_range %}
+      {% if page_obj.number == i %}
+      <li class="page-item active"><a href="#" class="page-link">{{ i }}</a></li>
+      {% else %}
+      <li class="page-item"><a href="?page={{ i }}" class="page-link">{{ i }}</a></li>
+      {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <li class="page-item">
+          <a href="?page={{ page_obj.has_next_page_number }}" class="page-link" aria-label="Next">
+              <span aria-hidden="true">
+                  <span class="lnr lnr-chevron-right"></span>
+              </span>
+          </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <a href="#" class="page-link" aria-label="Next">
+            <span aria-hidden="true">
+                <span class="lnr lnr-chevron-right"></span>
+            </span>
+        </a>
+    </li>
+      {% endif %}
+  </ul>
+</nav>
+{% endif %}
 ```
+post/views.pyにpaginate_by = 3 を追加する
 ```python
-
-```
-```python
-
-```
-```python
-
+class IndexView(ListView):
+  template_name="posts/index.html"
+  model = Post
+  context_object_name = 'posts'
+  paginate_by = 3 # added
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    # context['categories'] = Category.object.all()
+    context['slider_posts'] = Post.objects.all().filter(slider_post=True)
+    return context
 ```
 ```python
 

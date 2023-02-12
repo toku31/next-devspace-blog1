@@ -875,19 +875,49 @@ user@mbp mern-busticket-booking % npm install stripe
 ```js
 user@mbp mern-busticket-booking % npm i uuid
 ```
-Stripeのプライベートキーを.envファイルに書く　stripe_key = '・・・・'
+Stripeのプライベートキーを.envファイルに書く　stripe_key = '・・・・'  
+bookingRoutesに支払い用(make payment)のルータを追加する
 ```js
 // routes/bookingRoutes.js
 const router = require('express').Router();
 const Booking = require("../models/bookingModel")
 const Bus = require('../models/busModel')
-const authMiddleware = require('../middlewares/authMiddleware')
-const stripe = require('stripe')(process.env.stripe_key)
-const uuid = require('uuid')
+const authMiddleware = require('../middlewares/authMiddleware') // added
+const stripe = require('stripe')(process.env.stripe_key) // added
+const {v4: uuidv4} = require('uuid')  // added
 
 // Book a seat
 router.post('/book-seat', authMiddleware, async(req, res) => {
-  ・・・
+  try {
+    // 新規予約を作成する
+    console.log('book-seat try')
+    const newBooking = new Booking({
+      ...req.body,
+      // transactionId: '1234', // deleted
+      userId: req.body.userId // authMiddleware参照
+    });
+    await newBooking.save()
+    console.log('book-seat save', newBooking)
+    // 予約シートをBusモデルに保存する
+    console.log('req.body.busId', req.body.busId)
+    const bus = await Bus.findById(req.body.busId);
+    console.log('bus', bus.name)
+    bus.seatsBooked = [...bus.seatsBooked, ...req.body.seats];
+    console.log('bus seatsBooked', bus.seatsBooked)
+    await bus.save()
+    // console.log('res:', res)
+    res.status(200).send({
+      message: 'Booking successful',
+      data: newBooking,
+      success: true,
+    })
+  } catch (error) {
+    res.status(500).send({
+      message: 'Booking failed',
+      data: error,
+      success: false,
+    })
+  }
 })
 
 // make payment
@@ -900,20 +930,184 @@ router.post('/make-payment', authMiddleware, async(req, res) => {
     })
     const payment = await stripe.charges.create({
       amount: amount,
-      currency: "yen",
+      currency: "jpy",
       customer: customer.id,
       receipt_email: token.email,
     }, {
-      idempotencyKey: uuid(),
+      idempotencyKey: uuidv4(),
     })
+
+    if (payment) {
+      res.status(200).send({
+        message:"支払いが完了しました",
+        data: {
+          transactionId: payment.source.id,
+        },
+        success: true,
+      })
+    }else{
+      res.status(500).send({
+        message:"支払いに失敗しました",
+        data: error,
+        success: false
+      })
+    }
   } catch (error) {
-    
+    console.log(error)
+    res.status(500).send({
+      message:"支払いに失敗しました",
+      data: error,
+      success: false
+    })
   }
 })
-
+module.exports = router;
 ```
+Stripeで支払いができることを確認したあと予約(bookNow)を続けてコールして予約するようにする  
+その際引数にStripe実行後に払い出されたtransactionIdを使う
 ```js
+// pages/BookNow.js
+import { useEffect, useState } from 'react'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import { useDispatch } from 'react-redux'
+import { toast } from 'react-toastify';
+import { Grid, Col, Row} from 'react-bootstrap';
+import { useParams } from 'react-router-dom';
+import SeatSelection from '../components/SeatSelection';
+import StripeCheckout from 'react-stripe-checkout';
 
+function BookNow() {
+
+  const params = useParams()
+  const dispatch = useDispatch()
+  const [bus, setBus] = useState(null)
+  const [selectedSeats, setSelectedSeats] = useState([])
+
+  const getBus = async()=> {
+    // console.log('getbus success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-bus-by-id', {_id : params.id})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('getbus success:', response.data.data)
+        setBus(response.data.data) 
+        // console.log(bus)
+      }else {
+        console.log('getbus else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('getbus error:')
+      toast.error(error.message)
+    }
+  }
+
+  const bookNow = async (transactionId)=> {  // 引数にtransactionIdを追加
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/book-seat', {
+        busId : bus._id,
+        seats: selectedSeats,
+        transactionId  // added
+      })
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookNow success:', response.data.data)
+        toast.success(response.data.message)
+      }else {
+        console.log('bookNow else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('bookNow error:')
+      toast.error(error.message)
+    }
+  };
+
+  const onToken = async (token) => {
+    // console.log(token)
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bookNow token:', token)
+      const response = await axiosInstance.post('/api/bookings/make-payment', {
+        token,
+        amount: selectedSeats.length * bus.fare,
+      })
+      dispatch(HideLoading());
+      if (response.data.success){
+        toast.success(response.data.message);
+        bookNow(response.data.data.transactionId) // added
+      }else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      dispatch(HideLoading());
+      toast.error(error.message);
+    }
+  }
+
+  useEffect(()=> {
+    getBus()
+  }, [])
+  // {bus && console.log('bookedSeats', bus.journeyDate)}
+  return (
+    <div>
+      {bus &&
+        <Row className='mt-3'>
+            <Col lg={6} xs={12} sm={12}>
+              <h1 className="text-xl text-secondary">{bus.name}</h1>
+              <h1 className="text-md">{bus.from}-{bus.to}</h1>
+              <hr />
+
+              <div>
+                <h1 className="text-lg"><b>出発日</b>: {bus.journeyDate}</h1>
+                <h1 className="text-lg"><b>料金</b>: ¥{bus.fare}</h1>
+                <h1 className="text-lg"><b>出発時刻</b>: {bus.departure}</h1>
+                <h1 className="text-lg"><b>到着時刻</b>: {bus.arrival}</h1>
+                <h1 className="text-lg"><b>残座席</b>: {bus.capacity - bus.seatsBooked.length}</h1>
+              </div>
+              <hr />
+
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl">
+                  選択した座席: {selectedSeats.join(",")}
+                </h1>
+                <h1 className="text-2xl mt-2">
+                  料金：¥{bus.fare * selectedSeats.length}
+                </h1>
+                <hr />
+
+                <StripeCheckout
+                  billingAddress
+                  token={onToken}
+                  amount={bus.fare * selectedSeats.length}
+                  currency = "jpy"
+                  stripeKey="pk_test_51MZD1gC1IWmbV77mFtIeuHiZNykx2UUfs3cs6odT8DKk2vVQ46kmXTMbb2l2XCEA95kvYXEHZ2njN3oaUfRKqOa200V1QQTJOd"
+                >
+                  <button // 座席を選択したら予約ボタンの色がグレーから青になる
+                    className={`btn btn-primary ${(selectedSeats.length===0) && 'disabled-btn' }`}
+                    // onClick={()=>bookNow()}
+                  >予約する</button>
+                </StripeCheckout>
+              </div>
+            </Col>
+            <Col lg={6} xs={12} sm={12}>
+                <SeatSelection  
+                  selectedSeats = {selectedSeats}
+                  setSelectedSeats = {setSelectedSeats}
+                  bus = {bus}
+                />
+            </Col>
+        </Row>
+      }
+    </div>
+  )
+}
+export default BookNow
 ```
 ```js
 
