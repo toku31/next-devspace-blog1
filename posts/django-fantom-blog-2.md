@@ -678,8 +678,14 @@ class PostDetail(DetailView):
   
   def get_context_data(self, **kwargs):
     context = super().get_context_data(**kwargs)
-    context['Previous'] = Post.objects.filer(id__lt=self.kwargs['pk']).order_by('-pk').first() # added
-    context['Next'] = Post.objects.filer(id__gt=self.kwargs['pk']).order_by('pk').first()  # added
+    print('context',context['object'].publishing_date)
+    pubdate = context['object'].publishing_date
+    # context['Next'] = Post.objects.filter(id__gt=self.kwargs['pk']).order_by('ーpk').first()
+    context['previous'] = Post.objects.filter(publishing_date__lt=pubdate).order_by('-publishing_date').first()
+    print('previous',context['previous'])
+    # context['next'] = Post.objects.filter(id__gt=self.kwargs['pk']).order_by('pk').first()
+    context['next'] = Post.objects.filter(publishing_date__gt=pubdate).order_by('publishing_date').first()
+    print('next',context['next'])
     return context
 ```
 details.htmlのnavigation-areaを編集する
@@ -689,28 +695,28 @@ details.htmlのnavigation-areaを編集する
   <div class="row">
       {% if previous %}
       <div class="col-lg-6 col-md-6 col-12 nav-left flex-row d-flex justify-content-start align-items-center">
-          <div class="thumb">
-              <a href="{% url 'detail' previous.pk %}"><img class="img-fluid" src="{{ previous.image.url }}" style={width:60px; hight:60px} alt=""></a>
+          <div class="thumb" >
+              <a href="{% url 'detail' previous.pk %}"><img class="img-fluid" src="{{ previous.image.url }}" alt="" style="width:100px;hight:100px">></a>
           </div>
           <div class="arrow">
               <a href="{% url 'detail' previous.pk %}"><span class="lnr text-white lnr-arrow-left"></span></a>
           </div>
           <div class="detials">
-              <p>Prev Post</p>
+              <p>前の記事</p>
               <a href="{% url 'detail' previous.pk %}"><h4>{{ previous.title }}</h4></a>
           </div>
       </div>
       {% else %}
       <div class="col-lg-6 col-md-6 col-12 nav-left flex-row d-flex justify-content-start align-items-center">
           <div class="thumb">
-              <a href="#"><img class="img-fluid" src="{% static "img/blog/prev.jpg" %}" alt=""></a>
+              <a href="#"><img class="img-fluid" src="{% static "img/blog/prev.jpg" %}" alt="" style="width:100px;hight:100px"></a>
           </div>
           <div class="arrow">
               <a href="#"><span class="lnr text-white lnr-arrow-left"></span></a>
           </div>
           <div class="detials">
-              <p>No Prev Post</p>
-              <a href="#"><h4>No Prev Post</h4></a>
+              <p>前の記事なし</p>
+              <a href="#"><h4>前の記事なし</h4></a>
           </div>
       </div>
       {% endif %}
@@ -718,32 +724,32 @@ details.htmlのnavigation-areaを編集する
       {% if next %}
       <div class="col-lg-6 col-md-6 col-12 nav-right flex-row d-flex justify-content-end align-items-center">
           <div class="detials">
-              <p>Next Post</p>
+              <p>次の記事</p>
               <a href="{% url 'detail' next.pk %}"><h4>{{ next.title }}</h4></a>
           </div>
           <div class="arrow">
               <a href="{% url 'detail' next.pk %}"><span class="lnr text-white lnr-arrow-right"></span></a>
           </div>
           <div class="thumb">
-              <a href="{% url 'detail' next.pk %}"><img class="img-fluid" src="{{ next.image.url }}" alt="" style={width:60px; hight:60px}></a>
+              <a href="{% url 'detail' next.pk %}"><img class="img-fluid" src="{{ next.image.url }}" alt="" style="width:60px;hight:60px"></a>
           </div>										
       </div>
       {% else %}
       <div class="col-lg-6 col-md-6 col-12 nav-right flex-row d-flex justify-content-end align-items-center">
           <div class="detials">
-              <p>No Next Post</p>
+              <p>次の記事無</p>
               <a href="#"><h4>No Next Post</h4></a>
           </div>
           <div class="arrow">
               <a href="#"><span class="lnr text-white lnr-arrow-right"></span></a>
           </div>
           <div class="thumb">
-              <a href="#"><img class="img-fluid" src="{% static "img/blog/next.jpg" %}" alt=""></a>
+              <a href="#"><img class="img-fluid" src="{% static "img/blog/next.jpg" %}" alt="" style="width:60px;hight:60px"></a>
           </div>										
       </div>	
       {% endif %}
   </div>
-</div>
+</div> 
 ```
 ### ページネーションを作成する
 index.htmlを編集する
@@ -806,25 +812,177 @@ class IndexView(ListView):
   model = Post
   context_object_name = 'posts'
   paginate_by = 3 # added
+  ・・・
+class CategoryDetail(ListView):
+  model = Post
+  template_name="categories/category_detail.html"
+  context_object_name="posts"
+  paginate_by = 3　# added
+  ・・・
+  class TagDetail(ListView):
+  model = Post
+  template_name="tags/tag_detail.html"
+  context_object_name="posts"
+  paginate_by = 3　# added
+```
+### パスワード変更Htmlを作成する
+まずパスワード変更用のパスを登録する
+```python
+# users.urls.view
+from django.urls import path
+from .views import *
+from django.contrib.auth import views as authViews # added
+
+app_name="users"
+urlpatterns = [
+    path('register/', RegisterView.as_view(), name="register"),
+    path('login/', UserLoginView.as_view(), name="login"),
+    path('logout/', UserLogoutView.as_view(), name="logout"),
+    path('password-change/', authViews.PasswordChangeView.as_view(), name="password_change"),  # added
+    path('password-change-done/', authViews.PasswordChangeDoneView.as_view(), name="password_change_done")  # added
+] 
+```
+### ユーザパスワードの変更
+createPostViewの@method_decorator(login_required(login_url='users/login'), name='dispatch')を参照する   
+users/urls.pyのPasswordChangeViewを右クリックして定義へ移動する  
+```python
+class PasswordChangeView(PasswordContextMixin, FormView):
+    form_class = PasswordChangeForm
+    success_url = reverse_lazy('users:password_change_done') # changed
+    template_name = "registration/password_change_form.html"
+    title = _("Password change")
+
+    @method_decorator(sensitive_post_parameters())
+    @method_decorator(csrf_protect)
+    @method_decorator(login_required(login_url='users/login'))  # changed
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        # Updating the password logs out all other sessions for the user
+        # except the current one.
+        update_session_auth_hash(self.request, form.user)
+        return super().form_valid(form)
+
+class PasswordChangeDoneView(PasswordContextMixin, TemplateView):
+    template_name = "registration/password_change_done.html"
+    title = _("Password change successful")
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+```
+パスワード変更フォーム用とパスワード変更完了通知用のhtmlを作成する  
+templatesフォルダの直下にregistrationフォルダを作りその直下に２ファイル作成する
+```html
+<!-- templates/registration/password_change_form.html -->
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>登録</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
   
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    # context['categories'] = Category.object.all()
-    context['slider_posts'] = Post.objects.all().filter(slider_post=True)
-    return context
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <h2 style="text-align: center; color:blue">パスワード変更</h2>
+                  <div class="blog_left_sidebar">
+                    <form method='post'>
+                      {% csrf_token %}
+                      {% if form.errors %}
+                        <div id="errors">
+                          <div class="inners">
+                            <p style="color:red">以下のエラーがあります</p>
+                            <ul>
+                              {% for field in form %}
+                                {% if field.errors %}
+                                <li>{{form.label }}: {{field.errors|striptags }}</li>
+                                {% endif %}
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        </div>
+                      {% endif %}
+                      {# {{ form.as_p }} #}
+                      <div class="mt-10">
+                        <input type="password" name="old_password" placeholder="古いパスワード" onfocus="this.placeholder = ''" onblur="this.placeholder = '古いパスワード'" required class="single-input">
+                      </div>
+                      <div class="mt-10">
+                        <input type="password" name="new_password1" placeholder="新しいパスワード" onfocus="this.placeholder = ''" onblur="this.placeholder = '新しいパスワード'" required class="single-input">
+                      </div>
+                      <div class="mt-10">
+                        <input type="password" name="new_password2" placeholder="新しいパスワード(確認)" onfocus="this.placeholder = ''" onblur="this.placeholder = '新しいパスワード(確認)'" required class="single-input">
+                      </div>
+                      <input type="submit" class="genric-btn success circle" style="float:right;margin-top:30px;" value="変更" >
+                    </form> 
+                  </div>
+              </div>
+             {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+{% endblock %}
 ```
-```python
+```html
+<!-- templates/registration/password_change_done.html -->
+{% extends 'base.html'%}
+{% load static %}
 
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>登録</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <h2 style="text-align: center; color:blue">パスワードが変更されました</h2>
+                  <div class="blog_left_sidebar">
+                  </div>
+              </div>
+             {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+{% endblock %}
 ```
-```python
-
-```
-```python
-
-```
-```python
-
-```
+### Search Viewを作成する
 ```python
 
 ```

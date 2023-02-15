@@ -1109,6 +1109,171 @@ function BookNow() {
 }
 export default BookNow
 ```
+#### 予約情報を表示する
+予約画面が開いたときもメニューの「ホーム」がアクティブになるようにする
+```js
+// src/components/DefaultLayout.js
+  const menuToBeRendered = user?.isAdmin ? adminMenu : userMenu
+  let activeRoute = window.location.pathname
+  console.log('activeRoute', activeRoute)
+  if (window.location.pathname.includes('book-now')){
+    activeRoute=('/')
+  }
+```
+バス予約の座席表の位置を調整するためmx-5を追加
+```js
+// src/components/SeatSelected.js
+import React from 'react'
+import { Col, Row} from 'react-bootstrap';
+import '../resources/bus.css'
+
+function SeatSelection({selectedSeats, setSelectedSeats, bus}) {
+  // console.log('selectedSeats1', selectedSeats)
+  const capacity = bus.capacity
+  const selectOrUnselectSeats = (seatNumber)=> {
+    if (selectedSeats.includes(seatNumber)) {
+      setSelectedSeats(selectedSeats.filter((seat)=> seat !== seatNumber))
+    } else {
+      setSelectedSeats([...selectedSeats, seatNumber])
+    }
+  }
+
+  return (
+    <div className='mx-5'>  // changed
+      <div className="bus-container">
+        <Row style={{gap:'10px 0px'}}>
+```
+bookingModel.jsを修正する
+```js
+// models/bookingModel.js
+const mongoose = require('mongoose')
+const bookingSchema = new mongoose.Schema(
+  {
+    busId: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'buses', // model名ではなく、mongodbのコレクション名を指定する
+      required: true,
+    },
+    userId: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'users',　// model名ではなく、mongodbのコレクション名を指定する
+      required: true,
+    },
+    seats: {
+      type: Array,
+      required: true,
+    },
+    transactionId : {
+      type: String,
+      required: true,
+    }
+  },
+  {
+    timestamps: true,
+  }
+);
+module.exports = mongoose.model('Booking', bookingSchema)
+```
+/bookings用のルートを追加する
+```js
+// App.js
+function App() {
+  const {loading} = useSelector(state => state.alerts)
+
+  return (
+    <div>
+      {loading && <Loader />}
+      <Router>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>}></Route>
+          <Route path="/book-now/:id" element={<ProtectedRoute><BookNow /></ProtectedRoute>}></Route>
+          <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>}></Route> // added
+```
+adminBuses.jsを参照してBooking.jsを作成する
+```js
+// pages/booking.js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import BusForm from '../components/ BusForm'
+import PageTitle from '../components/PageTitle'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import BusTable from '../components/BusTable';
+
+function Bookings() {
+  const dispatch = useDispatch()
+  const [bookings, setBookings] = useState([])
+
+  const getBookings = async()=> {
+    console.log('bookings data:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/get-bookings-by-user-id', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookings data success:', response.data.data)
+        setBookings(response.data.data) 
+      }else {
+        console.log('bookings data else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('bookings data error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBookings()
+  }, [])
+
+  return (
+    <div>Bookings</div>
+  )
+}
+export default Bookings
+```
+ユーザ別予約情報取得のBackendを作成する
+```js
+// route/bookingsRoute
+// get bookings by user id
+router.post('/get-bookings-by-user-id', authMiddleware, async(req, res) => {
+  try {
+    const bookings = await Booking.findById({userId: req.body.userId})
+      .populate('bus')
+      .populate('user')
+    res.status(200).send({
+      message:"Bookings fetched successfully",
+      data: bookings,
+      success: true,
+    })
+  } catch (error) {
+    console.log(error)
+    res.status(500).send({
+      message:"Bookings fetch failed",
+      data: error,
+      success: false
+    })
+  }
+})
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 ```js
 
 ```

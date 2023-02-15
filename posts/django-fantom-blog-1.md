@@ -819,7 +819,7 @@ from django.conf import settings
 class Post(models.Model):
   title = models.CharField(verbose_name='タイトル',max_length=150)
   content = models.TextField(verbose_name='内容')
-  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
+  TimeField(verbose_name='投稿日', auto_now_add=True)
   image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
   user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
   
