@@ -1143,20 +1143,21 @@ function SeatSelection({selectedSeats, setSelectedSeats, bus}) {
       <div className="bus-container">
         <Row style={{gap:'10px 0px'}}>
 ```
-bookingModel.jsを修正する
+bookingModel.js
 ```js
 // models/bookingModel.js
 const mongoose = require('mongoose')
+
 const bookingSchema = new mongoose.Schema(
   {
     busId: {
       type: mongoose.Schema.ObjectId,
-      ref: 'buses', // model名ではなく、mongodbのコレクション名を指定する
+      ref: 'Bus',
       required: true,
     },
     userId: {
       type: mongoose.Schema.ObjectId,
-      ref: 'users',　// model名ではなく、mongodbのコレクション名を指定する
+      ref: 'User',
       required: true,
     },
     seats: {
@@ -1172,6 +1173,7 @@ const bookingSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
 module.exports = mongoose.model('Booking', bookingSchema)
 ```
 /bookings用のルートを追加する
@@ -1238,12 +1240,24 @@ export default Bookings
 ユーザ別予約情報取得のBackendを作成する
 ```js
 // route/bookingsRoute
+const router = require('express').Router();
+const Booking = require("../models/bookingModel")
+const Bus = require('../models/busModel')
+const authMiddleware = require('../middlewares/authMiddleware')
+const stripe = require('stripe')(process.env.stripe_key)
+const {v4: uuidv4} = require('uuid')
+
+// Book a seat
+router.post('/book-seat', authMiddleware, async(req, res) => {
+// make payment
+router.post('/make-payment', authMiddleware, async(req, res) => 
 // get bookings by user id
 router.post('/get-bookings-by-user-id', authMiddleware, async(req, res) => {
   try {
-    const bookings = await Booking.findById({userId: req.body.userId})
-      .populate('bus')
-      .populate('user')
+    console.log('get-bookings-by-user-id try')
+    const bookings = await Booking.find({userId: req.body.userId})
+      .populate("busId")
+      .populate("userId")
     res.status(200).send({
       message:"Bookings fetched successfully",
       data: bookings,
@@ -1258,13 +1272,109 @@ router.post('/get-bookings-by-user-id', authMiddleware, async(req, res) => {
     })
   }
 })
+module.exports = router;
 ```
+BookingTableを作成する
 ```js
+// components/BookingTable.js
+import React from 'react'
+import { Table } from 'react-bootstrap';
 
+function BookingTable({bookings, setSelectedBus, setShowBusForm, deleteBus}) {
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>バス名</th>
+                  <th>バスNo.</th>
+                  <th>出発日</th>
+                  <th>出発時刻</th>
+                  <th>座席</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+              {bookings.map((booking) => 
+                  <tr key={booking._id}>
+                      <td class="align-middle">{booking.busId.name}</td>
+                      <td class="align-middle">{booking.busId.number}</td>
+                      <td class="align-middle">{booking.busId.journeyDate}</td>
+                      {/* {moment(booking.journeyDate).format('YYYY-MM-DD')} */}
+                      <td class="align-middle">{booking.busId.departure}</td>
+                      <td class="align-middle">{booking.seats}</td>
+                      <td>
+                          {/* <Button variant="outline-secondary">編集</Button>
+                          <Button variant="outline-danger">削除</Button> */}
+`                          <div >
+                            <h1
+                              className='text-md underline' 
+                            >チケット印刷</h1>
+                          </div>`
+                      </td>
+                  </tr>
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default BookingTable
 ```
+BookingTableをbooking.jsに実装する
 ```js
+// pages/booking.js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+// import BusForm from '../components/ BusForm'
+import PageTitle from '../components/PageTitle'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import BookingTable from '../components/BookingTable';
 
+function Bookings() {
+  const dispatch = useDispatch()
+  const [bookings, setBookings] = useState([])
+
+  const getBookings = async()=> {
+    console.log('bookings data:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/get-bookings-by-user-id', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookings data success:', response.data.data)
+        setBookings(response.data.data) 
+      }else {
+        console.log('bookings data else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      dispatch(HideLoading())  
+      console.log('bookings data error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBookings()
+  }, [])
+
+  return (
+    <div>
+      <div className='mb-2'>
+        <PageTitle title='予約リスト' />
+      </div>
+
+    <BookingTable  bookings={bookings} className="mt-3" /> // added
+    </div>
+  )
+}
+export default Bookings
 ```
+#### チケットをプリントする
 ```js
 
 ```
