@@ -982,7 +982,267 @@ templatesフォルダの直下にregistrationフォルダを作りその直下�
   </section>
 {% endblock %}
 ```
-### Search Viewを作成する
+### 検索機能を作成する
+検索ボックスにformタグを追加して、action="{% url 'search' %}" method="get"とする  
+inputタグにname="q"を追加する
+```html
+<!-- templates/right_side.html -->
+ {% load static %}
+ {% load custom_tags %}
+
+<div class="col-lg-4">
+  <div class="blog_right_sidebar">
+      <aside class="single_sidebar_widget search_widget">
+        <form action="{% url 'search' %}" method="get" >
+          <div class="input-group">
+              <input type="text" class="form-control" placeholder="Search Posts" name="q">
+              <span class="input-group-btn">
+                  <button class="btn btn-default" type="button"><i class="lnr lnr-magnifier"></i></button>
+              </span>
+          </div><!-- /input-group -->
+        </form>
+          <div class="br"></div>
+      </aside>
+```
+SearchView(ListView)を作成する  
+self.request.GET.get("q")のGETはmethod="get"から来て、get("q")のgetは関数でname="q"を参照している  
+重複しないように.distinct()をつける
+```python
+from django.db.models import Q
+
+class SearchView(ListView):  # 78
+  model = Post
+  template_name = 'posts/search.html'
+  paginate_by = 5
+  context_object_name = 'posts'
+  
+  def get_queryset(self):
+    query = self.request.GET.get("q")
+    
+    if query:
+      return Post.objects.filter(Q(title__icontains=query) |
+                                 Q(content__icontains=query) | 
+                                 Q(tag__title__icontains=query)  
+                                 ).order_by('publishing_date').distinct()
+    return Post.objects.all().order_by('publishing_date')
+```
+category_detail.htmlを使ってsearch.htmlを作成する
+```html
+# posts/search.html
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>検索結果</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+        <a href="#"></a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <div class="blog_left_sidebar">
+                      {% for post in posts %}
+                        <article class="blog_style1">
+                          <div class="blog_img">
+                            <img class="img-fluid" src={{ post.image.url }} alt="">
+                          </div>
+                          <div class="blog_text">
+                          <div class="blog_text_inner">
+                          {% for tag in post.tag.all %}
+                            <a class="cat" href="#">{{ tag.title }}</a>
+                          {% endfor %}
+                            <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title | truncatechars:150}}</h4></a>
+                            <p>{{ post.content }}</p>
+                            <div class="date">
+                              <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{post.publishing_date}}</a>
+                              <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
+                            </div>	
+                          </div>
+                          </div>
+                        </article>
+                      {% endfor %}
+                      <!--==パジネーションエリア　↓==-->
+                      {% if is_paginated %}
+                      <nav class="blog-pagination justify-content-center d-flex">
+                        <ul class="pagination">
+                          {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a href="?q={{request.GET.get.q}}&page={{ page_obj.has_previous_page_number }}" class="page-link" aria-label="Previous">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-left"></span>
+                                    </span>
+                                </a>
+                            </li>
+                          {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Previous">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-left"></span>
+                                  </span>
+                              </a>
+                            </li>
+                           {% endif %}
+    
+                           {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <li class="page-item active"><a href="#" class="page-link">{{ i }}</a></li>
+                            {% else %}
+                            <li class="page-item"><a href="?q={{request.GET.get.q}}&page={{ i }}" class="page-link">{{ i }}</a></li>
+                            {% endif %}
+                           {% endfor %}
+    
+                           {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a href="?q={{request.GET.get.q}}&page={{ page_obj.has_next_page_number }}" class="page-link" aria-label="Next">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-right"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Next">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-right"></span>
+                                  </span>
+                              </a>
+                          </li>
+                            {% endif %}
+                        </ul>
+                      </nav>
+                      {% endif %}
+                </div>
+            </div>
+      {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+  <!--================Blog Area =================-->
+{% endblock %}
+```
+posts/urls.pyのpathにsearchを追加する
+```python
+# posts/urls.py
+from .views import *
+
+urlpatterns = [
+    path('', IndexView.as_view(), name="index"),
+    path('detail/<str:pk>', PostDetail.as_view(), name="detail"),
+    path('post-update/<str:pk>', UpdatePostView.as_view(), name="post_update"),
+    path('post-delete/<str:pk>', DeletePostView.as_view(), name="post_delete"),
+    path('category/<str:pk>', CategoryDetail.as_view(), name="category_detail"),
+    path('tag/<slug:slug>', TagDetail.as_view(), name="tag_detail"),
+    path('post-create', CreatePostView.as_view(), name="create_post"),
+    path('search', SearchView.as_view(), name="search"), # added
+]  
+```
+検索ボタンをクリックすると以下のURLが表示される  
+http://127.0.0.1:8000/search?q=lorem  
+またペジネーションボタンを押すとhttp://127.0.0.1:8000/search?page=2 になり、q=loremが消えているのでhtmlを以下のように修正する(全部で３ヶ所)  
+href="?q={{request.GET.get.q}}&page={{ page_obj.has_previous_page_number }}"  
+これによりURLがhttp://127.0.0.1:8000/search?q=&page=2のように表示される
+```html
+  {% if is_paginated %}
+  <nav class="blog-pagination justify-content-center d-flex">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a href="?q={{request.GET.get.q}}&page={{ page_obj.has_previous_page_number }}" ＃class="page-link" aria-label="Previous">　// changed
+                <span aria-hidden="true">
+                    <span class="lnr lnr-chevron-left"></span>
+                </span>
+            </a>
+        </li>
+      {% else %}
+```
+#### コメント機能を作成する
+コメントのモデルを作成する  
+def __str__(self)で、self.post.titleを返した方がコメントの管理がやりやすい
+```python
+# posts/models.py
+class Comment(models.Model):
+  post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments", null=True, blank=True, verbose_name='Post')
+  name = models.CharField(max_length=100,verbose_name='名前')
+  email = models.EmailField(max_length=100, verbose_name='メールアドレス')
+  content = models.TextField(verbose_name='内容')
+  publishing_date = models.DateTimeField(auto_now=True, verbose_name='投稿日時')
+  
+  def __str__(self):
+    return self.post.title
+```
+makemigrations & migrate  
+管理画面に登録するため、admin.pyでAdminCommentを作成する
+```python
+# posts/admin.py
+from django.contrib import admin
+from .models import Post, Category, Tag, Comment
+
+class AdminPost(admin.ModelAdmin):
+  list_filter = ['publishing_date']
+  list_display = ['title', 'publishing_date']
+  search_fields = ['title', 'content']
+
+  class Meta:
+    model = Post
+    
+class AdminComment(admin.ModelAdmin):  # added
+  list_filter = ('publishing_date', )   # タプルを使ってもOK
+  search_fields = ('name', 'email', 'content', 'post__title')　 # タプルを使ってもOK
+  
+  class Meta:
+    model = Comment
+    
+admin.site.register(Post, AdminPost)
+admin.site.register(Category)
+admin.site.register(Tag)
+admin.site.register(Comment, AdminComment) # added
+```
+コメントのフォームを作成する
+```python
+# posts/forms.py
+class CreateCommentForm(forms.ModelForm):
+  def __init__(self, *args, **kwargs):
+    super(CreateCommentForm, self).__init__(*args, **kwargs)
+    self.helper = FormHelper()
+    self.helper.form_method="post"
+    self.helper.layout = Layout (
+      Field("name", css_class="form-control", placeholder="名前"),
+      Field("email", css_class="form-control", placeholder="メールアドレス"),
+      Field("content", css_class="form-control mb-10", placeholder="内容"),
+    )
+    self.helper.add_input(Submit('submit', 'コメントする', css_class="primary-btn submit_btn"))
+    
+  class Meta:
+    model = Comment
+    fields = ['name', 'email', 'content']
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
 ```python
 
 ```

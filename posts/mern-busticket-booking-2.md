@@ -1375,6 +1375,531 @@ function Bookings() {
 export default Bookings
 ```
 #### チケットをプリントする
+Booking.jsにshowPrintModal, setShowPrintModal、selectedBooking, setSelectedBookingを追加する  
+さらにプリントモーダルを追加する
+```js
+// pages/Bookings.js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+// import BusForm from '../components/ BusForm'
+import PageTitle from '../components/PageTitle'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import BookingTable from '../components/BookingTable';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+// import Form from 'react-bootstrap/Form';
+import moment from 'moment';
+
+function Bookings() {
+  const [showPrintModal, setShowPrintModal] = useState(false) // added
+  const [selectedBooking, setSelectedBooking] = useState(null) // added
+
+  const dispatch = useDispatch()
+  const [bookings, setBookings] = useState([])
+
+  const getBookings = async()=> {
+    console.log('bookings data:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/get-bookings-by-user-id', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookings data success:', response.data.data)
+        setBookings(response.data.data) 
+      }else {
+        console.log('bookings data else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      dispatch(HideLoading())  
+      console.log('bookings data error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBookings()
+  }, [])
+
+  return (
+    <div>
+      <div className='mb-2'>
+        <PageTitle title='予約リスト' />
+      </div>
+     {/* 予約リストのテーブル */}
+    <BookingTable  bookings={bookings} className="mt-3"
+      setSelectedBooking={setSelectedBooking} 
+      setShowPrintModal={setShowPrintModal}
+      // deleteBus = {deleteBus}
+    />
+
+ 　　{/* 　ここからプリントモーダルの追加　*/}
+    {showPrintModal && (   
+      <Modal 
+        show={showPrintModal} 
+        onHide={()=>{
+          setShowPrintModal(false)
+          setSelectedBooking(null)
+        }}
+      >
+      <Modal.Header closeButton >
+        <Modal.Title>チケット印刷</Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body>
+        <div>
+          <div className="d-flex flex-column">
+            <p>バス: {selectedBooking.busId.name}</p>
+            <p>
+              {selectedBooking.busId.from} - {selectedBooking.busId.to}
+            </p>
+            <hr />
+            <p>
+              <span>出発日：</span>{" "}
+              {moment(selectedBooking.journeyDate).format("YYYY-MM-DD")}
+            </p>
+            <p>
+              <span>出発時刻：</span>{" "}
+              {selectedBooking.busId.departure}
+            </p>
+            <hr />
+            <p>
+              <span>座席番号：</span>{" "}<br />
+              {selectedBooking.seats}
+            </p>
+            <hr />
+            <p>
+              <span className="text-secondary">総額：</span>{" "}
+              {selectedBooking.busId.fare * selectedBooking.seats.length}
+            </p>
+            <p className="mb-3 d-flex gap-2 justify-content-end" controlId="description">
+            <Button variant="secondary" type="">Cancel</Button>
+            <Button className="primary" type="submit">OK</Button>
+            </p>
+          </div>
+        </div>
+      </Modal.Body>
+      </Modal>
+    )}
+    </div>
+  )
+}
+
+export default Bookings
+```
+予約テーブルを編集する
+```js
+// components/BookingTable.js
+import React from 'react'
+import { Table } from 'react-bootstrap';
+
+function BookingTable({bookings, setSelectedBooking, setShowPrintModal, deleteBus}) {
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>バス名</th>
+                  <th>バスNo.</th>
+                  <th>出発日</th>
+                  <th>出発時刻</th>
+                  <th>座席</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+              {bookings.map((booking) => 
+                  <tr key={booking._id}>
+                      <td class="align-middle">{booking.busId.name}</td>
+                      <td class="align-middle">{booking.busId.number}</td>
+                      <td class="align-middle">{booking.busId.journeyDate}</td>
+                      <td class="align-middle">{booking.busId.departure}</td>
+                      <td class="align-middle">{booking.seats}</td>
+                      <td>
+                          <div >
+                            <h1
+                              className='text-md underline' 
+                              onClick={()=>{
+                                setShowPrintModal(true)  // added
+                                setSelectedBooking(booking) // added
+                              }}
+                            >チケット印刷</h1>
+                          </div>`
+                      </td>
+                  </tr>
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+```
+### プリント機能を実装する
+react-to-printのインストール:https://www.npmjs.com/package/react-to-print
+```js
+user@mbp client % npm install --save react-to-print
+```
+実装の参考例：Calling from functional components with useReactToPrint
+```js
+import React, { useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+
+import { ComponentToPrint } from './ComponentToPrint';
+
+const Example = () => {
+  const componentRef = useRef();
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+  });
+
+  return (
+    <div>
+      <ComponentToPrint ref={componentRef} />
+      <button onClick={handlePrint}>Print this out!</button>
+    </div>
+  );
+};
+```
+```js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import PageTitle from '../components/PageTitle'
+import { axiosInstance } from '../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../redux/alertsSlice';
+import BookingTable from '../components/BookingTable';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+import moment from 'moment';
+import { useReactToPrint } from 'react-to-print'; // added
+import { useRef } from 'react'; // added
+
+function Bookings() {
+  const [showPrintModal, setShowPrintModal] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState(null)
+
+  const dispatch = useDispatch()
+  const [bookings, setBookings] = useState([])
+
+  const getBookings = async()=> {
+    console.log('bookings data:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/get-bookings-by-user-id', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookings data success:', response.data.data)
+        setBookings(response.data.data) 
+      }else {
+        console.log('bookings data else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      dispatch(HideLoading())  
+      console.log('bookings data error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBookings()
+  }, [])
+
+  const componentRef = useRef();  // added
+  const handlePrint = useReactToPrint({  // added
+    content: () => componentRef.current,
+  });
+
+  return (
+    <div>
+      <div className='mb-2'>
+        <PageTitle title='予約リスト' />
+      </div>
+     {/* 予約リストのテーブル */}
+    <BookingTable  bookings={bookings} className="mt-3"
+      setSelectedBooking={setSelectedBooking} 
+      setShowPrintModal={setShowPrintModal}
+    />
+
+    {/* 予約チケットプリントのモーダル */}
+    {showPrintModal && (
+      <Modal 
+        show={showPrintModal} 
+        onHide={()=>{
+          setShowPrintModal(false)
+          setSelectedBooking(null)
+        }}
+      >
+      <Modal.Header closeButton >
+        <Modal.Title>チケット印刷</Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body>
+        <div>
+          <div className="d-flex flex-column p-5" ref={componentRef}>  // added
+            <p>バス: {selectedBooking.busId.name}</p>
+            <p>
+              {selectedBooking.busId.from} - {selectedBooking.busId.to}
+            </p>
+            <hr />
+            <p>
+              <span>出発日：</span>{" "}
+              {moment(selectedBooking.journeyDate).format("YYYY-MM-DD")}
+            </p>
+            <p>
+              <span>出発時刻：</span>{" "}
+              {selectedBooking.busId.departure}
+            </p>
+            <hr />
+            <p>
+              <span>座席番号：</span>{" "}<br />
+              {selectedBooking.seats}
+            </p>
+            <hr />
+            <p>
+              <span className="text-secondary">総額：</span>{" "}
+              ¥ {selectedBooking.busId.fare * selectedBooking.seats.length}
+            </p>
+            </div>
+            <p className="mb-3 d-flex gap-2 justify-content-end" controlId="">
+            <Button 
+              variant="secondary" 
+              type=""
+              onClick={()=> {setShowPrintModal(false)
+              setSelectedBooking(null)
+              }}
+            >Cancel</Button>
+            <Button className="primary" type="submit" onClick={handlePrint}>プリント</Button>
+            </p>
+        </div>
+      </Modal.Body>
+      </Modal>
+    )}
+    </div>
+  )
+}
+export default Bookings
+```
+### バスの運行状況を表示
+App.jsのRoute path="/admin" を削除する
+```js
+// App.js
+import {BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import './resources/global.css'
+import Register from './pages/ Register';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import {ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import PublicRoute from './components/PublicRoute';
+import ProtectedRoute from './components/ProtectedRoute';
+import Loader from './components/Loader';
+import { useSelector } from 'react-redux';
+import AdminHome from './pages/Admin/AdminHome'
+import AdminBuses from './pages/Admin/AdminBuses';
+import AdminUsers from './pages/Admin/AdminUsers';
+import BookNow from './pages/BookNow';
+import Bookings from './pages/Bookings';
+
+function App() {
+  const {loading} = useSelector(state => state.alerts)
+
+  return (
+    <div>
+      {loading && <Loader />}
+      <Router>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>}></Route>
+          <Route path="/book-now/:id" element={<ProtectedRoute><BookNow /></ProtectedRoute>}></Route>
+          <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>}></Route>
+          // 以下を削除
+          {/* <Route path="/admin" element={<ProtectedRoute><AdminHome /></ProtectedRoute>}></Route> */}　// 削除
+          <Route path="/admin/buses" element={<ProtectedRoute><AdminBuses /></ProtectedRoute>}></Route>
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}></Route>
+
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>}  />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>}  />
+        </Routes>
+      </Router>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+DefaultLayout.jsのadminMenuにあるホームのpathを'/admin'→'/'に変更
+```js
+// components/DefaultLayout.js
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false)
+  const {user} = useSelector(state => state.users)
+  console.log('DefaultLayout:user', user)
+  const userMenu = [
+    {
+      name: 'ホーム',
+      path: '/',
+      icon: 'ri-home-line'
+    },
+    {
+      name: '予約',
+      path: '/bookings',
+      icon: 'ri-file-list-line'
+    },
+    {
+      name: 'プロフィール',
+      path: '/profile',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'ログアウト',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+
+  const adminMenu = [
+    {
+      name: 'ホーム',
+      path: '/',  // Changed
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'バス',
+      path: '/admin/buses',
+      icon: 'ri-bus-line'
+    },
+    {
+      name: 'ユーザー',
+      path: '/admin/users',
+      icon: 'ri-user-line'
+    },
+    {
+      name: '予約',
+      path: '/admin/bookings',
+      icon: 'ri-file-list-line'
+    },
+    {
+      name: 'ログアウト',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+```
+バスを新規追加するモーダルのフォームにstatus項目を追加する  
+同時にuseStateのformDataにstatus: actionType==='add' ? "" : selectedBus.statusを追加する  
+ const {name, number, capacity, from, to, journeyDate, departure, arrival, type ,fare, status} = formData にstatusを追加  
+handleSubmitのvaluesにもstatusを追加
+```js
+// components/BusForm.js
+  <Row className="mb-3">
+    <Form.Group as={Col} controlId="status" >
+    <Form.Label>状況</Form.Label>
+    <Form.Select id="" name="status" onChange={handleChange}>
+    <option value='発車前'>発車前</option>
+    <option value='運行中'>運行中</option>
+    <option value='完了'>完了</option>
+    </Form.Select>
+    </Form.Group>
+
+    <Form.Group as={Col} controlId="">
+      <Form.Label></Form.Label>
+    </Form.Group>
+  </Row>
+```
+ホームページは発車前のバスのみ表示したいのでHome.jsを以下のように変更する
+```js
+import { toast } from 'react-toastify';
+import { Grid, Col, Row} from 'react-bootstrap';
+import Bus from '../components/Bus';
+
+function Home() {
+  const {user} = useSelector(state => state.users)
+  // console.log('user:', user)
+  const dispatch = useDispatch()
+  const [buses, setBuses] = useState([])
+
+  const getBuses = async()=> {
+    console.log('home getBuses')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/buses/get-all-buses', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('getBuses success:', response.data.data)
+
+        setBuses(response.data.data) 
+      }else {
+        console.log('bus data else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('GetBuses error:')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getBuses()
+  }, [])
+
+  return (
+    <div>
+      <div></div>
+      <div>
+          <Row>
+          // 変更後
+          {buses.filter((bus) => bus.status === "発車前").map((bus) => (
+              <Col key={bus._id} lg={6} xs={12} sm={12}>
+                <Bus bus={bus}/>
+              </Col>
+            ))}
+            // 変更前
+            {/* {buses.map(bus => (
+              <Col key={bus._id} lg={6} xs={12} sm={12}>
+                <Bus bus={bus}/>
+              </Col>
+            ))} */}
+          </Row>
+      </div>
+    </div>
+  )
+}
+
+export default Home
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 ```js
 
 ```
@@ -1393,7 +1918,12 @@ export default Bookings
 ```js
 
 ```
+```js
 
+```
+```js
+
+```
 
 
 
