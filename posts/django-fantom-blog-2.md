@@ -1231,15 +1231,122 @@ class CreateCommentForm(forms.ModelForm):
     model = Comment
     fields = ['name', 'email', 'content']
 ```
+views.pyのクラスDetailViewやListViewではFormを使うことができない  
+CreateViewではFormを使うことができる  
+PostDetail(DetailView)でFormを使うためにFormMixinを追加する  
+FormMixin: https://en-junior.com/formview/#form-mixin
 ```python
+# posts/views.py
+from django.views.generic.edit import FormMixin # added
+from .forms import PostCreationForm, PostUpdateForm, CreateCommentForm # added
 
+class PostDetail(DetailView, FormMixin): # added
+  template_name="posts/detail.html"
+  model = Post
+  context_object_name = 'single'
+  form_class = CreateCommentForm  # added
+  
+  def get(self, request, *args, **kwargs):
+    self.hit = Post.objects.filter(id=self.kwargs['pk']).update(hit=F('hit')+1)
+    return super(PostDetail,self).get(request, *args, **kwargs)
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    print('context',context['object'].publishing_date)
+    pubdate = context['object'].publishing_date
+    context['previous'] = Post.objects.filter(publishing_date__lt=pubdate).order_by('-publishing_date').first()
+    print('previous',context['previous'])
+    context['next'] = Post.objects.filter(publishing_date__gt=pubdate).order_by('publishing_date').first()
+    print('next',context['next'])
+    context['form'] = self.get_form　# added
+    return context
+
+  def form_valid(self, form):
+    form.instance.post = self.object
+    form.save()
+    return super().form_valid(form)
+    # return super(PostDetail, self).form_valid(form)
+  
+  def post(self, *args, **kwargs):
+    self.object = self.get_object()
+    form = self.get_form()
+    if form.is_valid():
+      return self.form_valid(form)
+    else:
+      return self.form_valid(form)
+    
+  def get_success_url(self):
+    return reverse('detail', kwargs={"pk":self.object.id})
 ```
+form_valid()は、postされた際、validationがOKだった場合にシステムからコールされる関数
+```html
+# templates/posts/detail.html
+{% extends 'base.html'%}
+{% load static %}
+{% load crispy_forms_tags %} # added
+{% block content %}
+・・・
+    <div class="comments-area">
+        <h4>{{ single.comment_count}} コメント</h4>
+        {% for comment in single.comments.all %}
+        <div class="comment-list">
+            <div class="single-comment justify-content-between d-flex">
+                <div class="user justify-content-between d-flex">
+                    <div class="thumb">
+                        <img src="{% static "img/blog/c1.jpg" %}" alt="">
+                    </div>
+                    <div class="desc">
+                        <h5><a href="#">{{ comment.name }}</a></h5>
+                        <p class="date">{{ comment.publishing_date }}<</p>
+                        <p class="comment">
+                            {{ comment.content }}
+                        </p>
+                    </div>
+                </div>
+                <div class="reply-btn">
+                        <a href="" class="btn-reply text-uppercase">reply</a> 
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="comment-form">
+        <h4>Leave a Reply</h4>
+        {% crispy form %}
+    </div>
+</div>
+     {% include 'right_side.html' %}
+    </div>
+</div>
+</section>
+```
+コメントの回数を取得する  
+Postモデルにコメントカウント用の関数def comment_countを作成する
 ```python
+# posts/model.py
+class Post(models.Model):
+  title = models.CharField(verbose_name='タイトル',max_length=150)
+  content = models.TextField(verbose_name='内容')
+  publishing_date=models.DateTimeField(verbose_name='投稿日', auto_now_add=True)
+  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  # slug = models.SlugField(default="slug")
+  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
+  tag = models.ManyToManyField(Tag, related_name="posts" , blank=True, verbose_name='タグ')
+  slider_post = models.BooleanField(default=False, verbose_name='スライダー')
+  hit = models.PositiveIntegerField(default=0, verbose_name='閲覧回数')
+  
+  def comment_count(self): # added
+    return self.comments.all().count()
 
+  def __str__(self):
+    return self.title
+  
+  def post_tag(self):
+    return ','.join(str(tag) for tag in self.tag.all())
 ```
-```python
-
-```
+### Recaptcha Packageのインストール
 ```python
 
 ```
