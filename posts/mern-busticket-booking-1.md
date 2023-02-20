@@ -2787,8 +2787,9 @@ function  BusForm(props) {
     journeyDate: actionType==='add' ? "" : selectedBus.journeyDate,
     departure: actionType==='add' ? "" : selectedBus.departure,
     arrival: actionType==='add' ? "" : selectedBus.arrival,
-    type: actionType==='add' ? "" : selectedBus.type,
+    type: actionType==='add' ? "AC" : selectedBus.type,
     fare: actionType==='add' ? "" : selectedBus.fare,
+    // status: actionType==='add' ? "発車前" : selectedBus.status, // あとで追加する
   })
 
   const {name, number, capacity, from, to, journeyDate, departure, arrival, type ,fare} = formData

@@ -1490,7 +1490,8 @@ function Bookings() {
 
 export default Bookings
 ```
-予約テーブルを編集する
+予約テーブルを編集する  
+座席番号の表示にカンマを追加する　例：1213→12,13 のように表示
 ```js
 // components/BookingTable.js
 import React from 'react'
@@ -1517,7 +1518,7 @@ function BookingTable({bookings, setSelectedBooking, setShowPrintModal, deleteBu
                       <td class="align-middle">{booking.busId.number}</td>
                       <td class="align-middle">{booking.busId.journeyDate}</td>
                       <td class="align-middle">{booking.busId.departure}</td>
-                      <td class="align-middle">{booking.seats}</td>
+                      <td class="align-middle">{booking.seats.seats.join(', ')}</td>
                       <td>
                           <div >
                             <h1
@@ -1825,6 +1826,7 @@ handleSubmitのvaluesにもstatusを追加
 ```
 ホームページは発車前のバスのみ表示したいのでHome.jsを以下のように変更する
 ```js
+// pages/Home.js
 import { toast } from 'react-toastify';
 import { Grid, Col, Row} from 'react-bootstrap';
 import Bus from '../components/Bus';
@@ -1885,9 +1887,29 @@ function Home() {
 
 export default Home
 ```
+予約が完了したら予約ページを表示させたくnavigate('/bookings') を設定
 ```js
+import { useNavigate, useParams } from 'react-router-dom'; // added
 
+function BookNow() {
+  const navigate = useNavigate() // added
+  const bookNow = async (transactionId)=> {
+    try {
+      dispatch(ShowLoading()) 
+      console.log('bus data success:')
+      const response = await axiosInstance.post('/api/bookings/book-seat', {
+        busId : bus._id,
+        seats: selectedSeats,
+        transactionId
+      })
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('bookNow success:', response.data.data)
+        toast.success(response.data.message)
+        navigate('/bookings') // added
 ```
+座席番号の表示にカンマを追加する　例：1213→12,13 のように表示  
+td class="align-middle">{booking.seats.join(', ')}
 ```js
 
 ```
