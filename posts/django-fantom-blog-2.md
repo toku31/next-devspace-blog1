@@ -1347,18 +1347,97 @@ class Post(models.Model):
     return ','.join(str(tag) for tag in self.tag.all())
 ```
 ### Recaptcha Packageのインストール
+https://pypi.org/project/django-recaptcha/#installation
 ```python
-
+(venv) user@mbp Django-fantom-blog % pip install django-recaptcha  
 ```
 ```python
-
+# Django_fantom_blog/settings.py
+INSTALLED_APPS = [
+    ...,
+    'captcha',
+    ...
+]
+    ...
+RECAPTCHA_PUBLIC_KEY = 'MyRecaptchaKey123'
+RECAPTCHA_PRIVATE_KEY = 'MyRecaptchaPrivateKey456'
 ```
+公開キーとプライベートキーは以下から取得する  
+https://www.google.com/recaptcha/admin/create
+
 ```python
-
+# posts/form.py
+from .models import *
+from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, Submit
+from captcha.fields import ReCaptchaField
+...
+class CreateCommentForm(forms.ModelForm):
+  captcha = ReCaptchaField() # added
+  def __init__(self, *args, **kwargs):
+    super(CreateCommentForm, self).__init__(*args, **kwargs)
+    self.helper = FormHelper()
+    self.helper.form_method="post"
+    self.helper.layout = Layout (
+      Field("name", css_class="form-control", placeholder="名前"),
+      Field("email", css_class="form-control", placeholder="メールアドレス"),
+      Field("content", css_class="form-control mb-10", placeholder="内容"),
+      Field("captcha"), # added
+    )
+    self.helper.add_input(Submit('submit', 'コメントする', css_class="primary-btn submit_btn"))
+    
+  class Meta:
+    model = Comment
+    fields = ['name', 'email', 'content']
 ```
+### フォームのエラー処理
+views.pyのPostDetailクラスのdef form_valid(self, form)にif form.is_valid()条件を追加する
 ```python
-
+# posts/views.py
+class PostDetail(DetailView, FormMixin):
+  template_name="posts/detail.html"
+  model = Post
+  context_object_name = 'single'
+  form_class = CreateCommentForm
+  
+  def get(self, request, *args, **kwargs):
+    self.hit = Post.objects.filter(id=self.kwargs['pk']).update(hit=F('hit')+1)
+    return super(PostDetail,self).get(request, *args, **kwargs)
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    print('context',context['object'].publishing_date)
+    pubDate = context['object'].publishing_date
+     context['previous'] = Post.objects.filter(publishing_date__lt=pubDate).order_by('-publishing_date').first()
+    print('previous',context['previous'])
+    context['next'] = Post.objects.filter(publishing_date__gt=pubDate).order_by('publishing_date').first()
+    print('next',context['next'])
+    context['form'] = self.get_form
+    return context
+  
+  def form_valid(self, form):
+    if form.is_valid():　# added
+      form.instance.post = self.object
+      form.save()
+      return super().form_valid(form)
+    else:  # added
+      return super(PostDetail, self).form_invalid(form)
+  
+  def post(self, *args, **kwargs):
+    self.object = self.get_object()
+    form = self.get_form()
+    if form.is_valid():
+      return self.form_valid(form)
+    else:
+      return self.form_invalid(form)
+    
+  def get_success_url(self):
+    return reverse('detail', kwargs={"pk":self.object.id})
 ```
+エラーメッセージを表示するためにBootsrapを使う
+https://getbootstrap.jp/docs/5.0/components/alerts/  
+components=>Alerts=>Dismissing
 ```python
 
 ```

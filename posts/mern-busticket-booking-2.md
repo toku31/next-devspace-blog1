@@ -2028,9 +2028,9 @@ export default Home
 router.post('/get-all-buses', authMiddleware, async function (req, res){
   console.log('get-all-buses')
   try {
-    const buses = await Bus.find(req.body)
-    console.log('filters:', req.body)
     // const buses = await Bus.find({ from: '横浜'})
+    const buses = await Bus.find(req.body) // changed
+    console.log('filters:', req.body)
     return res.status(200).send({
       success: true,
       message: 'Busを全て取得しました',
@@ -2041,9 +2041,6 @@ router.post('/get-all-buses', authMiddleware, async function (req, res){
   }
 })
 ```
-```js
-
-```
 ```css
 /* resources/layout.css */
 .content {
@@ -2053,14 +2050,232 @@ router.post('/get-all-buses', authMiddleware, async function (req, res){
   height: 85vh;
 }
 ```
+## ユーザの管理画面 adminUsers.js
+adminBuses.jsをadminUsers.jsにコピーして作成する
 ```js
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import PageTitle from '../../components/PageTitle'
+import { axiosInstance } from '../../helpers/axiosInstance'
+import { ShowLoading, HideLoading } from '../../redux/alertsSlice';
+import UserTable from '../../components/UserTable';
 
+function  AdminUsers() {
+  const dispatch = useDispatch()
+  const [users, setUsers] = useState([])
+
+  const getUsers = async()=> {
+    console.log('User data success1:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('User data success2:')
+      const response = await axiosInstance.post('/api/users/get-all-users', {})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('User data success3:', response.data.data)
+        setUsers(response.data.data) 
+      }else {
+        console.log('User data else:')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('User data error:')
+      toast.error(error.message)
+    }
+  }
+
+  const updateUserPermissions = async (user, action) => {
+    console.log('updateUserPermissions start')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('updateUserPermissions start2')
+      const response = await axiosInstance.post('/api/users/update-user-permissions', {user: user})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('updateUserPermissions success')
+        getUsers()
+        toast.success(response.data.message)
+      }else {
+        console.log('User delete else')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('User delete error')
+      toast.error(error.message)
+    }
+  }
+
+  const deleteUser = async(id) => {
+    console.log('User data success:')
+    try {
+      dispatch(ShowLoading()) 
+      console.log('User data success:')
+      const response = await axiosInstance.post('/api/users/delete-User', {_id: id})
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('User deleted')
+        getUsers()
+        toast.success(response.data.message)
+      }else {
+        console.log('User delete else')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log('User delete error')
+      toast.error(error.message)
+    }
+  }
+
+  useEffect(()=> {
+    getUsers()
+  }, [])
+
+  return (
+    <div>
+      <div className='d-flex justify-content-between'>
+        <PageTitle title='ユーザー' />
+      </div>
+
+      <div className="User-table">
+        <UserTable  
+          users={users} 
+          setSelectedUser={setSelectedUser} 
+          // setShowUserForm={setShowUserForm}
+          deleteUser = {deleteUser}
+          updateUserPermissions = {updateUserPermissions}
+        />
+      </div>
+
+    </div>
+  )
+}
+
+export default  AdminUsers
 ```
+UserTableを作成する
 ```js
+// components/UserTable.js
+import React from 'react'
+import { Table } from 'react-bootstrap';
 
+function UserTable({users, updateUserPermissions}) {
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>氏名</th>
+                  <th>メールアドレス</th>
+                  <th>ロール</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+              {users.map((user) => 
+                  <tr key={user._id}>
+                      <td>{user.name}</td>
+                      <td>{user.email}</td>
+                      <td>
+                        {user.isAdmin? "管理者" : 'ユーザ'}
+                      </td>
+                      <td>
+                          <div className="d-flex gap-3">
+                            {user.isBloked ? (
+                            <p 
+                            className='underline' 
+                            onClick={()=> {
+                              updateUserPermissions(user, "unblock");
+                            }}>ブロック解除</p>
+                            ) : (
+                              <p 
+                              className='underline' 
+                              onClick={()=> {
+                                updateUserPermissions(user, "block");
+                              }}>ブロック</p>
+                            )}
+
+                            {user.isAdmin ? (
+                            <p 
+                            className='underline' 
+                            onClick={()=> {
+                              updateUserPermissions(user, "remove-admin");
+                            }}>管理者から外す</p>
+                            ) : (
+                              <p 
+                              className='underline' 
+                              onClick={()=> {
+                                updateUserPermissions("make-admin");
+                              }}>管理者にする</p>
+                            )}
+                          </div>
+                      </td>
+                  </tr>
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+
+export default UserTable
 ```
+Backendでget all usersとUpdate userを作成する
 ```js
+const express = require('express')
+const router = express.Router()
+const User = require('../models/userModel')
+const bcrypt = require('bcryptjs')
+const jwt = require("jsonwebtoken")
+const authMiddleware = require('../middlewares/authMiddleware')
 
+// register new user
+router.post('/register', async(req, res) => {
+  ・・・
+})
+// login user
+router.post('/login', async(req, res) => {
+  ・・・
+})
+// get user by id
+router.post('/get-user-by-id', authMiddleware, async(req, res) => {
+  ・・・
+})
+// get all users 34
+router.post('/get-all-users', authMiddleware, async function (req, res){
+  console.log('get-all-users')
+  try {
+    const users = await User.find({})
+    console.log('users:', req.body)
+    // const buses = await Bus.find({ from: '横浜'})
+    return res.status(200).send({
+      success: true,
+      message: 'ユーザーを全て取得しました',
+      data: users,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success:false, 
+      message: error.message,
+      data: null,
+    })
+  }
+})
+
+// Update user 34
+router.post('/update-user', authMiddleware, async function (req, res){
+  console.log('update-user')
+  try {
+    await Bus.findByIdAndUpdate(req.body._id, req.body)
+    return res.status(200).send({
+      success: true,
+      message: 'ユーザーを更新しました'
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+module.exports = router
 ```
 ```js
 
