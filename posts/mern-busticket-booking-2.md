@@ -2088,33 +2088,34 @@ function  AdminUsers() {
   const updateUserPermissions = async (user, action) => {
     console.log('updateUserPermissions start')
     try {
+      const payload = null
+      if (action === "make-admin"){
+        payload = {
+          ...user,
+          isAdmin:true,
+        }
+      } else if (action === "remove-admin"){
+        payload = {
+          ...user,
+          isAdmin:false,
+        }
+      } else if (action === "block-user"){
+        payload = {
+          ...user,
+          isBlocked:true,
+        }
+      } else if (action === "unblock-user"){
+        payload = {
+          ...user,
+          isBlocked:false,
+        }
+      }
       dispatch(ShowLoading()) 
       console.log('updateUserPermissions start2')
       const response = await axiosInstance.post('/api/users/update-user-permissions', {user: user})
       dispatch(HideLoading())  
       if(response.data.success){
         console.log('updateUserPermissions success')
-        getUsers()
-        toast.success(response.data.message)
-      }else {
-        console.log('User delete else')
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log('User delete error')
-      toast.error(error.message)
-    }
-  }
-
-  const deleteUser = async(id) => {
-    console.log('User data success:')
-    try {
-      dispatch(ShowLoading()) 
-      console.log('User data success:')
-      const response = await axiosInstance.post('/api/users/delete-User', {_id: id})
-      dispatch(HideLoading())  
-      if(response.data.success){
-        console.log('User deleted')
         getUsers()
         toast.success(response.data.message)
       }else {
@@ -2222,6 +2223,7 @@ export default UserTable
 ```
 Backendでget all usersとUpdate userを作成する
 ```js
+// routes/usersRoutes.js
 const express = require('express')
 const router = express.Router()
 const User = require('../models/userModel')
@@ -2263,19 +2265,163 @@ router.post('/get-all-users', authMiddleware, async function (req, res){
 })
 
 // Update user 34
-router.post('/update-user', authMiddleware, async function (req, res){
+router.post('/update-user-permissions', authMiddleware, async function (req, res){
   console.log('update-user')
   try {
-    await Bus.findByIdAndUpdate(req.body._id, req.body)
+    await User.findByIdAndUpdate(req.body._id, req.body)
     return res.status(200).send({
       success: true,
-      message: 'ユーザーを更新しました'
+      message: 'ユーザーを更新しました',
+      data: null,
     });
   } catch (error) {
     res.status(500).send({success:false, message: error.message})
   }
 })
 module.exports = router
+```
+#### Permissions
+ユーザの権限の編集（フロントエンド）
+```js
+// pages/Admin/AdminUsers.js
+  const updateUserPermissions = async (user, action) => {
+    console.log('updateUserPermissions start')
+    try {
+      const payload = null
+      if (action === "make-admin"){
+        payload = {
+          ...user,
+          isAdmin:true,
+        }
+      } else if (action === "remove-admin"){
+        payload = {
+          ...user,
+          isAdmin:false,
+        }
+      } else if (action === "block"){
+        payload = {
+          ...user,
+          isBlocked:true,
+        }
+      } else if (action === "unblock"){
+        payload = {
+          ...user,
+          isBlocked:false,
+        }
+      }
+      dispatch(ShowLoading()) 
+      console.log('updateUserPermissions start2')
+      const response = await axiosInstance.post('/api/users/update-user-permissions', payload)
+      dispatch(HideLoading())  
+      if(response.data.success){
+        console.log('updateUserPermissions success')
+        getUsers()
+      }else {
+        console.log('User delete else')
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      dispatch(HideLoading())  
+      console.log('User delete error')
+      toast.error(error.message)
+    }
+  }
+```
+UserRouter.jsでユーザ更新の処理を追加（バックエンド）
+```js
+// routes/usersRoutes.js
+// Update user 34
+router.post('/update-user-permissions', authMiddleware, async function (req, res){
+  console.log('update-user')
+  try {
+    await User.findByIdAndUpdate(req.body._id, req.body)
+    return res.status(200).send({
+      success: true,
+      message: 'ユーザーを更新しました',
+      data: null,
+    });
+  } catch (error) {
+    res.status(500).send({success:false, message: error.message})
+  }
+})
+```
+ブロッックされたユーザがログインできないようにする
+```js
+// routes/usersRoutes.js
+// login user
+router.post('/login', async(req, res) => {
+  const {email, password} = req.body
+  try {
+    const userExists = await User.findOne({email}) 
+    if (!userExists){
+      console.log('User does not exist')
+      return res.send({
+        message: 'ユーザが存在しません',
+        success: false,
+        data: null,
+      })
+    }
+
+    if (userExists.isBlocked) {  // added
+      return res.send({
+        message: "アカウントがブロックされています。管理者にお問合せください。",
+        success: false,
+        data: null,
+      })
+    }
+
+    const passwordMatch = await bcrypt.compare(password, userExists.password)
+    if (!passwordMatch){
+      return res.send({
+        message: 'パスワードが正しくないです',
+        success: false,
+        data: null,
+      })
+    }
+
+    const token = jwt.sign(
+      { userId: userExists._id}, 
+      process.env.JWT_SECRET,
+      { expiresIn: "1d"}
+    )
+    res.send({
+      message: "ログインに成功しました",
+      success: true,
+      data: token,
+    })
+  } catch (error) {
+    res.send({
+      message: error.message,
+      success: false,
+      data: null,
+    })
+  }
+});
+```
+### UI fixes
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
 ```
 ```js
 

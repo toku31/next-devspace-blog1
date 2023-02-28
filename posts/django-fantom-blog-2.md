@@ -1438,7 +1438,760 @@ class PostDetail(DetailView, FormMixin):
 エラーメッセージを表示するためにBootsrapを使う
 https://getbootstrap.jp/docs/5.0/components/alerts/  
 components=>Alerts=>Dismissing
+```html
+<!-- posts/detail.html -->
+  <div class="comment-form">
+      <h4>返信する</h4>
+      {% if form.errors %}
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div id="form_errors">
+          {% for key, value in form.errors.items %}
+          <span class="fieldWrapper">
+            {{ key }} : {{ value }}
+          </span>
+          {% endfor %}
+        </div>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endif %}
+      {% crispy form %}
+  </div>
+```
+### ユーザープロファイルを作成する
+ユーザモデルの作成
 ```python
+# users/models.py
+from django.db import models
+from django.conf import settings
+from django.template.defaultfilters import slugify
+import uuid
+from PIL import Image
+
+class UserProfile(models.Model):
+  user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='ユーザー')
+  birth_day = models.DateField(null=True, blank=True, verbose_name='誕生日')
+  bio = models.TextField(max_length=1000, blank=True, verbose_name='自己紹介')
+  image = models.ImageField(blank=True,null=True, default='users/author.png', upload_to='users', verbose_name='画像')
+  id = models.UUIDField(verbose_name='ID', default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  created_at =models.DateTimeField(verbose_name='登録日時', auto_now_add=True)
+  # slug = models.SlugField(editable=False)
+  
+  def save(self, *args, **kwargs):
+    # self.slug = slugify(self.user.username)
+    super(UserProfile, self).save(*args, **kwargs)
+    
+    img = Image.open(self.image.path)
+    if img.height > 200 or img.width > 200:
+      new_size = (200, 200)
+      img.thumbnail(new_size)
+      img.save(self.image.path)
+    
+  def __str__(self):
+    return str(self.user.username)
+```
+makemigrations & migrate
+画像処理を行う（PIL 利用）  
+https://daeudaeu.com/django-image-processing/  
+```python
+pip install Pillow
+```
+admin.pyにモデルを登録する
+```python
+# users/admin.py
+from django.contrib import admin
+from .models import UserProfile
+
+admin.site.register(UserProfile)
+```
+### プロファイルを作成する
+UserProfileにSignalを追加する
+```python
+# users/models.py
+from django.db import models
+from django.conf import settings
+from django.template.defaultfilters import slugify
+import uuid
+from PIL import Image
+from django.db.models.signals import post_save
+
+class UserProfile(models.Model):
+  user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='ユーザー')
+  birth_day = models.DateField(null=True, blank=True, verbose_name='誕生日')
+  bio = models.TextField(max_length=1000, blank=True, verbose_name='自己紹介')
+  image = models.ImageField(blank=True,null=True, default='users/author.png', upload_to='users', verbose_name='画像')
+  id = models.UUIDField(verbose_name='ID', default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  created_at =models.DateTimeField(verbose_name='登録日時', auto_now_add=True)
+  # slug = models.SlugField(editable=False)
+  
+  def save(self, *args, **kwargs):
+    # self.slug = slugify(self.user.username)
+    super(UserProfile, self).save(*args, **kwargs)
+    
+    img = Image.open(self.image.path)
+    if img.height > 200 or img.width > 200:
+      new_size = (200, 200)
+      img.thumbnail(new_size)
+      img.save(self.image.path)
+      
+  def __str__(self):
+    return str(self.user.username)
+    # return str(self.id)
+
+  def create_user_profile(sender, instance, created, **kwargs):   # added
+    if created: 
+      UserProfile.objects.create(user=instance)
+      
+  post_save.connect(create_user_profile, sender=settings.AUTH_USER_MODEL) # added
+```
+```python
+# users/forms.py
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, Submit
+from .models import UserProfile
+
+class RegisterForm(UserCreationForm):
+  username = forms.CharField(max_length=50)
+  email = forms.EmailField(max_length=50)
+  password1 = forms.CharField()
+  password2 = forms.CharField()
+  
+  class Meta(UserCreationForm):
+    model = User
+    fields = ('username', 'email', 'password1', 'password2' )
+    
+    labels = {
+      'username': '名前',
+      'email': 'メールアドレス',
+      'password1': 'パスワード',
+      'password2': 'パスワード(確認)',
+    }
+
+class UsersProfileForm(forms.ModelForm):
+  def __init__ (self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.helper = FormHelper()
+    self.helper.form_method = 'post'
+    self.helper.field_class='mt-10'
+    self.helper.layout = Layout (
+      Field("birth_day", css_class="single-input", placeholder="誕生日"),
+      Field("bio", css_class="single-input", placeholder="自己紹介"),
+      Field("image", css_class="single-input", placeholder="画像"),
+    )
+    self.helper.add_input(Submit('submit', '更新', css_class="genric-btn success-border medium"))
+
+  class Meta:
+    model = UserProfile
+    fields = ('birth_day', 'bio', 'image')
+    widgets = {
+      'birth_day': forms.DateInput(attrs={'type':'date'})
+    }
+```
+widgetsを'birth_day': forms.DateInput(attrs={'type':'date'})と設定すると更新画面で日付が入力できる
+### ユーザプロファイルを更新する
+UserProfileUpdateViewを作成する
+```python
+# users.views.py
+from django.contrib.auth.views import LoginView, LogoutView
+from django.views.generic import CreateView, UpdateView
+from .forms import RegisterForm, UsersProfileForm
+from .models import UserProfile
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+
+class RegisterView(CreateView):
+  template_name = 'users/register.html'
+  form_class = RegisterForm
+  success_url = '/'
+  
+class UserLoginView(LoginView):
+  template_name = 'users/login.html'
+
+class UserLogoutView(LogoutView):
+  template_name = 'users/login.html'
+  
+@method_decorator(login_required(login_url='/users/login'), name='dispatch')
+class UserProfileUpdateView(UpdateView):
+  model = UserProfile
+  template_name = 'users/profile-update.html'
+  form_class = UsersProfileForm
+  
+  def form_valid(self, form):
+    form.instance.user = self.request.user
+    form.save()
+    return super().form_valid(form)
+    
+  def get_success_url(self):
+    return reverse('users:update_profile', kwargs={'pk':self.object.id})
+
+  # 別ユーザのIDがlocalhost:8000/users/update-profile/idのidに入力されたらホームにリダイレクトする
+  def get(self, request, *args, **kwargs):
+    self.object = self.get_object()
+    if self.object.user != request.user:
+      return HttpResponseRedirect('/')
+    return super(UserProfileUpdateView,self).get(request, *args, **kwargs)
+```
+post-update.htmlを使ってuser-update.htmlを作成する
+```html
+<!-- templates/users/user-update.html -->
+{% extends 'base.html'%}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>プロファイル編集</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <h2 style="text-align: center; color:blue">プロファイル編集</h2>
+                  <div class="blog_left_sidebar">
+                    {% crispy form %}
+                  </div>
+
+              </div>
+             {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+{% endblock %}
+```
+### ユーザプロファイルを表示する
+```python
+# users.views.py
+from django.views.generic import CreateView, UpdateView, ListView
+from posts.models import Post
+
+@method_decorator(login_required(login_url='/users/login'), name='dispatch')
+class UserProfileView(ListView):
+  template_name = 'users/my-profile.html'
+  model = Post
+  context_object_name = 'userposts'
+  paginate_by = 5
+  
+  def get_context_data(self, **kwargs):
+    context = super(UsersProfileView,self).get_context_data(**kwargs)
+    context['userprofile'] = UserProfile.objects.get(user=self.request.user)
+    return context
+  
+  def get_queryset(self):
+    return Post.objects.filter(user=self.request.user).order_by('-publishing_date')
+```
+プロファイルのページmy-profile.htmlをcategory_detail.htmlをコピーして作成する  
+名前：{{ userprofile.user.username|title}}で先頭の名前が大文字になる  
+自己紹介：{{ userprofile.bio|linebreaks }}で改行が有効になる
+```html
+<!-- templates/users/my-profile.html -->
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>プロファイル</h2>
+      <div class="page_link">
+        <img src="{{ userprofile.image.url }}" alt="">
+        <h4 style="color:white">名前：{{ userprofile.user.username|title}}</h4>
+        <h4 style="color:white">誕生日：{{ userprofile.birth_day }}</h4>
+        <h4 style="color:white">自己紹介：{{ userprofile.bio|linebreaks }}</h4>
+        <a href="{% url 'users:update_profile' pk=userprofile.id %}" class="genric-btn info circle" style="margin-bottom:30px">変更</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <div class="blog_left_sidebar">
+                      {% for post in userposts %}
+                        <article class="blog_style1">
+                          <div class="blog_img">
+                            <img class="img-fluid" src={{ post.image.url }} alt="">
+                          </div>
+                          <div class="blog_text">
+                          <div class="blog_text_inner">
+                          {% for tag in post.tag.all %}
+                            <a class="cat" href="#">{{ tag.title }}</a>
+                          {% endfor %}
+                            <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title | truncatechars:150}}</h4></a>
+                            <p>{{ post.content }}</p>
+                            <div class="date">
+                              <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{post.publishing_date}}</a>
+                              <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
+                            </div>	
+                          </div>
+                          </div>
+                        </article>
+                      {% endfor %}
+                      {% if is_paginated %}
+                      <nav class="blog-pagination justify-content-center d-flex">
+                        <ul class="pagination">
+                          {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a href="?page={{ page_obj.has_previous_page_number }}" class="page-link" aria-label="Previous">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-left"></span>
+                                    </span>
+                                </a>
+                            </li>
+                          {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Previous">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-left"></span>
+                                  </span>
+                              </a>
+                            </li>
+                           {% endif %}
+    
+                           {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <li class="page-item active"><a href="#" class="page-link">{{ i }}</a></li>
+                            {% else %}
+                            <li class="page-item"><a href="?page={{ i }}" class="page-link">{{ i }}</a></li>
+                            {% endif %}
+                           {% endfor %}
+    
+                           {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a href="?page={{ page_obj.has_next_page_number }}" class="page-link" aria-label="Next">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-right"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Next">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-right"></span>
+                                  </span>
+                              </a>
+                          </li>
+                            {% endif %}
+                        </ul>
+                      </nav>
+                      {% endif %}
+                </div>
+            </div>
+      {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+  <!--================Blog Area =================-->
+{% endblock %}
+```
+### ユーザ別投稿(User Posts)を表示する
+```python
+# users/views.py
+class UserPostView(ListView):
+  template_name='users/user-post.html'
+  model = Post
+  context_object_name='posts'
+  paginate_by = 5
+  
+  def get_queryset(self):
+    return Post.objects.filter(user=self.kwargs['pk'])
+```
+pathをurls.pyに追加する
+```python
+# urls.py
+from django.urls import path
+from .views import *
+from django.contrib.auth import views as authViews
+from django.urls import reverse_lazy
+
+app_name="users"
+urlpatterns = [
+    path('register/', RegisterView.as_view(), name="register"),
+    path('login/', UserLoginView.as_view(), name="login"),
+    path('logout/', UserLogoutView.as_view(), name="logout"),
+    path('myprofile/', UserProfileView.as_view(), name="myprofile"),
+    path('<str:pk>/', UserPostView.as_view(), name="user_posts"), # added
+    path('update-profile/<str:pk>/', UserProfileUpdateView.as_view(), name="update_profile"), 
+    path('password-change/', authViews.PasswordChangeView.as_view(success_url=reverse_lazy('users:password_change_done')), name="password_change"),
+    path('password-change-done/', authViews.PasswordChangeDoneView.as_view(), name="password_change_done")
+] 
+```
+投稿の詳細ページでクリックするとユーザ別投稿のページに遷移するように設定
+```html
+<!-- posts/detail.html -->
+  <div class="float-right">
+    <div class="media">
+      <div class="media-body">
+        <h5><a href="{% url 'users:user_posts' single.user.pk %}"> {{ single.user.username }}</a></h5>
+        <p>{{ single.publishing_date }}</p>
+      </div>
+      <div class="d-flex">
+        <img src="{% static "img/blog/user-img.jpg" %}" alt="">
+      </div>
+    </div>
+  </div>
+```
+ユーザ別投稿のページのhmlを作成する(category_detail.htmlからコピー)
+```html
+<!-- users/user-post.html -->
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>ユーザ別投稿</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <div class="blog_left_sidebar">
+                      {% for post in posts %}
+                        <article class="blog_style1">
+                          <div class="blog_img">
+                            <img class="img-fluid" src={{ post.image.url }} alt="">
+                          </div>
+                          <div class="blog_text">
+                          <div class="blog_text_inner">
+                          {% for tag in post.tag.all %}
+                            <a class="cat" href="#">{{ tag.title }}</a>
+                          {% endfor %}
+                            <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title | truncatechars:150}}</h4></a>
+                            <p>{{ post.content }}</p>
+                            <div class="date">
+                              <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{post.publishing_date}}</a>
+                              <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
+                            </div>	
+                          </div>
+                          </div>
+                        </article>
+                      {% endfor %}
+                      {% if is_paginated %}
+                      <nav class="blog-pagination justify-content-center d-flex">
+                        <ul class="pagination">
+                          {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a href="?page={{ page_obj.has_previous_page_number }}" class="page-link" aria-label="Previous">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-left"></span>
+                                    </span>
+                                </a>
+                            </li>
+                          {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Previous">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-left"></span>
+                                  </span>
+                              </a>
+                            </li>
+                           {% endif %}
+    
+                           {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <li class="page-item active"><a href="#" class="page-link">{{ i }}</a></li>
+                            {% else %}
+                            <li class="page-item"><a href="?page={{ i }}" class="page-link">{{ i }}</a></li>
+                            {% endif %}
+                           {% endfor %}
+    
+                           {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a href="?page={{ page_obj.has_next_page_number }}" class="page-link" aria-label="Next">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-right"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Next">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-right"></span>
+                                  </span>
+                              </a>
+                          </li>
+                            {% endif %}
+                        </ul>
+                      </nav>
+                      {% endif %}
+                </div>
+            </div>
+      {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+  <!--================Blog Area =================-->
+{% endblock %}
+```
+### ユーザリストを作成する
+```html
+<!-- templates/base.html -->
+  <ul class="nav navbar-nav menu_nav">
+    <li class="nav-item active"><a class="nav-link" href="{% url 'index' %}">ホーム</a></li> 
+    <li class="nav-item"><a class="nav-link" href="category.html">カテゴリー</a></li>
+    <li class="nav-item"><a class="nav-link" href="{% url 'users:user_list' %}">ユーザーリスト</a></li> # Changed
+    {% if user.is_authenticated %}
+    <li class="nav-item submenu dropdown">
+      <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{user.username}}</a>
+      <ul class="dropdown-menu">
+        <li class="nav-item"><a class="nav-link" href="{% url 'create_post' %}">投稿の追加</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'users:password_change' %}">パスワードの変更</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'users:myprofile' %}">プロフィール</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'users:logout' %}">ログアウト</a></li>
+      </ul>
+    </li> 
+```
+```python
+# users/views.py
+class UserListView(ListView):
+  template_name ='users/user-list.html'
+  model = UserProfile
+  context_object_name='profiles'
+  paginate_by = 5
+  
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    return context
+```
+ユーザーリストのhtmlを作成する
+```html
+<!-- templates/users/user-list.html -->
+{% extends 'base.html'%}
+{% load static %}
+
+{% block content %}
+  <!--================Home Banner Area =================-->
+  <section class="banner_area">
+      <div class="banner_inner d-flex align-items-center">
+        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
+  <div class="container">
+    <div class="banner_content text-center">
+      <h2>ユーザーリスト</h2>
+      <div class="page_link">
+        <a href="{% url 'index' %}">Home</a>
+        <a href="#">{{ category.title }}</a>
+      </div>
+    </div>
+  </div>
+      </div>
+  </section>
+  <!--================End Home Banner Area =================-->
+  
+  <!--================Blog Area =================-->
+  <section class="blog_area p_120">
+      <div class="container">
+          <div class="row">
+              <div class="col-lg-8">
+                  <div class="blog_left_sidebar" style="text-align:center">
+                      {% for profile in profiles %}
+                      <div class="container" style="border-style:solid; border-width; 2px; border-color:green; margin-bottom:5px;">
+                        <img src="{{ profile.image.url }}" alt="">
+                        <h4>{{ profile.user.username }}</h4>
+                        <p>{{ profile.bio }}</P>
+                        <p>{{ profile.birth_day }}</P>
+                      </div>
+                      {% endfor %}
+                      {% if is_paginated %}
+                      <nav class="blog-pagination justify-content-center d-flex">
+                        <ul class="pagination">
+                          {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a href="?page={{ page_obj.has_previous_page_number }}" class="page-link" aria-label="Previous">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-left"></span>
+                                    </span>
+                                </a>
+                            </li>
+                          {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Previous">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-left"></span>
+                                  </span>
+                              </a>
+                            </li>
+                           {% endif %}
+    
+                           {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <li class="page-item active"><a href="#" class="page-link">{{ i }}</a></li>
+                            {% else %}
+                            <li class="page-item"><a href="?page={{ i }}" class="page-link">{{ i }}</a></li>
+                            {% endif %}
+                           {% endfor %}
+    
+                           {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a href="?page={{ page_obj.has_next_page_number }}" class="page-link" aria-label="Next">
+                                    <span aria-hidden="true">
+                                        <span class="lnr lnr-chevron-right"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                              <a href="#" class="page-link" aria-label="Next">
+                                  <span aria-hidden="true">
+                                      <span class="lnr lnr-chevron-right"></span>
+                                  </span>
+                              </a>
+                          </li>
+                            {% endif %}
+                        </ul>
+                      </nav>
+                      {% endif %}
+                </div>
+            </div>
+      {% include 'right_side.html' %}
+          </div>
+      </div>
+  </section>
+  <!--================Blog Area =================-->
+{% endblock %}
+```
+```python
+# users/urls.py
+from django.urls import path
+from .views import *
+from django.contrib.auth import views as authViews
+from django.urls import reverse_lazy
+
+app_name="users"
+urlpatterns = [
+    path('', UserListView.as_view(), name="user_list"),  #added
+    path('register/', RegisterView.as_view(), name="register"),
+    path('login/', UserLoginView.as_view(), name="login"),
+    path('logout/', UserLogoutView.as_view(), name="logout"),
+    path('myprofile/', UserProfileView.as_view(), name="myprofile"),
+    path('<int:pk>/', UserPostView.as_view(), name="user_posts"),
+    path('update-profile/<str:pk>/', UserProfileUpdateView.as_view(), name="update_profile"),
+    path('password-change/', authViews.PasswordChangeView.as_view(success_url=reverse_lazy('users:password_change_done')), name="password_change"),
+    path('password-change-done/', authViews.PasswordChangeDoneView.as_view(), name="password_change_done")
+] 
+```
+### メニューバーにカテゴリーリストを表示する
+```html
+<div class="collapse navbar-collapse offset" id="navbarSupportedContent">
+  <ul class="nav navbar-nav menu_nav">
+    <li class="nav-item active"><a class="nav-link" href="{% url 'index' %}">ホーム</a></li>
+    <li class="nav-item submenu dropdown">
+      <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">カテゴリー</a>
+      <ul class="dropdown-menu">
+          {% post_categories as categories %}
+          {% for category in categories %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'category_detail' category.id %}">{{ category.title }}</a></li>
+          {% endfor %}
+      </ul>
+    </li> 
+    <li class="nav-item"><a class="nav-link" href="{% url 'users:user_list' %}">ユーザーリスト</a></li>
+```
+img class="img-fluid" src={{ post.image.url }} alt="" style="width:100%"  
+style="width:100%" で画像の幅を広げる
+### メッセージを表示する
+UserProfileUpdateViewでSuccessMessageMixinを追加する
+```python
+# users/views.py
+@method_decorator(login_required(login_url='/users/login'), name='dispatch')
+class UserProfileUpdateView(SuccessMessageMixin, UpdateView):
+  model = UserProfile
+  template_name = 'users/profile-update.html'
+  form_class = UsersProfileForm
+  success_message ="プロフィールが更新されました"
+  
+  def form_valid(self, form):
+    form.instance.user = self.request.user
+    form.save()
+    return super(UserProfileUpdateView,self).form_valid(form)
+    
+  def get_success_url(self):
+    return reverse('users:update_profile', kwargs={'pk':self.object.id})
+  
+  # 別ユーザのIDがlocalhost:8000/users/update-profile/idのidに入力されたらホームにリダイレクトする
+  def get(self, request, *args, **kwargs):
+    self.object = self.get_object()
+    if self.object.user != request.user:
+      return HttpResponseRedirect('/')
+    return super(UserProfileUpdateView,self).get(request, *args, **kwargs)
+```
+Django messagesで検索
+```html
+Sample: https://docs.djangoproject.com/en/4.1/ref/contrib/messages/
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+```
+```html
+<!-- templates/messages.html -->
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-success alert-dismissible">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+```
+```html
+<!-- templates/base.html -->
+<body>
+    <!--================Header Menu Area =================-->
+    <header class="header_area">
+        {% include 'messages.html' %} # added
+        <div class="logo_part">
+          <div class="container">
+            <a class="logo" href="#"><img src="{% static "img/logo.png" %}" alt=""></a>
+          </div>
+        </div>
+```
+
+```python
+
 
 ```
 ```python
@@ -1447,9 +2200,5 @@ components=>Alerts=>Dismissing
 ```python
 
 ```
-```python
-
-```
-
 
 

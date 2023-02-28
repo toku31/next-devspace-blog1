@@ -880,7 +880,7 @@ index.htmlのarticleタグは１つだけ残してそれをfor文で囲む
 {{}}を使ってurl, title, content, publishing_dateを以下のように動的に変える
 ```html
 // templates/posts/index.html
-<img class="img-fluid" src="{% static "img/home-blog/blog-1.jpg" %}" alt="">  
+<img class="img-fluid" src="{% static "img/home-blog/blog-1.jpg" %}" alt="" style="width:100%">  
 ↓
 <img class="img-fluid" src="{{ post.image.url }}" alt="">
 ```
@@ -891,7 +891,7 @@ for文で囲んだarticleタグは以下のようにする
 {% for post in posts %}
   <article class="blog_style1">
     <div class="blog_img">
-      <img class="img-fluid" src="{{ post.image.url }}" alt="">
+      <img class="img-fluid" src="{{ post.image.url }}" alt="" style="width:100%">
     </div>
     <div class="blog_text">
       <div class="blog_text_inner">

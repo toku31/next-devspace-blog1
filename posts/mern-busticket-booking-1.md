@@ -887,7 +887,8 @@ JWT_SECRET = '・・・'
 ```
 フロントエンドLogin.jsのhandleSubmit処理を編集する  
 取得したtokenはlocalStrageに保存する  
-取得したtokenをJWTページ(https://jwt.io/)で確認することができる
+取得したtokenをJWTページ(https://jwt.io/)で確認することができる  
+navigate('/')でうまくいかない時はwindow.location.reload()またはwindow.location.href=('/')で置き換える
 ```Js
 // src/pages/Login.js
 import {Link, useNavigate} from 'react-router-dom'
@@ -927,7 +928,9 @@ function Login() {
         console.log("Login user successfully:", response.data) ;
         // toast.success(response.data.message, {theme: "colored"})
         localStorage.setItem("token", response.data.data)
-        navigate('/');
+        window.location.href=('/')
+        // window.location.reload()
+        // navigate('/');
       } else {
         console.log("Login error:", response.data) ;
         toast.error(response.data.message, {theme: "colored"})
@@ -1557,7 +1560,9 @@ function Login() {
         console.log("Login user successfully:", response.data) ;
         // toast.success(response.data.message, {theme: "colored"})
         localStorage.setItem("token", response.data.data)
-        navigate('/');
+        window.location.href=('/')
+        // window.location.reload()
+        // navigate('/');
       } else {
         dispatch(HideLoading())  // setLoading(false)
         console.log("Login error:", response.data) ;
