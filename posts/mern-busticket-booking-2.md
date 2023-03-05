@@ -2206,7 +2206,7 @@ function UserTable({users, updateUserPermissions}) {
                               <p 
                               className='underline' 
                               onClick={()=> {
-                                updateUserPermissions("make-admin");
+                                updateUserPermissions(user, "make-admin");
                               }}>管理者にする</p>
                             )}
                           </div>
