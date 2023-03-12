@@ -74,7 +74,7 @@ import os
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], // 追加
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # 追加
         'APP_DIRS': True,
     }
 ```
@@ -111,7 +111,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'jobs.apps.PostsConfig'　// added
+    'jobs.apps.JobsConfig', 　// added
 ]
 ```
 作成したpostsにurls.pyファイルを作成する  
@@ -987,38 +987,37 @@ index.htmlファイルに下記のデザイン済みのhtmlファイルをコピ
 ```
 postsフォルダのurls.pyにindex.htmlのパスを追加する　P182
 ```python
-# posts/urls.py
+# jobs/urls.py
 from django.urls import path
-# from posts.views import *
+# from jobs.views import *
 from .views import *
 
 urlpatterns = [
-    path('', IndexView.as_view(), name="index"),
+    path('', HomeView.as_view(), name="home"),
 ] 
 ```
-postsフォルダのviews.pyにIndexViewというクラスビューを作成する 183
+postsフォルダのviews.pyにHomeViewというクラスビューを作成する 183
 ```python
+# jobs/views.py
 from django.shortcuts import render
 from django.views.generic import TemplateView
 
-class IndexView(TemplateView):
-  template_name="posts/index.html"
+class HomeView(TemplateView):
+  template_name="jobs/index.html"
 ```
 ### Static Filesをtemplates/posts/index.htmlに取り込む
 先頭に{% load static %}を追加する
 ```html
-// templates/jobs/index.htm
-{% load static %} // added
+ <!-- templates/jobs/index.htm -->
+{% load static %} # added
 <!doctype html>
 <html lang="en">
   ・・・
 ```
-index.htmの中の全ての 「"img/」を「"{% static "img/」に置換する  
-index.htmの中の全ての 「.png"」を「.png" %}"」に置換する  
-index.htmの中の全ての 「.jpg"」を「.jpg" %}"」に置換する  
+index.htmの中の全ての 「'img/」を「'{% static 'images/」に置換する  
+index.htmの中の全ての 「.jpg'」を「.jpg' %}'」に置換する  
 index.htmの中の全ての 「"css/」を「"{% static "css/」に置換する  
 index.htmの中の全ての 「.css"」を「.css" %}"」に置換する  
-index.htmの中の全ての 「"vendors/」を「"{% static "vendors/」に置換する  
 index.htmの中の全ての 「"js/」を「"{% static "js/」に置換する  
 index.htmの中の全ての 「.js"」を「.js" %}"」に置換する  
 #### Base Htmlを作成する
@@ -1026,147 +1025,176 @@ index.htmlからヘッダーとフッターを切り抜いてbase.htmlを作る
 ```python
 # templates/base.html
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link rel="icon" href="{% static "img/favicon.png" %}" type="image/png">
-        <title>Fantom Blog</title>
-        <!-- Bootstrap CSS -->
-        <link rel="stylesheet" href="{% static "css/bootstrap.css" %}">
-        <link rel="stylesheet" href="{% static "vendors/linericon/style.css" %}">
-        <link rel="stylesheet" href="{% static "css/font-awesome.min.css" %}">
-        <link rel="stylesheet" href="{% static "vendors/owl-carousel/owl.carousel.min.css" %}">
-        <link rel="stylesheet" href="{% static "vendors/lightbox/simpleLightbox.css" %}">
-        <link rel="stylesheet" href="{% static "vendors/nice-select/css/nice-select.css" %}">
-        <link rel="stylesheet" href="{% static "vendors/animate-css/animate.css" %}">
-        <link rel="stylesheet" href="{% static "vendors/jquery-ui/jquery-ui.css" %}">
-        <!-- main css -->
-        <link rel="stylesheet" href="{% static "css/style.css" %}">
-        <link rel="stylesheet" href="{% static "css/responsive.css" %}">
-    </head>
-    <body>
-        <!--================Header Menu Area =================-->
-        <header class="header_area">
-            <div class="logo_part">
-            	<div class="container">
-            		<a class="logo" href="#"><img src="{% static "img/logo.png" %}" alt=""></a>
-            	</div>
-            </div>
-			<div class="main_menu">
-				<nav class="navbar navbar-expand-lg navbar-light">
-					<div class="container">
-						<!-- Brand and toggle get grouped for better mobile display -->
-						<a class="navbar-brand logo_h" href="index.html"><img src="{% static "img/logo.png" %}" alt=""></a>
-						<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
-						</button>
-						<!-- Collect the nav links, forms, and other content for toggling -->
-						<div class="collapse navbar-collapse offset" id="navbarSupportedContent">
-							<ul class="nav navbar-nav menu_nav">
-								<li class="nav-item active"><a class="nav-link" href="index.html">Home</a></li> 
-								<li class="nav-item"><a class="nav-link" href="category.html">Category</a></li>
-								<li class="nav-item"><a class="nav-link" href="archive.html">Archive</a></li>
-								<li class="nav-item submenu dropdown">
-									<a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Pages</a>
-									<ul class="dropdown-menu">
-										<li class="nav-item"><a class="nav-link" href="single-blog.html">Blog Details</a></li>
-										<li class="nav-item"><a class="nav-link" href="elements.html">Elements</a></li>
-									</ul>
-								</li> 
-								<li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
-							</ul>
-							<ul class="nav navbar-nav navbar-right ml-auto">
-								<li class="nav-item"><a href="#" class="search"><i class="lnr lnr-magnifier"></i></a></li>
-							</ul>
-						</div> 
-					</div>
-				</nav>
-			</div>
-        </header>
-        <!--================Header Menu Area =================-->
+  <head>
+    <title>JobPortal - Free Bootstrap 4 Template by Colorlib</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:200,300,400,600,700,800,900" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static "css/open-iconic-bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/animate.css" %}">
+    
+    <link rel="stylesheet" href="{% static "css/owl.carousel.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/owl.theme.default.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/magnific-popup.css" %}">
+
+    <link rel="stylesheet" href="{% static "css/aos.css" %}">
+
+    <link rel="stylesheet" href="{% static "css/ionicons.min.css" %}">
+
+    <link rel="stylesheet" href="{% static "css/bootstrap-datepicker.css" %}">
+    <link rel="stylesheet" href="{% static "css/jquery.timepicker.css" %}">
+
+    
+    <link rel="stylesheet" href="{% static "css/flaticon.css" %}">
+    <link rel="stylesheet" href="{% static "css/icomoon.css" %}">
+    <link rel="stylesheet" href="{% static "css/style.css" %}">
+  </head>
+  <body>
+    
+	  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
+	    <div class="container">
+	      <a class="navbar-brand" href="index.html">JobPortal</a>
+	      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Toggle navigation">
+	        <span class="oi oi-menu"></span> Menu
+	      </button>
+
+	      <div class="collapse navbar-collapse" id="ftco-nav">
+	        <ul class="navbar-nav ml-auto">
+	          <li class="nav-item active"><a href="index.html" class="nav-link">Home</a></li>
+	          <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
+	          <li class="nav-item"><a href="blog.html" class="nav-link">Blog</a></li>
+	          <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
+	          <li class="nav-item cta mr-md-2"><a href="new-post.html" class="nav-link">Post a Job</a></li>
+	          <li class="nav-item cta cta-colored"><a href="job-post.html" class="nav-link">Want a Job</a></li>
+
+	        </ul>
+	      </div>
+	    </div>
+	  </nav>
+    <!-- END nav -->
+
 {% block content %}
-      #  ここにindex.htmlの内容を表示させる
+      {% comment %} ここにindex.htmlの内容を表示させる {% endcomment %}
 {% endblock %}
-        <!--================ start footer Area  =================-->	
-        <footer class="footer-area">
-          <div class="container">
-              <div class="row">
-                  <div class="col-lg-3  col-md-6 col-sm-6">
-                      <div class="single-footer-widget">
-                          <h6 class="footer_title">About Us</h6>
-                          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore dolore magna aliqua.</p>
-                      </div>
-                  </div>
-                  <div class="col-lg-4 col-md-6 col-sm-6">
-                      <div class="single-footer-widget">
-                          <h6 class="footer_title">Newsletter</h6>
-                          <p>Stay updated with our latest trends</p>		
-                          <div id="mc_embed_signup">
-                              <form target="_blank" action="https://spondonit.us12.list-manage.com/subscribe/post?u=1462626880ade1ac87bd9c93a&amp;id=92a4423d01" method="get" class="subscribe_form relative">
-                                  <div class="input-group d-flex flex-row">
-                                      <input name="EMAIL" placeholder="Email Address" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Email Address '" required="" type="email">
-                                      <button class="btn sub-btn"><span class="lnr lnr-arrow-right"></span></button>		
-                                  </div>									
-                                  <div class="mt-10 info"></div>
-                              </form>
-                          </div>
-                      </div>
-                  </div>
-                  <div class="col-lg-3 col-md-6 col-sm-6">
-                      <div class="single-footer-widget instafeed">
-                          <h6 class="footer_title">Instagram Feed</h6>
-                          <ul class="list instafeed d-flex flex-wrap">
-                              <li><img src="{% static "img/instagram/Image-01.jpg" %}" alt=""></li>
-                               <li><img src="{% static "img/instagram/Image-08.jpg" %}" alt=""></li>
-                          </ul>
-                      </div>
-                  </div>	
-                  <div class="col-lg-2 col-md-6 col-sm-6">
-                      <div class="single-footer-widget f_social_wd">
-                          <h6 class="footer_title">Follow Us</h6>
-                          <p>Let us be social</p>
-                          <div class="f_social">
-                            <a href="#"><i class="fa fa-facebook"></i></a>
-              <a href="#"><i class="fa fa-twitter"></i></a>
-              <a href="#"><i class="fa fa-dribbble"></i></a>
-              <a href="#"><i class="fa fa-behance"></i></a>
-                          </div>
-                      </div>
-                  </div>						
-              </div>
-              <div class="row footer-bottom d-flex justify-content-between align-items-center">
-                  <p class="col-lg-12 footer-text text-center"><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
-Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="fa fa-heart-o" aria-hidden="true"></i> by <a href="https://colorlib.com" target="_blank">Colorlib</a>
-<!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. --></p>
-              </div>
+
+<section class="ftco-section-parallax">
+  <div class="parallax-img d-flex align-items-center">
+    <div class="container">
+      <div class="row d-flex justify-content-center">
+        <div class="col-md-7 text-center heading-section heading-section-white ftco-animate">
+          <h2>Subcribe to our Newsletter</h2>
+          <p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts. Separated they live in</p>
+          <div class="row d-flex justify-content-center mt-4 mb-4">
+            <div class="col-md-8">
+              <form action="#" class="subscribe-form">
+                <div class="form-group d-flex">
+                  <input type="text" class="form-control" placeholder="Enter email address">
+                  <input type="submit" value="Subscribe" class="submit px-3">
+                </div>
+              </form>
+            </div>
           </div>
-      </footer>
-  <!--================ End footer Area  =================-->
-      <!-- Optional JavaScript -->
-      <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-      <script src="{% static "js/jquery-3.2.1.min.js" %}"></script>
-      <script src="{% static "js/popper.js" %}"></script>
-      <script src="{% static "js/bootstrap.min.js" %}"></script>
-      <script src="{% static "js/stellar.js" %}"></script>
-      <script src="{% static "vendors/lightbox/simpleLightbox.min.js" %}"></script>
-      <script src="{% static "vendors/nice-select/js/jquery.nice-select.min.js" %}"></script>
-      <script src="{% static "vendors/isotope/imagesloaded.pkgd.min.js" %}"></script>
-      <script src="{% static "vendors/isotope/isotope-min.js" %}"></script>
-      <script src="{% static "vendors/owl-carousel/owl.carousel.min.js" %}"></script>
-      <script src="{% static "vendors/jquery-ui/jquery-ui.js" %}"></script>
-      <script src="{% static "js/jquery.ajaxchimp.min.js" %}"></script>
-      <script src="{% static "js/mail-script.js" %}"></script>
-      <script src="{% static "js/theme.js" %}"></script>
-  </body>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="ftco-footer ftco-bg-dark ftco-section">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-md">
+         <div class="ftco-footer-widget mb-4">
+          <h2 class="ftco-heading-2">About</h2>
+          <p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts.</p>
+          <ul class="ftco-footer-social list-unstyled float-md-left float-lft mt-3">
+            <li class="ftco-animate"><a href="#"><span class="icon-twitter"></span></a></li>
+            <li class="ftco-animate"><a href="#"><span class="icon-facebook"></span></a></li>
+            <li class="ftco-animate"><a href="#"><span class="icon-instagram"></span></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="ftco-footer-widget mb-4">
+          <h2 class="ftco-heading-2">Employers</h2>
+          <ul class="list-unstyled">
+            <li><a href="#" class="py-2 d-block">How it works</a></li>
+            <li><a href="#" class="py-2 d-block">Register</a></li>
+            <li><a href="#" class="py-2 d-block">Post a Job</a></li>
+            <li><a href="#" class="py-2 d-block">Advance Skill Search</a></li>
+            <li><a href="#" class="py-2 d-block">Recruiting Service</a></li>
+            <li><a href="#" class="py-2 d-block">Blog</a></li>
+            <li><a href="#" class="py-2 d-block">Faq</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="ftco-footer-widget mb-4 ml-md-4">
+          <h2 class="ftco-heading-2">Workers</h2>
+          <ul class="list-unstyled">
+            <li><a href="#" class="py-2 d-block">How it works</a></li>
+            <li><a href="#" class="py-2 d-block">Register</a></li>
+            <li><a href="#" class="py-2 d-block">Post Your Skills</a></li>
+            <li><a href="#" class="py-2 d-block">Job Search</a></li>
+            <li><a href="#" class="py-2 d-block">Emploer Search</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="ftco-footer-widget mb-4">
+          <h2 class="ftco-heading-2">Have a Questions?</h2>
+          <div class="block-23 mb-3">
+            <ul>
+              <li><span class="icon icon-map-marker"></span><span class="text">203 Fake St. Mountain View, San Francisco, California, USA</span></li>
+              <li><a href="#"><span class="icon icon-phone"></span><span class="text">+2 392 3929 210</span></a></li>
+              <li><a href="#"><span class="icon icon-envelope"></span><span class="text">info@yourdomain.com</span></a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12 text-center">
+
+        <p><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="icon-heart text-danger" aria-hidden="true"></i> by <a href="https://colorlib.com" target="_blank">Colorlib</a>
+<!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. --></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- loader -->
+<div id="ftco-loader" class="show fullscreen"><svg class="circular" width="48px" height="48px"><circle class="path-bg" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke="#eeeeee"/><circle class="path" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke-miterlimit="10" stroke="#F96D00"/></svg></div>
+
+<script src="{% static "js/jquery.min.js" %}"></script>
+<script src="{% static "js/jquery-migrate-3.0.1.min.js" %}"></script>
+<script src="{% static "js/popper.min.js" %}"></script>
+<script src="{% static "js/bootstrap.min.js" %}"></script>
+<script src="{% static "js/jquery.easing.1.3.js" %}"></script>
+<script src="{% static "js/jquery.waypoints.min.js" %}"></script>
+<script src="{% static "js/jquery.stellar.min.js" %}"></script>
+<script src="{% static "js/owl.carousel.min.js" %}"></script>
+<script src="{% static "js/jquery.magnific-popup.min.js" %}"></script>
+<script src="{% static "js/aos.js" %}"></script>
+<script src="{% static "js/jquery.animateNumber.min.js" %}"></script>
+<script src="{% static "js/bootstrap-datepicker.js" %}"></script>
+<script src="{% static "js/jquery.timepicker.min.js" %}"></script>
+<script src="{% static "js/scrollax.min.js" %}"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBVWaKrjvy3MaE7SQ74_uJiULgl1JY0H2s&sensor=false"></script>
+<script src="{% static "js/google-map.js" %}"></script>
+<script src="{% static "js/main.js" %}"></script>
+
+</body>
 </html>
 ```
 切り抜いた後のindex.html
 ```python
+# templates/jobs/index.html
 {% extends 'base.html'%}
 {% load static %}
 
@@ -1176,36 +1204,252 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
         <!--================Blog Area =================-->
 {% endblock %}
 ```
-#### SuperUserを作成する
-```python
-(venv) user@mbp Django-fantom-blog % python manage.py createsuperuser 
-Username (leave blank to use 'user'): user
-Email address: 
-Password: 123
+### First Modelの作成 8
+ユーザモデルを作成する　ログインはメールアドレスとパスワードを入力する  
+まずusers appを作成する
 ```
-### First Modelの作成
-date=models.DateField(auto_now_add=True)にすると自動的に日付が適用される   
-’uploads/'は画像を格納するフォルダ名で最後にスラッシュをつける  
+(venv) user@mbp Job-Portal % python manage.py startapp users
+```
 ```python
-# posts/models.py
-from django.db import models
+# settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'jobs.apps.JobsConfig',
+    'users.apps.UsersConfig', #added
+]
+```
+```python
+# job/urls.py
+from django.contrib import admin
+from django.urls import path, include
 from django.conf import settings
+from django.conf.urls.static import static
 
-class Post(models.Model):
-  title = models.CharField(verbose_name='タイトル',max_length=150)
-  content = models.TextField(verbose_name='内容')
-  TimeField(verbose_name='投稿日', auto_now_add=True)
-  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
-  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('jobs.urls')), 
+    path('users/', include('users.urls')),  # added
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+カスタムユーザーを作成する【AbstractBaseUser編】  
+https://daeudaeu.com/django-abstractbaseuser/  
+```python
+# users/models.py
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import PermissionsMixin
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+class UserManager(BaseUserManager):
+  use_in_migrations = True
   
-  def __str__(self):
-    return self.title
+  def _create_user(self, email, password, **extra_fields):
+    if not email:
+      raise ValueError('Your email is not correct')
+    
+    email = self.normalize_email(email)
+    user = self.model(email=email, **extra_fields)
+    user.set_password(password)
+    user.save(using=self._db)
+    return user
+
+  def create_user(self, email=None, password=None, **extra_fields):
+      extra_fields.setdefault('is_superuser', False)
+      return self._create_user(email, password, **extra_fields)
+    
+  def create_superuser(self, email, password, **extra_fields):
+      extra_fields.setdefault('is_superuser', True)
+      if extra_fields.get('is_superuser') is not True:
+          raise ValueError('Superuser must have is_superuser=True.')
+
+      return self._create_user(email, password, **extra_fields)
+
+
+class Account(AbstractBaseUser, PermissionsMixin):
+  email = models.EmailField(_('メールアドレス'), unique=True)
+  first_name = models.TextField(_('名'), max_length=50, blank=False)
+  last_name = models.TextField(_('姓'), max_length=50, blank=False)
+  date_joined = models.DateTimeField(_('登録日'), auto_now_add=True)
+  is_active = models.BooleanField(_('アクティブ'), default=True)
+  is_staff = models.BooleanField(_('スタッフ'), default=False)
+  is_employee = models.BooleanField(default=False)
+  is_employer = models.BooleanField(default=False)
+  
+  objects = UserManager()
+  USERNAME_FIELD = 'email'
+  REQUIRED_FIELDS = []
+  
+  class Meta:
+    verbose_name = _("user")
+    verbose_name_plural = _("users")
+```
+jobs/settings.pyに以下を追加する
+```
+AUTH_USER_MODEL = 'users.Account'
 ```
 作成したモデルでテーブルを作成してデータベースに登録する
 ```python
 (venv) user@mbp Django-fantom-blog % python manage.py makemigrations
 (venv) user@mbp Django-fantom-blog % python manage.py migrate 
 ```
+#### SuperUserを作成する
+```python
+(venv) user@mbp Job-Portal % python manage.py createsuperuser   
+メールアドレス: admin@gmail.com
+Password: 123
+Password (again): 
+```
+テーブルの値変更：is_staff= 1に更新する  
+https://qiita.com/ysk91_engineer/items/46859bf3721d38334431
+```sql
+-- SQLite
+UPDATE users_account
+SET is_staff= 1
+WHERE id = 1;
+```
+管理画面でユーザの属性を表示させる
+```python
+# users/admin.py
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from .models import Account
+
+class MyAdminAccounts(UserAdmin):
+  model = Account
+  list_display = ('email', 'first_name', 'last_name', 'is_employee', 'is_employer')
+  list_filter = ('email', 'first_name', 'last_name', 'is_employee', 'is_employer')
+  search_fields = ('email', 'first_name', 'last_name')
+  ordering = ('email', 'first_name')
+  readonly_fields = ['date_joined']
+
+admin.site.register(Account, MyAdminAccounts)
+```
+### user作成と更新機能
+```python
+# users/admin.py
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from .models import Account
+
+class MyAdminAccounts(UserAdmin):
+  model = Account
+  list_display = ('email', 'first_name', 'last_name', 'is_employee', 'is_employer')
+  list_filter = ('email', 'first_name', 'last_name', 'is_employee', 'is_employer')
+  search_fields = ('email', 'first_name', 'last_name')
+  ordering = ('email', 'first_name')
+  readonly_fields = ['date_joined']
+  
+  add_fieldsets = (
+    (None, {
+      'classes': ('wide',),
+      'fields':('email', 'first_name', 'last_name', 'password1', 'password2', 'is_employee', 'is_employer','is_staff', 'is_active')
+    }),
+  )
+  
+  fieldsets = (
+    (None, {'fields': ('email', 'first_name', 'last_name', 'password')}),
+    ('Permissions', {'fields': ('is_staff', 'is_active', 'is_employee', 'is_employer')})
+  )
+
+admin.site.register(Account, MyAdminAccounts)
+```
+### Job モデルを作成する
+```python
+# jobs/models.py
+from django.db import models
+from django.conf import settings
+import uuid
+# from django.template.defaultfilters import slugify
+
+class Job(models.Model):
+  title = models.CharField(max_length=300, verbose_name='タイトル')
+  company = models.CharField(max_length=300, verbose_name='会社')
+  CHOICES = (
+    ('full_time', 'フルタイム'),
+    ('part_time', 'パートタイム'),
+    ('freelance', 'フリーランス'),
+    ('internship', 'インターンシップ'),
+    ('temporary', 'アルバイト'),
+  )
+  
+  job_type = models.CharField(max_length=20, blank=False, default=None, choices=CHOICES, verbose_name='勤務形態')
+  location = models.CharField(max_length=200, blank=False, default=None, verbose_name='勤務地')
+  description = models.TextField(blank=False, default=None, verbose_name='仕事内容')
+  publishing_date = models.DateTimeField(auto_now_add=True, verbose_name='公開日')
+  # slug = models.SlugField(default=None, editable=False)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  employer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=None, verbose_name='雇用者')
+  
+  def __str__(self):
+    return self.title
+  
+  # def save(self, *args, **kwargs):
+  #   self.slugify(self.title)
+  #   super(Job, self).save(*args, **kwargs)
+  
+  class Meta:
+    ordering = ('-publishing_date',)
+```
+migrations & migrate
+```python
+# jobs/admin.py
+from django.contrib import admin
+from .models import Job
+  
+admin.site.register(Job)
+```
+```python
+# jobs/views.py
+from django.shortcuts import render
+
+from django.views.generic import TemplateView, ListView
+
+class HomeView(ListView):
+  template_name="jobs/index.html"
+  context_object_name = 'jobs'
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+```python
+
+```
+
+
+
+
+
 さらにpostsのadmin.pyを編集してDjango administrationにサーチフィールドやフィルターを追加する
 ```python
 # posts/admin.py 

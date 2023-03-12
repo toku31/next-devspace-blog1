@@ -64,8 +64,32 @@ user@mbp client % npm i react-router-dom axios redux react-redux
 ~~~
 Bootstrap CDN: 
 ```
-// public/index.html に追加
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+```
+```html
+ <!-- public/index.html に追加 -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Web site created using create-react-app" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <title>Retail Store POS</title>
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+</body>
+
+</html>
 ```
 Remix Icon CDN:  https://remixicon.com/  
 ```
@@ -75,17 +99,13 @@ Remix Icon CDN:  https://remixicon.com/
 フォントはGoogle FontsのMontserratを使う
 ```css
 /* index.cssに上書き */
-:root {
-  --primary: #058359;
-  --secondary: #AC4425;
-}
-
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
 
 * {
   font-family: 'Montserrat',sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
-  /* background-color: aqua; */
 }
 ```
 srcフォルダの直下にpages, components, resources, reduxフォルダを作成する
@@ -153,21 +173,297 @@ function Layout(props) {
   }
 }
 ```
-#### Backend Setup
-Package.jsonの作成 : user@mbp mern-busticket-booking % npm init -y  
-user@mbp mern-busticket-booking % npm i nodemon mongoose express jsonwebtoken bcryptjs   nodemailer dotenv  
+#### Layoutを設計する(DefaultLayout)４
+###  メニュー画面（サイドバー）
+```js
+// src/components/DefaultLayout.js
+import React from 'react'
+import '../resources/layout.css'
+
+function DefaultLayout({children}) {
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        sidebar
+      </div>
+      <div className="body">
+        <div className="header">
+          header
+        </div>
+        <div className="content">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+export default DefaultLayout
+```
+画面のCSSの編集
+```js
+// resources/layout.css
+.layout-parent{
+  display: flex;
+  height: 100%;
+  width: 100%;
+  height: 100vh;
+}
+
+.body {
+  width: 100%;;
+}
+
+.header{
+  background-color: gray;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.479);
+  width: 100%;
+  padding: 20px;
+}
+
+.sidebar {
+  background-color: gray;
+  width: 300px;
+  border-radius: 5px;
+}
+
+.content {
+  background-color: pink;
+  padding: 10px;
+}
+```
+defaultLayout.jsのサイドバーの項目を追記する  
+最初はadminMenuから  
+iconはRemix Iconを使う：https://remixicon.com/
+```js
+import {useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
+import '../resources/global.css'
+
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false)
+  const userMenu = []
+  const adminMenu = [
+    {
+      name: 'Home',
+      path: '/home',
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'Bills',
+      path: '/bills',
+      icon: 'ri-bill-line'
+    },
+    {
+      name: 'items',
+      path: '/items',
+      icon: 'ri-list-check'
+    },
+    {
+      name: 'Customers',
+      path: '/admin/users',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'Logout',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+  const menuToBeRendered = adminMenu
+  const activeRoute = window.location.pathname
+
+  return (
+    <div className='layout-parent'>
+      <div className="sidebar">
+        <div>
+          <p className="logo">Store POS</p>
+          {/* <h3 className='logo'>Store POS</h3> */}
+        </div>
+          <div className="item-container d-flex flex-column">
+            {menuToBeRendered.map((item, index) => {
+              return <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
+                <i className={item.icon} ></i>
+                {!collapsed && 
+                <span onClick={()=>navigate(item.path)}>{item.name}</span>
+                }
+                </div>
+            })}
+          </div>
+      </div>
+      <div className="body">
+      <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+          {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+        </div>
+        <div className="content">{children}</div>
+      </div>
+    </div>
+  )
+}
+export default DefaultLayout
+```
+cssの編集
+```css
+ /* resources/layout.css */
+.layout-parent{
+  display: flex;
+  height: 100%;
+  width: 100%;
+  padding: 15px 10px;
+  height: 100vh;
+  /* gap:20px; */
+}
+
+.body {
+  width: 100%;;
+}
+
+.header{
+  background-color: #fff;
+  box-shadow: 0 0 3px #ccc;
+  /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.479); */
+  width: 100%;
+  padding: 10px;
+  margin: 0 10px;
+  border-radius: 5px;
+}
+
+.content {
+  background-color: pink;
+  padding: 15px;
+  margin: 10px;
+  height: 90vh;
+}
+
+.sidebar {
+  /* width: 300px; */
+  background-color: black;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  padding: 0px 15px;
+}
+
+.menu-item {
+  color: white;
+  background-color: black;
+  /* background-color: rgb(38, 197, 168); */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 10px 10px 10px;
+  /* width: 100%; */
+  cursor: pointer;
+  transition: 0.2s;
+  /* gap: 15px; */
+  margin: 10px 0px;
+  /* text-align: center; */
+}
+
+.menu-item i {
+  font-size: 20px;
+  margin-right: 0px;
+  color: white;
+}
+
+.menu-item span {
+  margin-left: 10px;
+  width: 130px;
+}
+
+.active-menu-item {
+  /* border: 2px solid white; */
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background: #047979;
+}
+
+.item-container {
+  /* width: 300px; */
+  padding: 10px 0px;
+  width: 100%;
+}
+
+.logo {
+  margin-top: 20px;;
+  color: #0887ad;
+  font-size: 20px;
+  font-weight: bold;
+  padding-bottom: 70px;
+}
+```
+テンプレートリテラル: CMAScriptのバージョン「ES2015」で実装された書き方  
+文字列の中に式を埋め込める
+```js
+${式}
+```
+```js
+let name = 'オレンジ';
+let cost = 100;
+
+let msg = `今日の${name}の値段は${Math.trunc(cost*1.1)}円です。`;
+console.log(msg);
+>> 今日のオレンジの値段は110円です。
+```
+### Layout Responsive
+ヘッダーにハンバーガーメニュー(ri-menu-2-fill)をつける  
+トグルで閉じるボタン(ri-close-line)もつける
+```js
+// components/defaultLayout.js
+import {useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
+
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false)
+  ・・・・
+  <div className="body">
+  <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+    {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+  </div>
+  <div className="content">{children}</div>
+```
+global.cssに iタグのフォントを追加
+```css
+// resources/global.css
+i{
+  cursor: pointer;
+  font-size: 25px;
+}
+```
+サイドバーのCSSのwidthを修正
+```css
+// resources/layout.css
+.sidebar {
+  /* width: 300px; */
+  background-color: var(--secondary);
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0px 20px;
+}
+```
+#### Backend: Node Server Setup 7
+Package.jsonの作成 : user@mbp mern-retail-pos % npm init -y  
+user@mbp mern-retail-pos  % npm i nodemon mongoose express 
+
+user@mbp mern-busticket-booking %jsonwebtoken bcryptjs   nodemailer dotenv  
 __dotenv__  https://www.npmjs.com/package/dotenv  
 dotenvを使うと.envファイルに定義された値を環境変数として使える。システムの環境変数として値が設定されていればそちらを優先して使えるので、開発時はローカルで.envを配置し、本番ではホスティングサービスの機能で環境変数として設定することでリポジトリ内のファイルを変更せずに実行することができる
 ```js
 // server.js
 const express = require('express')
 const app = express();
-const dotenv = require("dotenv").config()
-const port = process.env.PORT || 5000;
+const port = 5000;
 
-app.listen(port, ()=> console.log(`listening on port ${port}!`))
+app.get('/', (req, res) => res.send('Hello World from home api'))
+app.listen(port, ()=> console.log(`Node JS Server Running at port ${port}!`))
 ```
-user@mbp mern-busticket-booking % nodemon server  
+user@mbp mern-retail-pos % nodemon server 
 __Backendフォルダ__ の作成  
 routers, models, config, utils, middlewears
 
@@ -186,20 +482,20 @@ const app = express();
 app.get('/', (req, res) => res.send('Hello World'))
 app.listen(port, ()=> console.log(`Node JS Server started at port ${port}!`))
 ```
-user@mbp mern-busticket-booking % nodemon server  
+user@mbp mern-retail-pos　% nodemon server  
 ```js
 // .env
 NODE_ENV = development
 PORT =5000
 MONGO_URI = 'MONGO_URI = 'mongodb+srv://<username>:<password>@cluster0.7eiib.mongodb.net/busticket-booking?retryWrites=true&w=majority'
 ```
+ルート直下にdbConfig.jsを作成する  
+下記のURLにuserame, password, databaseを記載する
 ```js
-// config/dbConfig.js
+// dbConfig.js
 const mongoose = require('mongoose')
-const dotenv = require("dotenv").config()
-
-mongoose.connect(process.env.MONGO_URI)
-
+const URL = 'mongodb+srv://<username>:<password>@cluster0.7eiib.mongodb.net/<database>?retryWrites=true&w=majority'
+mongoose.connect(URL)
 const db= mongoose.connection
 
 db.on('connected', ()=> console.log('Mongo DB Connection successful'))
@@ -208,30 +504,118 @@ db.on('error', err => console.log(err))
 上のdbConfigをserver.jsに追加
 ```js
 // server.js
-const express = require('express');
+const express = require('express')
+const dbConnect = require('./dbConnect')
 const app = express();
-const dotenv = require("dotenv").config();
-const port = process.env.PORT || 5000;
-const dbConfig = require("./config/dbConfig"); // added
+const port = 5000;
 
-app.listen(port, ()=> console.log(`Node server listening on port ${port}!`));
+app.get('/', (req, res) => res.send('Hello World from home api'))
+app.listen(port, ()=> console.log(`Node JS Server Running at port ${port}!`))
+```
+MongoDBに以下のjsonファイルをインポートする
+```json
+[
+
+  {
+
+    "name": "Grapes",
+
+    "image": "https://cf.ltkcdn.net/wine/images/std/165373-800x532r1-grapes.jpg",
+
+    "price": 7,
+
+    "category": "fruits",
+
+  },
+
+  {
+
+    "name": "Oranges",
+
+    "image": "http://orfiagro.com/wp-content/uploads/2020/10/orange-1hoca2l.jpg",
+
+    "price": 5,
+
+    "category": "fruits",
+
+  },
+
+  {
+
+    "name": "Mangoes",
+
+    "image":
+
+      "http://cdn.shopify.com/s/files/1/2785/6868/products/43406-crystallized-citrus_mango_1024x1024.jpg?v=1603740971",
+
+    "price": 10,
+
+    "category": "fruits",
+
+  },
+
+
+
+  {
+
+    "name": "Beans",
+
+    "image":
+
+      "https://cdn-prod.medicalnewstoday.com/content/images/articles/285/285753/beans.jpg",
+
+    "price": 8,
+
+    "category": "vegetables",
+
+  },
+
+  {
+
+    "name": "Tomato",
+
+    "image":
+
+      "https://media.istockphoto.com/photos/tomato-with-slice-isolated-with-clipping-path-picture-id941825878?k=20&m=941825878&s=612x612&w=0&h=Qx5wYoEKsig3BGfhHAb2ZUqRBrhi6k64ZbXp3_zhj4o=",
+
+    "price": 4,
+
+    "category": "vegetables",
+
+  },
+
+  {
+
+    "name": "Brinjol",
+
+    "image":
+
+      "https://www.jiomart.com/images/product/original/590004102/brinjal-purple-striped-500-g-0-20201118.jpg",
+
+    "price": 6,
+
+    "category": "vegetables",
+
+  },
+
+]
 ```
 ### Front End Folder Structure
-最初にsrc/pagesの配下にhomepage.js, Item.js, Login.jsを作成する。その後App.js を以下のように書く
+最初にsrc/pagesの配下にhomepage.js, Item.jsを作成する。  
+App.cssを削除  
+その後App.js を以下のように書く
 ```js
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
-import Register from './pages/Register';
-import Home from './pages/Home';
-import Login from './pages/Login';
+import Homepage from './pages/Homepage';
+import Items from './pages/Items';
 
 function App() {
   return (
-    <div>
+    <div className="App">
       <Router>
         <Routes>
-          <Route path="/" element={<Home />}  />
-          <Route path="/register" element={<Register />}  />
-          <Route path="/login" element={<Login />}  />
+          <Route path="/home" element={<Homepage />}  />
+          <Route path="/items" element={<Items />}  />
         </Routes>
       </Router>
     </div>
@@ -240,6 +624,217 @@ function App() {
 
 export default App;
 ```
+### item Model & get items api 10
+ルート直下にroutesとmodelsのフォルダを作成する
+```js
+// models/itemsModel.js
+const mongoose = require('mongoose')
+
+const itemsSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      require: true
+    },
+    price: {
+      type: Number,
+      require: true
+    },
+    category: {
+      type: String,
+      require: true
+    },
+    image: {
+      type: String,
+      require: true
+    },
+  })
+
+module.exports = mongoose.model('items', itemsSchema)
+```
+```js
+// routes/itemsRoute.js
+const express = require('express')
+const itemsModel = require('../models/itemsModel')
+const router = express.Router()
+
+router.get('/get-all-items', async(req, res)=> {
+  try {
+    const items = await itemsModel.find()
+    res.send(items)
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
+module.exports = router
+```
+ルータをserver.jsに追加する
+```js
+//  server.js
+const express = require('express')
+const dbConnect = require('./dbConnect')
+
+const app = express();
+app.use(express.json()) // added
+const port = 5000;
+
+const itemsRoute = require('./routes/itemsRoute') // added
+app.use('/api/items/', itemsRoute) // added
+
+app.get('/', (req, res) => res.send('Hello World from home api'))
+app.listen(port, ()=> console.log(`Node JS Server Running at port ${port}!`))
+```
+http://localhost:5000/api/items/get-all-itemsにアクセスするとjson形式でitemsが表示される　　
+### Get items UI
+フロントエンドのpackage.jsonにproxyを設定する
+```js
+// client/src/package.json
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy" : "http://localhost:5000" // added
+}
+```
+Home画面に商品(items)を表示するgetAllItemsを作成する  
+画面はBootstrapで作成する
+```js
+// src/pages/Homepage.js
+import React, { useEffect, useState } from 'react'
+import DefaultLayout from '../components/DefaultLayout'
+import axios from 'axios' 
+import Item from '../components/Item'
+
+function Homepage() {
+  const [items, setItems] = useState([])
+  const getAllItems = () => {
+    axios.get('/api/items/get-all-items').then((response)=> {
+      console.log(response.data);
+      setItems(response.data)
+    }).catch((error)=> {
+    console.log(error)
+    })
+  }
+
+  useEffect(()=> {
+    getAllItems()
+  }, [])
+
+  return (
+    <DefaultLayout>
+      {/* <div>Homepage</div> */}
+      <div className="row">
+        {items.map((item)=> {
+          return (
+            <div className="col-md-3" key={item._id}>
+              <Item  item={item} />
+            </div>
+          )
+        })}
+      </div>
+    </DefaultLayout>
+  )
+}
+
+export default Homepage
+```
+#### Itemコンポーネントの編集
+```js
+// component/item.js
+import React from 'react'
+import '../resources/items.css'
+
+function Item({item}) {
+  return (
+    <div className='item'>
+      <h4 className='name'>{item.name}</h4>
+      <img src={item.image} alt='' height='100' width='100' />
+      <h4 className='price'><b>価格：</b>¥{item.price}</h4>
+      <div className="d-flex justify-content-end">
+      <button type="submit" className="btn">カートに追加</button>
+      </div>
+    </div>
+  )
+}
+
+export default Item
+```
+
+```js
+// src/resources/item.css
+.item {
+  box-shadow: 0 0 3px black;
+  padding: 15px;
+  margin: 10px 0px 15px 10px;
+  border-radius: 5px;
+}
+
+.item .name {
+  color: tomato;
+  font-size: 20px;
+}
+
+.item .price {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.686);
+  font-size: 20px;
+}
+
+.item button {
+  margin-top: 10px;
+  background-color: rgb(43, 197, 43);
+  color: white
+}
+```
+```js
+// src/redux/rootReducer.js
+const initialState = {
+  loading: false,
+  cartItems: []
+}
+
+export const rootReducer=(state=initialState, action) => {
+
+  switch(action.type){
+    default: return  state
+
+  }
+}
+```
+
+```js
+
+```
+```js
+
+```
+
+```js
+
+```
+
+```js
+
+```
+```js
+
+```
+
+```js
+
+```
+
+```js
+
+```
+
+
+
+
+
 BootstrapのRegistration Formのサンプル
 ```js
   <form>
@@ -1688,285 +2283,9 @@ function App() {
 http://localhost:3001/admin  
 http://localhost:3001/admin/buses  
 http://localhost:3001/admin/users  
-###  メニュー画面（サイドバー）
-```js
-// src/components/DefaultLayout.js
-import React from 'react'
-import '../resources/layout.css'
 
-function DefaultLayout({children}) {
-  return (
-    <div className='layout-parent'>
-      <div className="sidebar">
-        sidebar
-      </div>
-      <div className="body">
-        <div className="header">
-          header
-        </div>
-        <div className="content">{children}</div>
-      </div>
-    </div>
-  )
-}
 
-export default DefaultLayout
-```
-画面のCSSの編集
-```js
-// resources/layout.css
-.layout-parent{
-  display: flex;
-  height: 100%;
-  width: 100%;
-  padding: 19px;
-  height: 100vh;
-  gap:20px;
-}
 
-.body {
-  width: 100%;;
-}
-
-.header{
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.479);
-  width: 100%;
-  padding: 20px;
-}
-
-.sidebar {
-  width: 300px;
-  background-color: var(--secondary);
-  border-radius: 5px;
-}
-
-.content {
-  padding: 10px;
-}
-```
-defaultLayout.jsのサイドバーの項目を追記する  
-最初はadminMenuから  
-iconはRemix Iconを使う：https://remixicon.com/
-```js
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import '../resources/layout.css'
-
-function DefaultLayout({children}) {
-  const navigate = useNavigate
-  const userMenu = []
-  const adminMenu = [
-    {
-      name: 'Home',
-      path: '/admin',
-      icon: 'ri-home-line'
-    },
-    {
-      name: 'Buses',
-      path: '/admin/buses',
-      icon: 'ri-bus-line'
-    },
-    {
-      name: 'users',
-      path: '/admin/users',
-      icon: 'ri-user-line'
-    },
-    {
-      name: 'bookings',
-      path: '/admin/bookings',
-      icon: 'ri-file-list-line'
-    },
-    {
-      name: 'logout',
-      path: '/logout',
-      icon: 'ri-logout-box-line'
-    }
-  ]
-  const menuToBeRendered = adminMenu
-  const activeRoute = window.location.pathname
-
-  return (
-    <div className='layout-parent'>
-      <div className="sidebar">
-        <div className="d-flex flex-column gap-2">
-          {menuToBeRendered.map((item, index) => {
-            return <div className='menu-item'>
-              <i className={item.icon} ></i>
-              <span onClick={()=>navigate(item.path)}>{item.name}</span>
-              </div>
-          })}
-        </div>
-      </div>
-      <div className="body">
-        <div className="header">
-          header
-        </div>
-        <div className="content">{children}</div>
-      </div>
-    </div>
-  )
-}
-
-export default DefaultLayout
-```
-cssの編集
-```css
- /* resources/layout.css */
-.sidebar {
-  width: 300px;
-  background-color: var(--secondary);
-  border-radius: 5px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: start;
-  padding: 5px 15px;
-  width: 100%;
-  cursor: pointer;
-  transition: 0.2s;
-  gap: 15px;
-}
-.active-menu-item {
-  border: 2px solid white;
-  border-radius: 5px;
-}
-
-.menu-item i {
-  font-size: 20px;
-  margin-right: 10px;
-  color: white;
-}
-
-.menu-item span {
-  font-size: 18px;
-  color: white;
-}
-
-```
-```js
-// src/component/defaultLayout.js
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import '../resources/layout.css'
-
-function DefaultLayout({children}) {
-  const navigate = useNavigate()
-  const userMenu = []
-  const adminMenu = [
-    {
-      name: 'Home',
-      path: '/admin',
-      icon: 'ri-home-line'
-    },
-    {
-      name: 'Buses',
-      path: '/admin/buses',
-      icon: 'ri-bus-line'
-    },
-    {
-      name: 'users',
-      path: '/admin/users',
-      icon: 'ri-user-line'
-    },
-    {
-      name: 'bookings',
-      path: '/admin/bookings',
-      icon: 'ri-file-list-line'
-    },
-    {
-      name: 'logout',
-      path: '/logout',
-      icon: 'ri-logout-box-line'
-    }
-  ]
-  const menuToBeRendered = adminMenu
-  const activeRoute = window.location.pathname
-  console.log(activeRoute)
-
-  return (
-    <div className='layout-parent'>
-      <div className="sidebar">
-        <div className="d-flex flex-column gap-3">
-          {menuToBeRendered.map((item, index) => {
-            return (
-              <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
-                <i className={item.icon} ></i>
-                <span onClick={()=>navigate(item.path)}>{item.name}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-      <div className="body">
-        <div className="header">
-          header
-        </div>
-        <div className="content">{children}</div>
-      </div>
-    </div>
-  )
-}
-
-export default DefaultLayout
-```
-テンプレートリテラル: CMAScriptのバージョン「ES2015」で実装された書き方  
-文字列の中に式を埋め込める
-```js
-${式}
-```
-```js
-let name = 'オレンジ';
-let cost = 100;
-
-let msg = `今日の${name}の値段は${Math.trunc(cost*1.1)}円です。`;
-console.log(msg);
->> 今日のオレンジの値段は110円です。
-```
-### Layout Responsive
-ヘッダーにハンバーガーメニュー(ri-menu-2-fill)をつける  
-トグルで閉じるボタン(ri-close-line)もつける
-```js
-// components/defaultLayout.js
-import {useState} from 'react'
-import { useNavigate } from 'react-router-dom'
-import '../resources/layout.css'
-
-function DefaultLayout({children}) {
-  const navigate = useNavigate()
-  const [collapsed, setCollapsed] = useState(false)
-  ・・・・
-  <div className="body">
-  <div className="header" onClick={()=>setCollapsed(!collapsed)}>
-    {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
-  </div>
-  <div className="content">{children}</div>
-```
-global.cssに iタグのフォントを追加
-```css
-// resources/global.css
-i{
-  cursor: pointer;
-  font-size: 25px;
-}
-```
-サイドバーのCSSのwidthを修正
-```css
-// resources/layout.css
-.sidebar {
-  /* width: 300px; */
-  background-color: var(--secondary);
-  border-radius: 5px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0px 20px;
-}
-```
 ログアウトの項目をクリックするとlocalStorageの'token'を削除してログイン画面に戻るようにする
 ```js
 // components/defaultLayout.js

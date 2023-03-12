@@ -1,6 +1,6 @@
 ---
 title: 'Python Slot Game'
-date: 'December 15, 2022'
+date: 'March 14, 2023'
 excerpt: 'Pythonを使って簡単なスロットゲームをつくりました。'
 cover_image: '/images/posts/img7.jpg'
 category: 'Python'
