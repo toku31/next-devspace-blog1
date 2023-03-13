@@ -1410,16 +1410,97 @@ admin.site.register(Job)
 from django.shortcuts import render
 
 from django.views.generic import TemplateView, ListView
+from .models import Job
 
 class HomeView(ListView):
   template_name="jobs/index.html"
   context_object_name = 'jobs'
+  model = Job
 ```
-```python
+### 仕事(Jobs)のリストを表示する
+```html
+<!-- templates/jobs/index.html -->
+  {% for job in jobs %}
+  <div class="col-md-12 ftco-animate">
+    <div class="job-post-item bg-white p-4 d-block d-md-flex align-items-center">
 
+      <div class="mb-4 mb-md-0 mr-5">
+        <div class="job-post-item-header d-flex align-items-center">
+          <h2 class="mr-3 text-black h4">{{ job.title }}</h2>
+          <div class="badge-wrap">
+          {% if job.job_type == 'full_time' %}
+          <span class="bg-warning text-white badge py-2 px-3">フルタイム</span>
+          {% elif job.job_type == 'part_time' %}
+          <span class="bg-info text-white badge py-2 px-3">パートタイム</span>
+          {% elif job.job_type == 'freelance' %}
+          <span class="bg-secondary text-white badge py-2 px-3">フリーランス</span>
+          {% elif job.job_type == 'internship' %}
+          <span class="bg-info text-white badge py-2 px-3">インターンシップ</span>
+          {% elif job.job_type == 'temporary' %}
+          <span class="bg-danger text-white badge py-2 px-3">アルバイト</span>
+          {% endif %}
+          </div>
+        </div>
+        <div class="job-post-item-body d-block d-md-flex">
+          <div class="mr-3"><span class="icon-layers"></span> <a href="#">{{ job.company }}</a></div>
+          <div><span class="icon-my_location"></span> <span>{{ job.location }}</span></div>
+        </div>
+      </div>
+
+      <div class="ml-auto d-flex">
+        <a href="job-single.html" class="btn btn-primary py-2 mr-1">応募する</a>
+        <a href="#" class="btn btn-danger rounded-circle btn-favorite d-flex align-items-center">
+          <span class="icon-heart"></span>
+        </a>
+      </div>
+
+    </div>
+  </div> <!-- end -->
+  {% endfor %}
 ```
+### Pagination
 ```python
+# jobs/views.py
+from django.shortcuts import render
 
+from django.views.generic import TemplateView, ListView
+from .models import Job
+
+class HomeView(ListView):
+  template_name="jobs/index.html"
+  context_object_name = 'jobs'
+  model = Job
+  paginate_by = 1 # added
+```
+```html
+<!-- templates/jobs/index.html -->
+<div class="row mt-5">
+  {% if is_paginated %}
+  <div class="col text-center">
+    <div class="block-27">
+      <ul>
+        {% if page_obj.has_previous %}
+        <li><a href="?page={{ page_obj.previous_page_number }}"><</a></li>
+        {% else %}
+        <li class="disabled"><span>&lt;</span></li>
+        {% endif %}
+        {% for i in paginator.page_range %}
+          {% if page_obj.number == i %}
+            <li class="active"><span>{{i}}</span></li>
+          {% else %}
+            <li><a href="?page={{ i }}">{{i}}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li><a href="?page={{ page_obj.next_page_number }}">></a></li>
+        {% else %}
+        <li class="disabled"><span>&gt;</span></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</div>
 ```
 ```python
 
