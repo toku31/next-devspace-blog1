@@ -828,7 +828,7 @@ const initialState = {
   },
 }
 
-const store = createStore(initialState, finalReducer)
+const store = createStore(finalReducer, initialState)
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -837,16 +837,61 @@ root.render(
   </Provider>
 );
 ```
+ヘッダーの右側にカートを作成する
 ```js
-
+// src/component/DefaultLayout.js
+  <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+      {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+      <div className="cart account d-flex align-items-center"> // added
+        <p className='mt-3 mr-2'>{cartItems.length}</p>
+        <i class="ri-shopping-cart-2-line"></i>
+      </div>
+  </div>
 ```
-
+### Add to Cart 機能
 ```js
+// src/redux/rootReducer.js
+const initialState = {
+  loading: false,
+  cartItems: []
+}
 
+export const rootReducer=(state=initialState, action) => {
+
+  switch(action.type){
+    case 'addToCart' : return {
+      state,
+      cartItems: [...state.cartItems, action.payload]
+    }
+
+    default: return  state
+  }
+}
 ```
-
+Item.jsのボタンにaddToCartを実装する
 ```js
+import '../resources/items.css'
+import {useDispatch} from 'react-redux'
 
+function Item({item}) {
+  const dispatch = useDispatch()
+  const addToCart = ()=> {
+    console.log('click: ', item);
+    dispatch({type:'addToCart', payload:item})
+  }
+
+  return (
+    <div className='item'>
+      <h4 className='name'>{item.name}</h4>
+      <img src={item.image} alt='' height='100' width='100' />
+      <h4 className='price'><b>価格：</b>¥{item.price}</h4>
+      <div className="d-flex justify-content-end">
+      <button onClick={()=> addToCart()} className="btn">カートに追加</button>
+      </div>
+    </div>
+  )
+}
+export default Item
 ```
 ```js
 
