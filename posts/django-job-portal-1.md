@@ -1502,9 +1502,58 @@ class HomeView(ListView):
   {% endif %}
 </div>
 ```
+### Category Modelを作成する
 ```python
+# src/jobs/models.py
+from django.db import models
+from django.conf import settings
+import uuid
+# from django.template.defaultfilters import slugify
 
+class Category(models.Model):
+  title=models.CharField(max_length=100, verbose_name='タイトル')
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
+  # slug = models.SlugField(default=None, editable=False)
+  
+  def __str__(self):
+    return self.title
+
+  # def save(self, *args, **kwargs):
+  #   self.slugify(self.title)
+  #   super(Category, self).save(*args, **kwargs)
+  
+class Job(models.Model):
+  title = models.CharField(max_length=300, verbose_name='タイトル')
+  company = models.CharField(max_length=300, verbose_name='会社')
+  CHOICES = (
+    ('full_time', 'フルタイム'),
+    ('part_time', 'パートタイム'),
+    ('freelance', 'フリーランス'),
+    ('internship', 'インターンシップ'),
+    ('temporary', 'アルバイト'),
+  )
+  
+  job_type = models.CharField(max_length=20, blank=False, default=None, choices=CHOICES, verbose_name='勤務形態')
+  location = models.CharField(max_length=200, blank=False, default=None, verbose_name='勤務地')
+  description = models.TextField(blank=False, default=None, verbose_name='仕事内容')
+  publishing_date = models.DateTimeField(auto_now_add=True, verbose_name='公開日')
+  # slug = models.SlugField(default=None, editable=False)
+  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+  employer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=None, verbose_name='雇用者')
+  category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="jobs", default=None, verbose_name='カテゴリー')
+    
+  def __str__(self):
+    return self.title
+  
+  # def save(self, *args, **kwargs):
+  #   self.slugify(self.title)
+  #   super(Job, self).save(*args, **kwargs)
+  
+  class Meta:
+    ordering = ('-publishing_date',)
 ```
+makemigrations & migrate
 ```python
 
 ```

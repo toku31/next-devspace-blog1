@@ -893,18 +893,127 @@ function Item({item}) {
 }
 export default Item
 ```
+### Cart Pageを作成する
+Cart Pageのリンクを追加する
+```js
+// src/pages/CartPage.js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import CartPage from './pages/CartPage';
+import Homepage from './pages/Homepage';
+import Items from './pages/Items';
+
+function App() {
+  return (
+    <div className="App">
+      <Router>
+        <Routes>
+          <Route path="/home" element={<Homepage />}  />
+          <Route path="/items" element={<Items />}  />
+          <Route path="/cart" element={<CartPage />}  /> // added
+        </Routes>
+      </Router>
+    </div>
+  );
+}
+
+export default App;
+```
+ヘッダーにあるカートをクリックするとCart Pageが開くようにする
+```js
+// src/components/defaultLayout.js
+  <div className="body">
+    <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+        {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+        <div className="cart-count d-flex align-items-center" onClick={()=>navigate('/cart')}>  // added
+          <p className='mt-3 mr-2'>{cartItems.length}</p>
+          <i className="ri-shopping-cart-2-line"></i>
+        </div>
+    </div>
+    <div className="content">{children}</div>
+  </div>
+```
+```css
+/* resources/layout.css */
+cart-count {
+  cursor: pointer;
+}
+```
+カートページ
+```js
+// src/pages/CartPage.js
+import { useSelector } from 'react-redux'
+import CartTable from '../components/CartTable'
+import DefaultLayout from '../components/DefaultLayout'
+
+function CartPage() {
+  const cartItems = useSelector(state => state.rootReducer)
+  console.log('cartItems:', cartItems);
+
+  const handleDeleteClick = async (id)=> {
+  }
+
+  return (
+    <DefaultLayout>
+      <h3>Cart</h3>
+      <CartTable cartItems ={cartItems} handleDeleteClick={handleDeleteClick} />
+    </DefaultLayout>
+  )
+}
+
+export default CartPage
+```
+カートテーブル  
+user@mbp client % npm i react-bootstrap
+```js
+// src/components/cartTable.js
+import { Table} from 'react-bootstrap';
+
+function CartTable({cartItems, handleDeleteClick}) {
+  // console.log('table->items', items.cartItems);
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>商品</th>
+                  <th>画像</th>
+                  <th>価格</th>
+                  <th>数量</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+           {cartItems.cartItems.map((item) => {
+                  return (
+                  <tr key={item._id}>
+                      <td className="align-middle">{item.name}</td>
+                      <td className="align-middle">
+                        <img src={item.image} alt="" hight='60' width='60' />
+                      </td>
+                      <td className="align-middle">{item.price}</td>
+                      <td></td>
+                      <td>
+                          <i className="ri-delete-bin-line"
+                             onClick={()=>{handleDeleteClick(item._id)}}                        
+                          />
+                      </td>
+                  </tr>
+                  )
+                }
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default CartTable
+```
 ```js
 
 ```
-
 ```js
 
 ```
-
-```js
-
-```
-
 
 
 
