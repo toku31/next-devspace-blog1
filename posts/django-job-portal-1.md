@@ -1554,1763 +1554,255 @@ class Job(models.Model):
     ordering = ('-publishing_date',)
 ```
 makemigrations & migrate
+[MySQL] 外部キー制約を一時的に無効にする  
+https://blog.katsubemakito.net/mysql/mysql-foreignkey-disable
 ```python
-
+DATABASES = {
+ 'default': {
+    'ENGINE': 'django.db.backends.mysql',
+    'NAME': 'my_job_portal',                     
+    'USER': 'root',                     
+    'PASSWORD': '',                 
+    'HOST': 'localhost',                    
+    'PORT': '3306',                      
+    'OPTIONS': {
+                "init_command": "SET foreign_key_checks = 0;",
+           },
+   }
+}
 ```
+### Category を画面に表示させる
+HomeViewのcontext_object_nameとして'jobs'以外に'categories'を追加する
 ```python
-
-```
-```python
-
-```
-```python
-
-```
-```python
-
-```
-```python
-
-```
-```python
-
-```
-
-
-
-
-
-さらにpostsのadmin.pyを編集してDjango administrationにサーチフィールドやフィルターを追加する
-```python
-# posts/admin.py 
-from django.contrib import admin
-from .models import Post
-
-class AdminPost(admin.ModelAdmin):
-  list_filter = ['publishing_date']
-  list_display = ['title', 'publishing_date']
-  search_fields = ['title', 'content']
-
-  class Meta:
-    model = Post
-    
-admin.site.register(Post, AdminPost)
-```
-#### Posts(投稿)を作成する
-http://127.0.0.1:8000/admin/を開いてpostsを作成すると、画像がルート配下のmedia/uploadsフォルダに保存される
-### Generic Class Based ViewのListViewを使う
-ListView公式ドキュメント：https://docs.djangoproject.com/en/4.1/ref/class-based-views/generic-display/  
-
-```python
-# posts/views.py
+# jobs/views.py
 from django.shortcuts import render
-from django.views.generic import TemplateView
 
-class IndexView(TemplateView):
-  template_name="posts/index.html"
-```
-上記を以下のように書き換える
-```python
-# posts/views.py
-from django.shortcuts import render
-from .models import Post
 from django.views.generic import TemplateView, ListView
+from .models import Job, Category
 
-class IndexView(ListView):
-  template_name="posts/index.html"
-  model = Post
-  context_object_name = 'posts'
+class HomeView(ListView):
+  template_name="jobs/index.html"
+  context_object_name = 'jobs'
+  model = Job
+  paginate_by = 1
   
   def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
+    context = super(HomeView, self).get_context_data(**kwargs)
+    context['categories'] = Category.objects.all()
     return context
 ```
-index.htmlのarticleタグは１つだけ残してそれをfor文で囲む  
-{{}}を使ってurl, title, content, publishing_dateを以下のように動的に変える
-```html
-// templates/posts/index.html
-<img class="img-fluid" src="{% static "img/home-blog/blog-1.jpg" %}" alt="" style="width:100%">  
-↓
-<img class="img-fluid" src="{{ post.image.url }}" alt="">
-```
-for文で囲んだarticleタグは以下のようにする  
-{{ post.content|truncatechars:175  }}でコンテントの長さを短くしている
-```html
-// templates/posts/index.html
-{% for post in posts %}
-  <article class="blog_style1">
-    <div class="blog_img">
-      <img class="img-fluid" src="{{ post.image.url }}" alt="" style="width:100%">
-    </div>
-    <div class="blog_text">
-      <div class="blog_text_inner">
-        <a class="cat" href="#">Gadgets</a>
-        <a href="single-blog.html"><h4>{{ post.title }}</h4></a>
-        <p>{{ post.content|truncatechars:175  }}</p>
-        <div class="date">
-          <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{ post.publishing_date }}</a>
-          <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-        </div>	
-      </div>
-    </div>
-  </article>
-{% endfor %}
-```
-### Generic Class Based ViewのDetailViewを使って詳細ページの編集
+Cayegoryモデルにdef job_count(self)を追加して１カテゴリーにつきいくつの仕事があるかカウントする
 ```python
-# posts/views.py
-class PostDetail(DetailView):
-  template_name="posts/detail.html"
-  model = Post
-  context_object_name = 'single'
-  
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    return context
-```
-templates/posts/detail.htmlを作成する
-```html
-{% extends 'base.html'%}
-{% load static %}
-
-{% block content %}
-  <!--================Home Banner Area =================-->
-  <section class="banner_area">
-      <div class="banner_inner d-flex align-items-center">
-        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
-      <div class="container">
-        <div class="banner_content text-center">
-          <h2>Blog Post Details</h2>
-          <div class="page_link">
-            <a href="index.html">Home</a>
-            <a href="single-blog.html">Post Details</a>
-          </div>
-        </div>
-      </div>
-      </div>
-  </section>
-  <!--================End Home Banner Area =================-->
-  
-  <!--================Blog Area =================-->
-  <section class="blog_area p_120 single-post-area">
-      <div class="container">
-          <div class="row">
-              <div class="col-lg-8">
-          <div class="main_blog_details">
-            <img class="img-fluid" src="img/blog/news-blog.jpg" alt="">
-            <a href="#"><h4>Cartridge Is Better Than Ever <br /> A Discount Toner</h4></a>
-            <div class="user_details">
-              <div class="float-left">
-                <a href="#">Lifestyle</a>
-                <a href="#">Gadget</a>
-              </div>
-              <div class="float-right">
-                <div class="media">
-                  <div class="media-body">
-                    <h5>Mark wiens</h5>
-                    <p>12 Dec, 2017 11:21 am</p>
-                  </div>
-                  <div class="d-flex">
-                    <img src="img/blog/user-img.jpg" alt="">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p>MCSE boot camps have its supporters and its detractors. Some people do not understand why you should have to spend money on boot camp when you can get the MCSE study materials yourself at a fraction of the camp price. However, who has the willpower</p>
-            <p>MCSE boot camps have its supporters and its detractors. Some people do not understand why you should have to spend money on boot camp when you can get the MCSE study materials yourself at a fraction of the camp price. However, who has the willpower to actually sit through a self-imposed MCSE training. who has the willpower to actually sit through a self-imposed MCSE training.</p>
-        <blockquote class="blockquote">
-          <p class="mb-0">MCSE boot camps have its supporters and its detractors. Some people do not understand why you should have to spend money on boot camp when you can get the MCSE study materials yourself at a fraction of the camp price. However, who has the willpower to actually sit through a self-imposed MCSE training.</p>
-        </blockquote>
-        <p>MCSE boot camps have its supporters and its detractors. Some people do not understand why you should have to spend money on boot camp when you can get the MCSE study materials yourself at a fraction of the camp price. However, who has the willpower</p>
-        <p>MCSE boot camps have its supporters and its detractors. Some people do not understand why you should have to spend money on boot camp when you can get the MCSE study materials yourself at a fraction of the camp price. However, who has the willpower</p>
-            <div class="news_d_footer">
-              <a href="#"><i class="lnr lnr lnr-heart"></i>Lily and 4 people like this</a>
-              <a class="justify-content-center ml-auto" href="#"><i class="lnr lnr lnr-bubble"></i>06 Comments</a>
-              <div class="news_socail ml-auto">
-            <a href="#"><i class="fa fa-facebook"></i></a>
-            <a href="#"><i class="fa fa-twitter"></i></a>
-            <a href="#"><i class="fa fa-youtube-play"></i></a>
-            <a href="#"><i class="fa fa-pinterest"></i></a>
-            <a href="#"><i class="fa fa-rss"></i></a>
-          </div>
-            </div>
-          </div>
-          <div class="navigation-area">
-                      <div class="row">
-                          <div class="col-lg-6 col-md-6 col-12 nav-left flex-row d-flex justify-content-start align-items-center">
-                              <div class="thumb">
-                                  <a href="#"><img class="img-fluid" src="img/blog/prev.jpg" alt=""></a>
-                              </div>
-                              <div class="arrow">
-                                  <a href="#"><span class="lnr text-white lnr-arrow-left"></span></a>
-                              </div>
-                              <div class="detials">
-                                  <p>Prev Post</p>
-                                  <a href="#"><h4>Space The Final Frontier</h4></a>
-                              </div>
-                          </div>
-                          <div class="col-lg-6 col-md-6 col-12 nav-right flex-row d-flex justify-content-end align-items-center">
-                              <div class="detials">
-                                  <p>Next Post</p>
-                                  <a href="#"><h4>Telescopes 101</h4></a>
-                              </div>
-                              <div class="arrow">
-                                  <a href="#"><span class="lnr text-white lnr-arrow-right"></span></a>
-                              </div>
-                              <div class="thumb">
-                                  <a href="#"><img class="img-fluid" src="img/blog/next.jpg" alt=""></a>
-                              </div>										
-                          </div>									
-                      </div>
-                  </div>
-                  <div class="comments-area">
-                      <h4>05 Comments</h4>
-                      <div class="comment-list">
-                          <div class="single-comment justify-content-between d-flex">
-                              <div class="user justify-content-between d-flex">
-                                  <div class="thumb">
-                                      <img src="img/blog/c1.jpg" alt="">
-                                  </div>
-                                  <div class="desc">
-                                      <h5><a href="#">Emilly Blunt</a></h5>
-                                      <p class="date">December 4, 2017 at 3:12 pm </p>
-                                      <p class="comment">
-                                          Never say goodbye till the end comes!
-                                      </p>
-                                  </div>
-                              </div>
-                              <div class="reply-btn">
-                                      <a href="" class="btn-reply text-uppercase">reply</a> 
-                              </div>
-                          </div>
-                      </div>	
-                      <div class="comment-list left-padding">
-                          <div class="single-comment justify-content-between d-flex">
-                              <div class="user justify-content-between d-flex">
-                                  <div class="thumb">
-                                      <img src="img/blog/c2.jpg" alt="">
-                                  </div>
-                                  <div class="desc">
-                                      <h5><a href="#">Elsie Cunningham</a></h5>
-                                      <p class="date">December 4, 2017 at 3:12 pm </p>
-                                      <p class="comment">
-                                          Never say goodbye till the end comes!
-                                      </p>
-                                  </div>
-                              </div>
-                              <div class="reply-btn">
-                                      <a href="" class="btn-reply text-uppercase">reply</a> 
-                              </div>
-                          </div>
-                      </div>	
-                      <div class="comment-list left-padding">
-                          <div class="single-comment justify-content-between d-flex">
-                              <div class="user justify-content-between d-flex">
-                                  <div class="thumb">
-                                      <img src="img/blog/c3.jpg" alt="">
-                                  </div>
-                                  <div class="desc">
-                                      <h5><a href="#">Annie Stephens</a></h5>
-                                      <p class="date">December 4, 2017 at 3:12 pm </p>
-                                      <p class="comment">
-                                          Never say goodbye till the end comes!
-                                      </p>
-                                  </div>
-                              </div>
-                              <div class="reply-btn">
-                                      <a href="" class="btn-reply text-uppercase">reply</a> 
-                              </div>
-                          </div>
-                      </div>	
-                      <div class="comment-list">
-                          <div class="single-comment justify-content-between d-flex">
-                              <div class="user justify-content-between d-flex">
-                                  <div class="thumb">
-                                      <img src="img/blog/c4.jpg" alt="">
-                                  </div>
-                                  <div class="desc">
-                                      <h5><a href="#">Maria Luna</a></h5>
-                                      <p class="date">December 4, 2017 at 3:12 pm </p>
-                                      <p class="comment">
-                                          Never say goodbye till the end comes!
-                                      </p>
-                                  </div>
-                              </div>
-                              <div class="reply-btn">
-                                      <a href="" class="btn-reply text-uppercase">reply</a> 
-                              </div>
-                          </div>
-                      </div>	
-                      <div class="comment-list">
-                          <div class="single-comment justify-content-between d-flex">
-                              <div class="user justify-content-between d-flex">
-                                  <div class="thumb">
-                                      <img src="img/blog/c5.jpg" alt="">
-                                  </div>
-                                  <div class="desc">
-                                      <h5><a href="#">Ina Hayes</a></h5>
-                                      <p class="date">December 4, 2017 at 3:12 pm </p>
-                                      <p class="comment">
-                                          Never say goodbye till the end comes!
-                                      </p>
-                                  </div>
-                              </div>
-                              <div class="reply-btn">
-                                      <a href="" class="btn-reply text-uppercase">reply</a> 
-                              </div>
-                          </div>
-                      </div>	                                             				
-                  </div>
-                  <div class="comment-form">
-                      <h4>Leave a Reply</h4>
-                      <form>
-                          <div class="form-group form-inline">
-                            <div class="form-group col-lg-6 col-md-6 name">
-                              <input type="text" class="form-control" id="name" placeholder="Enter Name" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Enter Name'">
-                            </div>
-                            <div class="form-group col-lg-6 col-md-6 email">
-                              <input type="email" class="form-control" id="email" placeholder="Enter email address" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Enter email address'">
-                            </div>										
-                          </div>
-                          <div class="form-group">
-                              <input type="text" class="form-control" id="subject" placeholder="Subject" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Subject'">
-                          </div>
-                          <div class="form-group">
-                              <textarea class="form-control mb-10" rows="5" name="message" placeholder="Messege" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Messege'" required=""></textarea>
-                          </div>
-                          <a href="#" class="primary-btn submit_btn">Post Comment</a>	
-                      </form>
-                  </div>
-        </div>
-              <div class="col-lg-4">
-                  <div class="blog_right_sidebar">
-                      <aside class="single_sidebar_widget search_widget">
-                          <div class="input-group">
-                              <input type="text" class="form-control" placeholder="Search Posts">
-                              <span class="input-group-btn">
-                                  <button class="btn btn-default" type="button"><i class="lnr lnr-magnifier"></i></button>
-                              </span>
-                          </div><!-- /input-group -->
-                          <div class="br"></div>
-                      </aside>
-                      <aside class="single_sidebar_widget author_widget">
-                          <img class="author_img rounded-circle" src="img/blog/author.png" alt="">
-                          <h4>Charlie Barber</h4>
-                          <p>Senior blog writer</p>
-                          <div class="social_icon">
-                              <a href="#"><i class="fa fa-facebook"></i></a>
-                              <a href="#"><i class="fa fa-twitter"></i></a>
-                              <a href="#"><i class="fa fa-github"></i></a>
-                              <a href="#"><i class="fa fa-behance"></i></a>
-                          </div>
-                          <p>Boot camps have its supporters andit sdetractors. Some people do not understand why you should have to spend money on boot camp when you can get. Boot camps have itssuppor ters andits detractors.</p>
-                          <div class="br"></div>
-                      </aside>
-                      <aside class="single_sidebar_widget popular_post_widget">
-                          <h3 class="widget_title">Popular Posts</h3>
-                          <div class="media post_item">
-                              <img src="img/blog/popular-post/post1.jpg" alt="post">
-                              <div class="media-body">
-                                  <a href="blog-details.html"><h3>Space The Final Frontier</h3></a>
-                                  <p>02 Hours ago</p>
-                              </div>
-                          </div>
-                          <div class="media post_item">
-                              <img src="img/blog/popular-post/post2.jpg" alt="post">
-                              <div class="media-body">
-                                  <a href="blog-details.html"><h3>The Amazing Hubble</h3></a>
-                                  <p>02 Hours ago</p>
-                              </div>
-                          </div>
-                          <div class="media post_item">
-                              <img src="img/blog/popular-post/post3.jpg" alt="post">
-                              <div class="media-body">
-                                  <a href="blog-details.html"><h3>Astronomy Or Astrology</h3></a>
-                                  <p>03 Hours ago</p>
-                              </div>
-                          </div>
-                          <div class="media post_item">
-                              <img src="img/blog/popular-post/post4.jpg" alt="post">
-                              <div class="media-body">
-                                  <a href="blog-details.html"><h3>Asteroids telescope</h3></a>
-                                  <p>01 Hours ago</p>
-                              </div>
-                          </div>
-                          <div class="br"></div>
-                      </aside>
-                      <aside class="single_sidebar_widget"> 
-                          <a href="#"><img class="img-fluid" src="img/blog/add.jpg" alt=""></a>
-                          <div class="br"></div>
-                      </aside>
-                      <aside class="single_sidebar_widget post_category_widget">
-                          <h4 class="widget_title">Post Catgories</h4>
-                          <ul class="list cat-list">
-                              <li>
-                                  <a href="#" class="d-flex justify-content-between">
-                                      <p>Technology</p>
-                                      <p>37</p>
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="d-flex justify-content-between">
-                                      <p>Lifestyle</p>
-                                      <p>24</p>
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="d-flex justify-content-between">
-                                      <p>Fashion</p>
-                                      <p>59</p>
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="d-flex justify-content-between">
-                                      <p>Art</p>
-                                      <p>29</p>
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="d-flex justify-content-between">
-                                      <p>Food</p>
-                                      <p>15</p>
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="d-flex justify-content-between">
-                                      <p>Architecture</p>
-                                      <p>09</p>
-                                  </a>
-                              </li>
-                              <li>
-                                  <a href="#" class="d-flex justify-content-between">
-                                      <p>Adventure</p>
-                                      <p>44</p>
-                                  </a>
-                              </li>															
-                          </ul>
-                          <div class="br"></div>
-                      </aside>
-                      <aside class="single-sidebar-widget tag_cloud_widget">
-                          <h4 class="widget_title">Tag Clouds</h4>
-                          <ul class="list">
-                              <li><a href="#">Technology</a></li>
-                              <li><a href="#">Fashion</a></li>
-                              <li><a href="#">Architecture</a></li>
-                              <li><a href="#">Fashion</a></li>
-                              <li><a href="#">Food</a></li>
-                              <li><a href="#">Technology</a></li>
-                              <li><a href="#">Lifestyle</a></li>
-                              <li><a href="#">Art</a></li>
-                              <li><a href="#">Adventure</a></li>
-                              <li><a href="#">Food</a></li>
-                              <li><a href="#">Lifestyle</a></li>
-                              <li><a href="#">Adventure</a></li>
-                          </ul>
-                      </aside>
-                  </div>
-              </div>
-          </div>
-      </div>
-  </section>
-  <!--================Blog Area =================-->
-{% endblock %}
-```
-posts/urls.pyにPostDetailを追加する
-```python
-# posts/urls.py
-from django.urls import path
-# from posts.views import *
-from .views import *
-
-urlpatterns = [
-    path('', IndexView.as_view(), name="index"),
-    path('detail/<int:pk>', PostDetail.as_view(), name="detail"),　# added
-] 
-```
-index.htmlに詳細ページリンク先を追記する  
-下のpk=post.id の左辺のidは上の<int:pk>のpkと対応している
-```python
-  <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title }}</h4></a>　# added
-  <p>{{ post.content|truncatechars:175  }}</p>
-  <div class="date">
-```
-### 各詳細ページの項目を動的に出力する
-detail.htmの中の全ての 「"img/」を「"{% static "img/」に置換する  
-detail.htmの中の全ての 「.jpg"」を「.jpg" %}"」に置換する  
-detail.htmの中の全ての 「.png"」を「.png" %}"」に置換する  
- detail.htmlを以下のように{{ single.image.url }},{{single.title}}など編集する
-```html
- <!-- templates/posts/detail.html -->
- <!--================Blog Area =================-->
-  <section class="blog_area p_120 single-post-area">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-8">
-      <div class="main_blog_details">
-        <img class="img-fluid" src="{{ single.image.url }}" alt="">
-        <a href="#"><h4>{{single.title}}<br /> A Discount Toner</h4></a>
-        <div class="user_details">
-          <div class="float-left">
-            <a href="#">Lifestyle</a>
-            <a href="#">Gadget</a>
-          </div>
-          <div class="float-right">
-            <div class="media">
-              <div class="media-body">
-                <h5>Mark wiens</h5>
-                <p>{{ single.publishing_date }}</p>
-              </div>
-              <div class="d-flex">
-                <img src="{% static "img/blog/user-img.jpg" %}" alt="">
-              </div>
-            </div>
-          </div>
-        </div>
-        <p>{{single.content}}</p>
-```
-### Slug Fieldを使う
-詳細ページのURLにslugを使ってhttp://127.0.0.1:8000/detail/1/titlenameのように指定する　但し日本語のサイトではslugを日本語変換するのが難しいのでuuidを使う  
-idをuuidとした時urls.pyの"path('detail/<<int:pk>>', PostDetail.as_view(), name="detail")"の<<int:pk>> => <<string:pk>> と変更する
-```python
-# posts.models.py
-from django.db import models
-from django.conf import settings
-import uuid
-# from django.template.defaultfilters import slugify
-
-class Post(models.Model):
-  title = models.CharField(verbose_name='タイトル',max_length=150)
-  content = models.TextField(verbose_name='内容')
-  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
-  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
-  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  # slug = models.SlugField(default="slug")
-    
-  def __str__(self):
-    return self.title
-  
-  # def save(self):
-  #   self.slugify(self.title)
-  #   super(self).save()
-```
-```python
-(venv) user@mbp Django-fantom-blog % python manage.py makemigrations
-(venv) user@mbp Django-fantom-blog % python manage.py migrate      
-```
-### カテゴリーモデルを作成する
-```python
-# posts/models.py
-from django.db import models
-from django.conf import settings
-import uuid
-# from django.template.defaultfilters import slugify
-
 class Category(models.Model):
-  title= models.CharField(verbose_name='タイトル', max_length=200)
+  title=models.CharField(max_length=100, verbose_name='タイトル')
   id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
   created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
+  # slug = models.SlugField(default=None, editable=False)
   
   def __str__(self):
     return self.title
-```
-```python
-(venv) user@mbp Django-fantom-blog % python manage.py makemigrations
-(venv) user@mbp Django-fantom-blog % python manage.py migrate      
-```
-adminパネルにCategoryを表示させるためにadmin.pyを作成する
-```python
-# posts/admin.py
-from django.contrib import admin
-from .models import Post, Category
 
-class AdminPost(admin.ModelAdmin):
-  list_filter = ['publishing_date']
-  list_display = ['title', 'publishing_date']
-  search_fields = ['title', 'content']
-
-  class Meta:
-    model = Post
-    
-admin.site.register(Post, AdminPost)
-admin.site.register(Category)
+  def job_count(self):
+    return self.jobs.all().count()
 ```
-
-PostモデルとCategoryモデルを関係づける(ForeignKey)
-```python
-class Post(models.Model):
-  title = models.CharField(verbose_name='タイトル',max_length=150)
-  content = models.TextField(verbose_name='内容')
-  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
-  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
-  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  # slug = models.SlugField(default="slug")
-  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー') # added
-  
-  def __str__(self):
-    return self.title
-```
-再度　makemigrations & migrate の実行
-## 右側のサイドメニューを作成する
-templates/posts/index.htmlとtemplates/posts/detail.htmlの中にあるサイドメニューを切り取りとる  
-切り取った後は　{% include 'right_side.html' %}　を追加する  
-right_side.htmlの先頭に {% load static %}をつける
 ```html
-# templates/right_side.html
-{% load static %} # added
-{% custom_tags %} # 後で追加する(カスタムタグ)
-
-<div class="col-lg-4">
-  <div class="blog_right_sidebar">
-      <aside class="single_sidebar_widget search_widget">
-          <div class="input-group">
-              <input type="text" class="form-control" placeholder="Search Posts">
-              <span class="input-group-btn">
-                  <button class="btn btn-default" type="button"><i class="lnr lnr-magnifier"></i></button>
-              </span>
-          </div><!-- /input-group -->
-          <div class="br"></div>
-      </aside>
-      <aside class="single_sidebar_widget author_widget">
-          <img class="author_img rounded-circle" src="{% static "img/blog/author.png" %}" alt="">
-          <h4>Charlie Barber</h4>
-          <p>Senior blog writer</p>
-          <div class="social_icon">
-              <a href="#"><i class="fa fa-facebook"></i></a>
-              <a href="#"><i class="fa fa-twitter"></i></a>
-              <a href="#"><i class="fa fa-github"></i></a>
-              <a href="#"><i class="fa fa-behance"></i></a>
-          </div>
-          <p>Boot camps have its supporters andit sdetractors. Some people do not understand why you should have to spend money on boot camp when you can get. Boot camps have itssuppor ters andits detractors.</p>
-          <div class="br"></div>
-      </aside>
-      <aside class="single_sidebar_widget popular_post_widget">
-          <h3 class="widget_title">Popular Posts</h3>
-          <div class="media post_item">
-              <img src="{% static "img/blog/popular-post/post1.jpg" %}" alt="post">
-              <div class="media-body">
-                  <a href="blog-details.html"><h3>Space The Final Frontier</h3></a>
-                  <p>02 Hours ago</p>
-              </div>
-          </div>
-          <div class="media post_item">
-              <img src="{% static "img/blog/popular-post/post2.jpg" %}" alt="post">
-              <div class="media-body">
-                  <a href="blog-details.html"><h3>The Amazing Hubble</h3></a>
-                  <p>02 Hours ago</p>
-              </div>
-          </div>
-          <div class="media post_item">
-              <img src="{% static "img/blog/popular-post/post3.jpg" %}" alt="post">
-              <div class="media-body">
-                  <a href="blog-details.html"><h3>Astronomy Or Astrology</h3></a>
-                  <p>03 Hours ago</p>
-              </div>
-          </div>
-          <div class="media post_item">
-              <img src="{% static "img/blog/popular-post/post4.jpg" %}" alt="post">
-              <div class="media-body">
-                  <a href="blog-details.html"><h3>Asteroids telescope</h3></a>
-                  <p>01 Hours ago</p>
-              </div>
-          </div>
-          <div class="br"></div>
-      </aside>
-      <aside class="single_sidebar_widget"> 
-          <a href="#"><img class="img-fluid" src="{% static "img/blog/add.jpg" %}" alt=""></a>
-          <div class="br"></div>
-      </aside>
-      <aside class="single_sidebar_widget post_category_widget">
-          <h4 class="widget_title">Post Catgories</h4>
-          <ul class="list cat-list">
-              <li>
-                  <a href="#" class="d-flex justify-content-between">
-                      <p>Technology</p>
-                      <p>37</p>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" class="d-flex justify-content-between">
-                      <p>Lifestyle</p>
-                      <p>24</p>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" class="d-flex justify-content-between">
-                      <p>Fashion</p>
-                      <p>59</p>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" class="d-flex justify-content-between">
-                      <p>Art</p>
-                      <p>29</p>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" class="d-flex justify-content-between">
-                      <p>Food</p>
-                      <p>15</p>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" class="d-flex justify-content-between">
-                      <p>Architecture</p>
-                      <p>09</p>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" class="d-flex justify-content-between">
-                      <p>Adventure</p>
-                      <p>44</p>
-                  </a>
-              </li>															
-          </ul>
-          <div class="br"></div>
-      </aside>
-      <aside class="single-sidebar-widget tag_cloud_widget">
-          <h4 class="widget_title">Tag Clouds</h4>
-          <ul class="list">
-              <li><a href="#">Technology</a></li>
-              <li><a href="#">Fashion</a></li>
-              <li><a href="#">Architecture</a></li>
-              <li><a href="#">Fashion</a></li>
-              <li><a href="#">Food</a></li>
-              <li><a href="#">Technology</a></li>
-              <li><a href="#">Lifestyle</a></li>
-              <li><a href="#">Art</a></li>
-              <li><a href="#">Adventure</a></li>
-              <li><a href="#">Food</a></li>
-              <li><a href="#">Lifestyle</a></li>
-              <li><a href="#">Adventure</a></li>
-          </ul>
-      </aside>
-  </div>
-</div>
-```
-### カスタム タグを作成する
-参考：https://djangobrothers.com/blogs/custom_template_tags_filters/
-postsフォルダの直下にtemplatetagsフォルダを作成する  
-その中に空の__init__.pyファイルを作成する(pythonモジュールには必要)
-```python
-# posts/templatetags/custom_tags.py
-from django import template
-from posts.models import Category
-
-register = template.Library()
-
-@register.simple_tag(name="post_categories")
-def all_categories():
-  return Category.objects.all()
-```
-templates/right_side.htmlに {% custom_tags %}を追加する  
-```python
-# templates/right_side.html
- {% load static %}  
- {% custom_tags %} # added
-   .....
-  <aside class="single_sidebar_widget post_category_widget">
-      <h4 class="widget_title">カテゴリー</h4>
-      <ul class="list cat-list">
-          {% post_categories as categories %}
-          {% for category in categories %}
-          <li>
-              <a href="#" class="d-flex justify-content-between">
-                  <p>{{ category.title }}</p>
-                  <p>37</p>
-              </a>
-          </li>
-          {% endfor %}
+<!-- templates/jobs/index.html -->
+  <div class="row">
+    {% for category in categories %}
+    <div class="col-md-3 ftco-animate">
+      <ul class="category">
+        <li><a href="#">{{category.title}}<span class="number" data-number="{{category.job_count}}">0</span></a></li>
       </ul>
-      <div class="br"></div>
-  </aside>
-```
-__カテゴリーの件数を表示する__
-```python
-Categoryモデルにpost_count関数を追加する  
-self.posts.all().count()のpostsは逆参照の意味
-# posts/models
-class Category(models.Model):
-  title= models.CharField(verbose_name='タイトル', max_length=200)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
-  
-  def __str__(self):
-    return self.title
-  
-  def post_count(self):  # added
-    return self.posts.all().count()
-```
-Postモデルのcategoryにrelated_name='posts'を追加する
-```python
-class Post(models.Model):
-  title = models.CharField(verbose_name='タイトル',max_length=150)
-  content = models.TextField(verbose_name='内容')
-  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
-  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
-  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  # slug = models.SlugField(default="slug")
-  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
-```
-right_side.htmlに件数を表示する
-```html
-# templates/right_side.html
-  <aside class="single_sidebar_widget post_category_widget">
-      <h4 class="widget_title">カテゴリー</h4>
-      <ul class="list cat-list">
-          {% post_categories as categories %}
-          {% for category in categories %}
-          <li>
-              <a href="#" class="d-flex justify-content-between">
-                  <p>{{ category.title }}</p>
-                  <p>{{ category.post_count }}</p>  // added
-              </a>
-          </li>
-          {% endfor %}
-      </ul>
-      <div class="br"></div>
-  </aside>
-```
-### Category別リスト(Category Deteil View)を作成する  
-templateファイル, vieｗs.py、urls.pyの３セットを編集  
-templatesフォルダにcategoriesフォルダを作成し、その中にcategory_detail.htmlを作成する
-```python
-# templates/categpries/category_detail.html
-{% extends 'base.html'%}
-{% load static %}
-
-{% block content %}
-  <!--================Home Banner Area =================-->
-  <section class="banner_area">
-      <div class="banner_inner d-flex align-items-center">
-        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
-  <div class="container">
-    <div class="banner_content text-center">
-      <h2>Category</h2>
-      <div class="page_link">
-        <a href="index.html">Home</a>
-        <a href="category.html">Category</a>
-      </div>
     </div>
+    {% endfor %}
   </div>
-      </div>
-  </section>
-  <!--================End Home Banner Area =================-->
-  
-  <!--================Blog Area =================-->
-  <section class="blog_area p_120">
-      <div class="container">
-          <div class="row">
-              <div class="col-lg-8">
-                  <div class="blog_left_sidebar">
-                      <article class="blog_style1">
-                        <div class="blog_img">
-                          <img class="img-fluid" src="img/home-blog/blog-1.jpg" alt="">
-                        </div>
-                        <div class="blog_text">
-            <div class="blog_text_inner">
-              <a class="cat" href="#">Gadgets</a>
-              <a href="#"><h4>Nest Protect: 2nd Gen Smoke CO Alarm</h4></a>
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
-              <div class="date">
-                <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> March 14, 2018</a>
-                <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-              </div>	
-            </div>
-                        </div>
-                      </article>
-                      <article class="blog_style1">
-                        <div class="blog_img">
-                          <img class="img-fluid" src="img/home-blog/blog-2.jpg" alt="">
-                        </div>
-                        <div class="blog_text">
-            <div class="blog_text_inner">
-              <a class="cat" href="#">Gadgets</a>
-              <a href="#"><h4>Nest Protect: 2nd Gen Smoke CO Alarm</h4></a>
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
-              <div class="date">
-                <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> March 14, 2018</a>
-                <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-              </div>	
-            </div>
-          </div>
-                      </article>
-                      <div class="row m0 post_cat_item">
-                        <div class="col-md-6 p0">
-                          <div class="post_s_item">
-              <div class="post_img">
-                <img class="img-fluid" src="img/post-slider/post-cat-1.jpg" alt="">
-              </div>
-              <div class="post_text">
-                <a class="cat" href="#">Gadgets</a>
-                <a href="#"><h4>Nest Protect: 2nd Gen Smoke + CO Alarm</h4></a>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore.</p>
-                <div class="date">
-                  <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> March 14, 2018</a>
-                  <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-                </div>
-              </div>
-            </div>
-                        </div>
-                        <div class="col-md-6 p0">
-                          <div class="post_s_item">
-              <div class="post_img">
-                <img class="img-fluid" src="img/post-slider/post-cat-2.jpg" alt="">
-              </div>
-              <div class="post_text">
-                <a class="cat" href="#">Gadgets</a>
-                <a href="#"><h4>Nest Protect: 2nd Gen Smoke + CO Alarm</h4></a>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore.</p>
-                <div class="date">
-                  <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> March 14, 2018</a>
-                  <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-                </div>
-              </div>
-            </div>
-                        </div>
-                      </div>
-                      <article class="blog_style1">
-                        <div class="blog_img">
-                          <img class="img-fluid" src="img/home-blog/blog-3.jpg" alt="">
-                        </div>
-                        <div class="blog_text">
-            <div class="blog_text_inner">
-              <a class="cat" href="#">Gadgets</a>
-              <a href="#"><h4>Nest Protect: 2nd Gen Smoke CO Alarm</h4></a>
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
-              <div class="date">
-                <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> March 14, 2018</a>
-                <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-              </div>	
-            </div>
-                        </div>
-                      </article>
-                      <article class="blog_style1">
-                        <div class="blog_img">
-                          <img class="img-fluid" src="img/home-blog/blog-4.jpg" alt="">
-                        </div>
-                        <div class="blog_text">
-            <div class="blog_text_inner">
-              <a class="cat" href="#">Gadgets</a>
-              <a href="#"><h4>Nest Protect: 2nd Gen Smoke CO Alarm</h4></a>
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
-              <div class="date">
-                <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> March 14, 2018</a>
-                <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-              </div>	
-            </div>
-          </div>
-                      </article>
-                      <nav class="blog-pagination justify-content-center d-flex">
-                      <ul class="pagination">
-                          <li class="page-item">
-                              <a href="#" class="page-link" aria-label="Previous">
-                                  <span aria-hidden="true">
-                                      <span class="lnr lnr-chevron-left"></span>
-                                  </span>
-                              </a>
-                          </li>
-                          <li class="page-item"><a href="#" class="page-link">01</a></li>
-                          <li class="page-item active"><a href="#" class="page-link">02</a></li>
-                          <li class="page-item"><a href="#" class="page-link">03</a></li>
-                          <li class="page-item"><a href="#" class="page-link">04</a></li>
-                          <li class="page-item"><a href="#" class="page-link">09</a></li>
-                          <li class="page-item">
-                              <a href="#" class="page-link" aria-label="Next">
-                                  <span aria-hidden="true">
-                                      <span class="lnr lnr-chevron-right"></span>
-                                  </span>
-                              </a>
-                          </li>
-                      </ul>
-                  </nav>
-                  </div>
-              </div>
-              {% include 'right_side.html' %}
-          </div>
-      </div>
-  </section>
-  <!--================Blog Area =================-->
-{% endblock %}
 ```
-views.pyにCategoryDetail(ListView)を追加する
-```python
-# posts/views.py
-from django.shortcuts import render, get_object_or_404
-from .models import Post, Category
-from django.views.generic import TemplateView, ListView, DetailView
-
-class IndexView(ListView):
-  template_name="posts/index.html"
-  model = Post
-  context_object_name = 'posts'
-  
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    return context
-  
-class PostDetail(DetailView):
-  template_name="posts/detail.html"
-  model = Post
-  context_object_name = 'single'
-  
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    return context
-
-class CategoryDetail(ListView):
-  model = Post
-  template_name="categories/category_detail.html"
-  context_object_name="posts"
-  # pk means id
-  def get_queryset(self):
-    self.category = get_object_or_404(Category, pk=self.kwargs['pk'])
-    return Post.objects.filter(category=self.category).order_by('-publishing_date')
-  
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    self.category = get_object_or_404(Category, pk=self.kwargs['pk'])　# あとで追加
-    context['category'] = self.category　# あとで追加
-    print('CategoryDetail:', context)
-    return context
-```
-上の def get_queryset(self)はpk(id)で抽出したデータを返してくれる  
-get_context_data(self, **kwargs)も抽出したデータを返してくれる  
-CategoryDetail: {'paginator': None, 'page_obj': None, 'is_paginated': False, 'object_list': <QuerySet [<Post: test Sed ut perspiciatis unde omnis>, <Post: Lorem ipsum dolor sit amet>]>, 'posts': <QuerySet [<Post: test Sed ut perspiciatis unde omnis>, <Post: Lorem ipsum dolor sit amet>]>, 'view': <posts.views.CategoryDetail object at 0x10f507670>, 'category': <Category: Technology>}  
-get_object_or_404とget_list_or_404は、アクセスしたレコードが存在しなかった場合に404エラーを返す
-#### Category別リストの表示
-urls.pyにCategory別リストのパスを追記する
-```python
-# posts/urls.py
-from django.urls import path
-# from posts.views import *
-from .views import *
-
-urlpatterns = [
-    path('', IndexView.as_view(), name="index"),
-    path('detail/<str:pk>', PostDetail.as_view(), name="detail"),
-    path('category/<str:pk>', CategoryDetail.as_view(), name="category_detail") # added
-] 
-```
-サイドバーのカテゴリーの一つをクリックするとカテゴリー別リストが表示されるようにする
-```html
-# templates/right_side.html
-<aside class="single_sidebar_widget post_category_widget">
-    <h4 class="widget_title">カテゴリー</h4>
-    <ul class="list cat-list">
-        {% post_categories as categories %}  # added
-        {% for category in categories %}   # added
-        <li>
-            <a href="{% url 'category_detail' pk=category.id %}" class="d-flex justify-content-between">
-                <p>{{ category.title }}</p>
-                <p>{{ category.post_count }}</p>  # added
-            </a>
-        </li>
-        {% endfor %}   # added
-    </ul>
-    <div class="br"></div>
-</aside>
-```
-カテゴリー別リストの先端にカテゴリー名を表示する
-```python
-# posts/views.py
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    self.category = get_object_or_404(Category, pk=self.kwargs['pk'])　# 追加
-    context['category'] = self.category　# 追加
-    print('CategoryDetail:', context)
-    return context
-```
-
-```html
-# templates/categories/category_detail.html
-{% extends 'base.html'%}
-{% load static %}
-
-{% block content %}
-  <!--================Home Banner Area =================-->
-  <section class="banner_area">
-      <div class="banner_inner d-flex align-items-center">
-        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
-  <div class="container">
-    <div class="banner_content text-center">
-      <h2>Category</h2>
-      <div class="page_link">
-        <a href="{% url 'index' %}">Home</a>  // Changed
-        <a href="category.html">{{ category.title }}</a> // Changed
-      </div>
-    </div>
-  </div>
-      </div>
-  </section>
-  <!--================End Home Banner Area =================-->
-    <!--================Blog Area =================-->
-  <section class="blog_area p_120">
-      <div class="container">
-          <div class="row">
-              <div class="col-lg-8">
-                  <div class="blog_left_sidebar">
-                      {% for post in posts %}
-                        <article class="blog_style1">
-                          <div class="blog_img">
-                            <img class="img-fluid" src={{ post.image.url }} alt="">
-                          </div>
-                          <div class="blog_text">
-                          <div class="blog_text_inner">
-                            <a class="cat" href="#">Gadgets</a>
-                            <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title | truncatechars:150}}</h4></a>
-                            <p>{{ post.content }}</p>
-                            <div class="date">
-                              <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{post.publishing_date}}</a>
-                              <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-                            </div>	
-                          </div>
-                          </div>
-                        </article>
-                      {% endfor %}
-                      <nav class="blog-pagination justify-content-center d-flex">
-                      <ul class="pagination">
-                        ・・・・・・・
-                      </ul>
-                  </nav>
-          </div>
-      </div>
-      {% include 'right_side.html' %}
-          </div>
-      </div>
-  </section>
-  <!--================Blog Area =================-->
-{% endblock %}
-```
-### Tag モデルを作成する
-Many-to-Many relationships:https://docs.djangoproject.com/en/4.1/topics/db/examples/many_to_many/  
-```python
-# posts/models.py
-from django.db import models
-from django.conf import settings
-import uuid
-from django.template.defaultfilters import slugify
-
-class Category(models.Model):
-  title= models.CharField(verbose_name='タイトル', max_length=200)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
-  
-  def __str__(self):
-    return self.title
-  
-  def post_count(self):
-    return self.posts.all().count()
-  
-class Tag(models.Model):  # added
-  title= models.CharField(verbose_name='タイトル', max_length=150)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
-  slug = models.SlugField(editable=False, null=True, blank=True, verbose_name='Slug')
-
-  def __str__(self):
-    return self.title
-  
-  def save(self, *args, **kwargs):
-    self.slug = slugify(self.title)
-    super().save(*kwargs)
-
-class Post(models.Model):
-  title = models.CharField(verbose_name='タイトル',max_length=150)
-  content = models.TextField(verbose_name='内容')
-  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
-  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
-  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  # slug = models.SlugField(default="slug")
-  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
-  tag = models.ManyToManyField(Tag, related_name="posts" , blank=True, verbose_name='タグ')  # added
-  
-  def __str__(self):
-    return self.title
-```
-makemigrations & migrate
-```python
-# posts/admin.py
-from django.contrib import admin
-from .models import Post, Category, Tag # added
-
-class AdminPost(admin.ModelAdmin):
-  list_filter = ['publishing_date']
-  list_display = ['title', 'publishing_date']
-  search_fields = ['title', 'content']
-
-  class Meta:
-    model = Post
-    
-admin.site.register(Post, AdminPost)
-admin.site.register(Category)
-admin.site.register(Tag) # added
-```
-### サイドバーにTagリストを表示する
-custom_tags.pyを編集する
-```python
-# posts/templatetags/custome_tags.py
-from django import template
-from posts.models import Category, Tag  # Changed
-
-register = template.Library()
-
-@register.simple_tag(name="post_categories")
-def all_categories():
-  return Category.objects.all()
-
-@register.simple_tag(name="tags") # added
-def all_tags():
-  return Tag.objects.all()
-```
-サイドバーのテンプレートを編集してTagリストを表示する  
-{{label.title}}は{{label}}でもOK
-```html
-<!-- templates/right_side.html -->
-    <aside class="single_sidebar_widget post_category_widget">
-        <h4 class="widget_title">カテゴリー</h4>
-        <ul class="list cat-list">
-            {% post_categories as categories %}
-            {% for category in categories %}
-            <li>
-                <a href="{% url 'category_detail' pk=category.id %}" class="d-flex justify-content-between">
-                    <p>{{ category.title }}</p>
-                    <p>{{ category.post_count }}</p>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
-        <div class="br"></div>
-    </aside>
-    <aside class="single-sidebar-widget tag_cloud_widget">
-        <h4 class="widget_title">タグ</h4>
-        <ul class="list">
-        {% tags as labels %}
-        {% for label in labels %}
-        <li><a href="#">{{label.title}}</a></li>
-        {% endfor %}
-        </ul>
-    </aside>
-```
-### タグ別リストを表示する
-views.pyにCategoryDetail同様にTagDetailクラスを作成する
-```python
-# posts/views.py
-class TagDetail(ListView):
-  model = Post
-  template_name="tags/tag_detail.html"
-  context_object_name="posts"
-  
-  # pk means id
-  def get_queryset(self):
-    self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
-    return Post.objects.filter(tag=self.tag).order_by('-publishing_date')
-  
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
-    context['tag'] = self.tag
-    print('TagDetail:', context)
-    return context
-```
-urls.pyにタグ別リストページのパスを追加する
-```python
-# post.urls.py
-from django.urls import path
-# from posts.views import *
-from .views import *
-
-urlpatterns = [
-    path('', IndexView.as_view(), name="index"),
-    path('detail/<str:pk>', PostDetail.as_view(), name="detail"),
-    path('category/<str:pk>', CategoryDetail.as_view(), name="category_detail"),
-    path('tag/<slug:slug>', TagDetail.as_view(), name="tag_detail"),　# added
-] 
-```
-category_detail.htmlをコピーしてtemplates/tagsフォルダーにtag_detail.htmlを作成する
-```html
-# templates/tags/tag_detail.html
-{% extends 'base.html'%}
-{% load static %}
-
-{% block content %}
-  <!--================Home Banner Area =================-->
-  <section class="banner_area">
-      <div class="banner_inner d-flex align-items-center">
-        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
-  <div class="container">
-    <div class="banner_content text-center">
-      <h2>タグ</h2>
-      <div class="page_link">
-        <a href="{% url 'index' %}">Home</a>
-        <a href="#">{{ tag.title }}</a>
-      </div>
-    </div>
-  </div>
-      </div>
-  </section>
-  <!--================End Home Banner Area =================-->
-  
-  <!--================Blog Area =================-->
-  <section class="blog_area p_120">
-      <div class="container">
-          <div class="row">
-              <div class="col-lg-8">
-                <h4>{{ tag.title }}タグに{{tag.post_count}}件の投稿があります</h4> # added
-                  <div class="blog_left_sidebar">
-                      {% for post in posts %}
-                        <article class="blog_style1">
-                          <div class="blog_img">
-                            <img class="img-fluid" src={{ post.image.url }} alt="">
-                          </div>
-                          <div class="blog_text">
-                          <div class="blog_text_inner">
-                            <a class="cat" href="#">Gadgets</a>
-                            <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title | truncatechars:150}}</h4></a>
-                            <p>{{ post.content }}</p>
-                            <div class="date">
-                              <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i>{{post.publishing_date}}</a>
-                              <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-                            </div>	
-                          </div>
-                          </div>
-                        </article>
-                      {% endfor %}
-                      <nav class="blog-pagination justify-content-center d-flex">
-                      <ul class="pagination">
-                          <li class="page-item">
-                            <a href="#" class="page-link" aria-label="Previous">
-                              <span aria-hidden="true">
-                                <span class="lnr lnr-chevron-left"></span>
-                              </span>
-                            </a>
-                          </li>
-                          <li class="page-item"><a href="#" class="page-link">01</a></li>
-                          <li class="page-item active"><a href="#" class="page-link">02</a></li>
-                          <li class="page-item"><a href="#" class="page-link">03</a></li>
-                          <li class="page-item"><a href="#" class="page-link">04</a></li>
-                          <li class="page-item"><a href="#" class="page-link">09</a></li>
-                          <li class="page-item">
-                              <a href="#" class="page-link" aria-label="Next">
-                                  <span aria-hidden="true">
-                                      <span class="lnr lnr-chevron-right"></span>
-                                  </span>
-                              </a>
-                          </li>
-                      </ul>
-                  </nav>
-          </div>
-      </div>
-      {% include 'right_side.html' %}
-          </div>
-      </div>
-  </section>
-  <!--================Blog Area =================-->
-{% endblock %}
-```
-タグ別リストページに投稿件数を表示する  
-Tagモデルにpost_count関数を追加する
-```python
-class Tag(models.Model):
-  title= models.CharField(verbose_name='タイトル', max_length=150)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  created =models.DateTimeField(verbose_name='登録日', auto_now_add=True)
-  slug = models.SlugField(editable=False, null=True, blank=True, verbose_name='Slug')
-
-  def __str__(self):
-    return self.title
-  
-  def save(self, *args, **kwargs):
-    self.slug = slugify(self.title)
-    super().save(*kwargs)
-    
-  def post_count(self):  # added
-    return self.posts.all().count()
-```
-```html
-# templates/tags/tag_detail.html
-<div class="container">
-    <div class="row">
-        <div class="col-lg-8">
-        <h4>{{ tag.title }}タグに{{tag.post_count}}件の投稿があります</h4> # added
-            <div class="blog_left_sidebar">
-                {% for post in posts %}
-                <article class="blog_style1">
-```
-####  Slider Postsを作成する
-Postモデルにslider_post を追加する
-```python
-# posts/models.py
-class Post(models.Model):
-  title = models.CharField(verbose_name='タイトル',max_length=150)
-  content = models.TextField(verbose_name='内容')
-  publishing_date=models.DateField(verbose_name='投稿日', auto_now_add=True)
-  image = models.ImageField(verbose_name='画像',null=True, blank=True, upload_to='uploads/')
-  user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='ユーザ',on_delete=models.CASCADE)
-  id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-  # slug = models.SlugField(default="slug")
-  category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True,verbose_name='カテゴリー', related_name='posts')
-  tag = models.ManyToManyField(Tag, related_name="posts" , blank=True, verbose_name='タグ')
-  slider_post = models.BooleanField(default=False, verbose_name='スライダー')  # added
-  
-  
-  def __str__(self):
-    return self.title
-```
-makemigrations & migrate  
-views.pyのIndexViewのcontextにslider_postsを追加する
-```python
-# posts/views.py
-class IndexView(ListView):
-  template_name="posts/index.html"
-  model = Post
-  context_object_name = 'posts'
-  
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    # context['categories'] = Category.object.all()
-    context['slider_posts'] = Post.objects.all().filter(slider_post=True)
-    return context
-```
-templates/posts/index.htmlのスライダー部分を編集する
-```python
-<img src="{% static "img/post-slider/post-s-1.jpg" %}" alt="">は以下のように編集
-<img src="{{ post.image.url}}" alt="">
-タグを全て表示するときは、{% for tag in post.tag.all %}　を使う
-```
-テンプレートのスライダー部分
-```html
-# templates/posts/index.html
-<section class="post_slider_area">
-    <div class="post_slider_inner owl-carousel">
-        {% for post in slider_posts %}
-        <div class="item">
-            <div class="post_s_item">
-                <div class="post_img">
-                    <img src="{{ post.image.url}}" alt="">
-                </div>
-                <div class="post_text">
-                    {% for tag in post.tag.all %}　# added ★★★★★
-                    <a class="cat" href="{% url 'tag_detail' slug=tag.slug %}">{{ tag.title }}</a>
-                    {% endfor %}
-                    <a href="{% url 'detail' pk=post.id %}"><h4>{{ post.title }}</h4></a>
-                    <p>{{ post.content | truncatechars:150 }}<</p>
-                    <div class="date">
-                        <a href="#"><i class="fa fa-calendar" aria-hidden="true"></i> {{post.publishing_date}}</a>
-                        <a href="#"><i class="fa fa-comments-o" aria-hidden="true"></i> 05</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</section>
-```
-### Users Appを作成する
-```python
-(venv) user@mbp Django-fantom-blog % python manage.py startapp users
-```
-usersフォルダの直下にurls.pyを作成する  
-このときapp_name="users"を追加する
-```python
-# users/urls.py
-from django.urls import path
-
-app_name="users"  # added
-urlpatterns = [
-    path('', ),   ## www.website.com/users/detail, www.website.com/detail
-] 
-```
-Django_fantom_blogのurls.pyに'users.urls'を追加する
-```python
-# Django_fantom_blog/urls.py
-from django.contrib import admin
-from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('posts.urls')),
-    path('users/', include('users.urls')),  # www.website.com/users/register added
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-```
-### User Creation Formを作成する
-登録用のフォームを作成する
+## Regiatraton Formを作成する
+django-fantom-blog-1の「User Creation Formを作成する」参照
 ```python
 # users/forms.py
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from .models import Account
 
-class RegisterForm(UserCreationForm):
-  username = forms.CharField(max_length=50)
-  email = forms.EmailField(max_length=50)
-  password1 = forms.CharField()
-  password2 = forms.CharField()
+class AccountRegisterForm(UserCreationForm):
+  CHOICES - [('is_employee', '従業員'), ('is_employer', '雇用者')]
+  user_types = forms.CharField(label="ユーザタイプ", widget=forms.RadioSelect(choices=CHOICES))
   
-  class Meta(UserCreationForm):
-    model = User
-    fields = ('username', 'email', 'password1', 'password2' )
+  class Meta:
+    model = Account
+    fields = ('email', 'first_name', 'last_name')
 ```
-views.pyにRegisterViewを作成する
 ```python
-# users/RegisterView.py
+# users/views.py
 from django.shortcuts import render
 from django.views.generic import CreateView
-from .forms import RegisterForm
+from django.contrib.messages.views import SuccessMessageMixin
+from .forms import AccountRegisterForm
 
-class RegisterView(CreateView):
-  template_name = 'users/register.html'
-  form_class = RegisterForm
+class UserRegisterView(SuccessMessageMixin, CreateView):
+  template_name = 'users/user-register.html'
+  form_class = AccountRegisterForm
   success_url = '/'
+  success_message = "ユーザアカウントが作成されました"
 ```
-templates/users/Register.htmlを作成する
-```html
+templates/users/user-register.htmlを作成する
+```python
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register</title>
+  <title>アカウント登録</title>
 </head>
 <body>
   
 </body>
 </html>
 ```
-urls.pyにパスを登録する
-```python
-from django.urls import path
-from .views import *
 
-app_name="users"
-urlpatterns = [
-    path('register/', RegisterView.as_view(), name="register")
-] 
-```
-users Appを登録
-```python
-Django_fantom_blog/settings.py
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'posts.apps.PostsConfig',
-    'users.apps.UsersConfig', // added
-]
-```
-#### Register Html Fileを作成する
-elements.htmlを参照する
-```html
-<!-- templates/users/register.html -->
-{% extends 'base.html'%}
-{% load static %}
-
-{% block content %}
-  <!--================Home Banner Area =================-->
-  <section class="banner_area">
-      <div class="banner_inner d-flex align-items-center">
-        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
-  <div class="container">
-    <div class="banner_content text-center">
-      <h2>登録</h2>
-      <div class="page_link">
-        <a href="{% url 'index' %}">Home</a>
-      </div>
-    </div>
-  </div>
-      </div>
-  </section>
-  <!--================End Home Banner Area =================-->
-  
-  <!--================Blog Area =================-->
-  <section class="blog_area p_120">
-      <div class="container">
-          <div class="row">
-              <div class="col-lg-8">
-                  <h2 style="text-align: center; color:blue">登録</h2>
-                  <div class="blog_left_sidebar">
-                    <form method='post'>
-                      {% csrf_token %}
-                      {% if form.errors %}
-                        <div id="errors">
-                          <div class="inners">
-                            <p style="color:red">以下のエラーがあります</p>
-                            <ul>
-                              {% for field in form %}
-                                {% if field.errors %}
-                                <li>{{form.label }}: {{field.errors|striptags }}</li>
-                                {% endif %}
-                              {% endfor %}
-                            </ul>
-                          </div>
-                        </div>
-                      {% endif %}
-                      {# {{ form.as_p }} #}
-                      <div class="mt-10">
-                        <input type="text" name="username" placeholder="名前" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
-                      </div>
-                      <div class="mt-10">
-                        <input type="text" name="email" placeholder="メールアドレス" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
-                      </div>
-                      <div class="mt-10">
-                        <input type="password" name="password1" placeholder="パスワード" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
-                      </div>
-                      <div class="mt-10">
-                        <input type="password" name="password2" placeholder="パスワード(確認)" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
-                      </div>
-                      <input type="submit" class="genric-btn success circle" style="float:right;margin-top:30px;" value="登録" >
-                    </form> 
-                  </div>
-              </div>
-             {% include 'right_side.html' %}
-          </div>
-      </div>
-  </section>
-{% endblock %}
-```
-### LoginViewとLogoutViewを作成する
-```python
-# users/views.py
-from django.contrib.auth.views import LoginView, LogoutView
-from django.views.generic import CreateView
-from .forms import RegisterForm
-
-class RegisterView(CreateView):
-  template_name = 'users/register.html'
-  form_class = RegisterForm
-  success_url = '/'
-  
-class UserLoginView(LoginView):
-  template_name = 'users/login.html'
-
-class UserLogoutView(LogoutView):
-  template_name = 'users/login.html'
-```
-ログインのテンプレート
-```html
-<!-- templates/users/login.html -->
-{% extends 'base.html'%}
-{% load static %}
-
-{% block content %}
-  <!--================Home Banner Area =================-->
-  <section class="banner_area">
-      <div class="banner_inner d-flex align-items-center">
-        <div class="overlay bg-parallax" data-stellar-ratio="0.9" data-stellar-vertical-offset="0" data-background=""></div>
-  <div class="container">
-    <div class="banner_content text-center">
-      <h2>ログイン</h2>
-      <div class="page_link">
-        <a href="{% url 'index' %}">Home</a>
-      </div>
-    </div>
-  </div>
-      </div>
-  </section>
-  <!--================End Home Banner Area =================-->
-  
-  <!--================Blog Area =================-->
-  <section class="blog_area p_120">
-      <div class="container">
-          <div class="row">
-              <div class="col-lg-8">
-                {% if not user.is_authenticated %}
-                  <h2 style="text-align: center; color:blue">ログイン</h2>
-                  <div class="blog_left_sidebar">
-                    <form method='post'>
-                      {% csrf_token %}
-                      {% if form.errors %}
-                        <div id="errors">
-                          <div class="inners">
-                            <p style="color:red">以下のエラーがあります</p>
-                            <ul>
-                              {% for field in form %}
-                                {% if field.errors %}
-                                <li>{{form.label }}: {{field.errors|striptags }}</li>
-                                {% endif %}
-                              {% endfor %}
-                            </ul>
-                          </div>
-                        </div>
-                      {% endif %}
-                      {# {{ form.as_p }} #}
-                      <div class="mt-10">
-                        <input type="text" name="username" placeholder="名前" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
-                      </div>
-                      <div class="mt-10">
-                        <input type="password" name="password" placeholder="パスワード" onfocus="this.placeholder = ''" onblur="this.placeholder = 'First Name'" required class="single-input">
-                      </div>
-                      <input type="submit" class="genric-btn success circle" style="float:right;margin-top:30px;" value="ログイン" >
-                    </form> 
-                  </div>
-                {% else %}
-                  <h2 style="color:red;">既にログイン済みです</h2>
-                {% endif %}
-              </div>
-             {% include 'right_side.html' %}
-          </div>
-      </div>
-  </section>
-{% endblock %}
-```
 ```python
 # users/urls.py
 from django.urls import path
 from .views import *
 
-app_name="users"
+app_name = "users"
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name="register"),
-    path('login/', UserLoginView.as_view(), name="login"),
-    path('logout/', UserLogoutView.as_view(), name="logout")
-] 
-```
-Django_fantom_blog/setting.pyの最後にLOGOUT_REDIRECT_URLとLOGIN_REDIRECT_URLを追加するだけでリダイレクトしてくれる
-```python
-# Django_fantom_blog/setting.py
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-LOGOUT_REDIRECT_URL = '/' # added
-LOGIN_REDIRECT_URL = '/'  # added
+    path('register', UserRegisterView.as_view(), name="register"),
+]
 ```
 ```python
+# jobs/urls.py
+from django.urls import path
+from .views import *
 
+app_name = "jobs" # added
+urlpatterns = [
+    path('', HomeView.as_view(), name="home"),
+]
 ```
+### ユーザ登録Htmlを作成する
+input type="{{ field.field.widget.input_type}}とするとパスワードの入力が隠される  
+{% for field in form.visible_fields|slice:"5" %}とすると５番目のユーザタイプが表示されなくなる  
+一度５番目のユーザタイプを非表示にしてから別途ユーザタイプのコードを追加する
+```python
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    
+<div class="hero-wrap js-fullheight" style="background-image: url('{% static 'images/bg_2.jpg' %}');" data-stellar-background-ratio="0.5">
+      <div class="overlay"></div>
+      <div class="container">
+        <div class="row no-gutters slider-text js-fullheight align-items-end justify-content-start" data-scrollax-parent="true">
+          <div class="col-md-8 ftco-animate text-center text-md-left mb-5" data-scrollax=" properties: { translateY: '70%' }">
+          	<p class="breadcrumbs" data-scrollax="properties: { translateY: '30%', opacity: 1.6 }"><span class="mr-3"><a href="index.html">Home <i class="ion-ios-arrow-forward"></i></a></span> <span>Post a Job</span></p>
+            <h1 class="mb-3 bread" data-scrollax="properties: { translateY: '30%', opacity: 1.6 }">Post a Job</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftco-section bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 col-lg-8 mb-5">
+			     <form action="#" class="p-5 bg-white" method="post">
+              {% csrf_token %}
+              {% for field in form.visible_fields|slice:"5" %}
+              <div class="row form-group">
+                <div class="col-md-12 mb-3 mb-md-0">
+                  <label class="font-weight-bold" for="fullname">{{field.label}}</label>
+                  <input type="{{ field.field.widget.input_type}}" id="fullname" 
+                      class="form-control" placeholder="{{field.label}}" name="{{ field.html_name }}">
+                </div>
+              </div>
+              {% endfor %}
+              <div class="row form-group">
+                <div class="col-md-12"><h5>ユーザータイプ</h5></div>
+                <div class="col-md-12 mb-3 mb-md-0">
+                  <label for="option-job-type-1">
+                    {{ form.user_types }}
+                  </label>
+                </div>
+              </div>
+            </form>
+            <div class="row form-group">
+              <div class="col-md-12">
+                <input type="submit" value="登録" class="btn btn-primary  py-2 px-5">
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="p-4 mb-3 bg-white">
+              <h3 class="h5 text-black mb-3">Contact Info</h3>
+              <p class="mb-0 font-weight-bold">Address</p>
+              <p class="mb-4">203 Fake St. Mountain View, San Francisco, California, USA</p>
+
+              <p class="mb-0 font-weight-bold">Phone</p>
+              <p class="mb-4"><a href="#">+1 232 3235 324</a></p>
+
+              <p class="mb-0 font-weight-bold">Email Address</p>
+              <p class="mb-0"><a href="#"><span class="__cf_email__" data-cfemail="671e081215020a060e0b2703080a060e094904080a">[email&#160;protected]</span></a></p>
+
+            </div>
+            
+            <div class="p-4 mb-3 bg-white">
+              <h3 class="h5 text-black mb-3">More Info</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ipsa ad iure porro mollitia architecto hic consequuntur. Distinctio nisi perferendis dolore, ipsa consectetur</p>
+              <p><a href="#" class="btn btn-primary  py-2 px-4">Learn More</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+	{% endblock %}
+```
+### ユーザを登録する How to Regiter Our Users
+UserRegisterViewにform_valid関数を追加する
+```python
+# users/views.py
+from django.shortcuts import render, redirect
+from django.views.generic import CreateView
+from django.contrib.messages.views import SuccessMessageMixin
+from .forms import AccountRegisterForm
+
+class UserRegisterView(SuccessMessageMixin, CreateView):
+  template_name = 'users/user-register.html'
+  form_class = AccountRegisterForm
+  success_url = '/'
+  success_message = "ユーザアカウントが作成されました"
+  
+  def form_valid(self, form):
+    user = form.save(commit=False)
+    user_type = form.cleaned_data['user_types']
+    if user_type == 'is_employee':
+      # print('user.is_employee', user.is_employee)
+      user.is_employee = True
+    elif user_type == 'is_employer':
+      user.is_employer = True
+    user.save()
+    return redirect(self.success_url)
+```
+
 ```python
 
 ```
+
 ```python
 
 ```
+
 ```python
 
 ```
+
 ```python
 
 ```
-```python
 
-```
-```python
 
-```
-```python
 
-```
-```python
-
-```
 

@@ -1008,6 +1008,405 @@ function CartTable({cartItems, handleDeleteClick}) {
 }
 export default CartTable
 ```
+#### Cartの数量 (Quantity)
+カートテーブルの数量列にプラスマイナスのボタンを追加する
+```js
+// components/cartTable.js
+import React from 'react'
+import { Table} from 'react-bootstrap';
+import { ReactComponent as MinusIcon } from "../minus_circle_icon.svg";
+
+function CartTable({cartItems, handleDeleteClick}) {
+  return (
+    <div>
+        <Table hover bordered>
+          <thead>
+              <tr>
+                  <th>商品</th>
+                  <th>画像</th>
+                  <th>価格</th>
+                  <th>数量</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+           {cartItems.cartItems.map((item) => {
+                  return (
+                  <tr key={item._id}>
+                      <td className="align-middle">{item.name}</td>
+                      <td className="align-middle">
+                        <img src={item.image} alt="" hight='40' width='60' />
+                      </td>
+                      <td className="align-middle">{item.price}</td>
+                      <td className="align-middle">
+                        <div className='d-flex justify-content-center align-items-center'>
+                          <i className="plus-icon ri-add-circle-line" />
+                          <b>{item.quantity}</b>
+                          <MinusIcon width={24} height={24} className="minus-icon" />
+                        </div>
+                      </td>
+                      <td>
+                          <i className="ri-delete-bin-line"
+                             onClick={()=>{handleDeleteClick(item._id)}}                        
+                          />
+                      </td>
+                  </tr>
+                  )
+                }
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default CartTable
+```
+```css
+/* resources/layout.css */
+.cart-count {
+  cursor: pointer;
+}
+
+.plus-icon {
+  cursor: pointer;
+  margin-right: 20px;
+}
+
+.minus-icon {
+  cursor: pointer;
+  margin-left: 20px;
+}
+```
+itemコンポーネントの「カートに追加」ボタンクリック時のディスパッチ時にpayloadとしてpayload:{...item, quantity:1 }とquantity:1 を追加する
+```js
+// compoments/itemsjs
+import '../resources/items.css'
+import {useDispatch} from 'react-redux'
+
+function Item({item}) {
+  const dispatch = useDispatch()
+  const addToCart = ()=> {
+    console.log('click: ', item);
+    dispatch({type:'addToCart', payload:{...item, quantity:1 }}) // added
+  }
+
+  return (
+    <div className='item'>
+      <h4 className='name'>{item.name}</h4>
+      <img src={item.image} alt='' height='100' width='100' />
+      <h4 className='price'><b>価格：</b>¥{item.price}</h4>
+      <div className="d-flex justify-content-end">
+      <button onClick={()=> addToCart()} className="btn">カートに追加</button>
+      </div>
+    </div>
+  )
+}
+export default Item
+```
+increaseQuantity(item)とdecreaseQuantity(item) を追加する
+```js
+// components/cartTable.js
+import { Table} from 'react-bootstrap';
+import { ReactComponent as MinusIcon } from "../minus_circle_icon.svg";
+import {useDispatch}  from 'react-redux'
+
+function CartTable({cartItems}) {
+  // console.log('table->items', items.cartItems);
+  const dispatch = useDispatch()
+
+  const increaseQuantity = (item) => {
+    dispatch({type:'updateCart', payload: {...item, quantity:item.quantity + 1}})
+  }
+  const decreaseQuantity = (item) => {
+    if (item.quantity !== 1){
+      dispatch({type:'updateCart', payload: {...item, quantity:item.quantity - 1}})
+    }
+  }
+  const deleteFromCart = (id) => {
+
+  }
+
+  return (
+    <div>
+        <Table hover bordered>
+          <thead>
+              <tr>
+                  <th>商品</th>
+                  <th>画像</th>
+                  <th>価格</th>
+                  <th>数量</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+           {cartItems.cartItems.map((item) => {
+                  return (
+                  <tr key={item._id}>
+                      <td className="align-middle">{item.name}</td>
+                      <td className="align-middle">
+                        <img src={item.image} alt="" hight='40' width='60' />
+                      </td>
+                      <td className="align-middle">{item.price}</td>
+                      <td className="align-middle">
+                        <div className='d-flex justify-content-start align-items-center'>
+                          <i className="plus-icon ri-add-circle-line" onClick={()=>increaseQuantity(item)}/>
+                          <b>{item.quantity}</b>
+                          <MinusIcon width={24} height={24} 
+                            className="minus-icon" onClick={()=>decreaseQuantity(item) }/>
+                        </div>
+                      </td>
+                      <td>  // 削除ボタンの作成
+                          <i className="ri-delete-bin-line"
+                             onClick={()=>{deleteFromCart(item._id)}}                         
+                          />
+                      </td>
+                  </tr>
+                  )
+                }
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default CartTable
+```
+```js
+// redux/rootReducer.js
+const initialState = {
+  loading: false,
+  cartItems: []
+}
+
+export const rootReducer=(state=initialState, action) => {
+
+  switch(action.type){
+    case 'addToCart' : return {
+      state,
+      cartItems: [...state.cartItems, action.payload]
+    }
+    case 'updateCart': return { //added
+      state,
+      cartItems: state.cartItems.map((item)=> 
+        item._id === action.payload._id 
+        ? {...item, quantity: action.payload.quantity } 
+        : item
+      )
+    }
+    case 'deleteFromCart': return {  //added
+      state,
+      cartItems: state.cartItems.filter((item)=>item._id!==action.payload)
+    }
+    default: return  state
+  }
+}
+```
+### Delete item from Cart
+上のcartTable.jsとrootReducer.jsに追記
+### Loading
+```js
+// redux/rootReducer.js
+const initialState = {
+  loading: false,
+  cartItems: []
+}
+
+export const rootReducer=(state=initialState, action) => {
+
+  switch(action.type){
+    case 'addToCart' : return {
+      ...state,
+      cartItems: [...state.cartItems, action.payload]
+    }
+    case 'updateCart': return {
+      ...state,
+      cartItems: state.cartItems.map((item)=> 
+        item._id === action.payload._id 
+        ? {...item, quantity: action.payload.quantity } 
+        : item
+      )
+    }
+    case 'deleteFromCart': return {
+      ...state,
+      cartItems: state.cartItems.filter((item)=>item._id!==action.payload)
+    }
+    case 'showLoading': return {
+      ...state,
+      loading: true
+    }
+    case 'hideLoading': return {
+      ...state,
+      loading: false    
+    }
+    default: return  state
+
+  }
+}
+```
+```js
+// pages/Homepage.js
+import React, { useEffect, useState } from 'react'
+import DefaultLayout from '../components/DefaultLayout'
+import axios from 'axios' 
+import Item from '../components/Item'
+import { useDispatch } from 'react-redux'
+
+function Homepage() {
+  const [items, setItems] = useState([])
+  const dispatch = useDispatch()
+  const getAllItems = () => {
+    dispatch({type:'showLoading'})
+    axios.get('/api/items/get-all-items').then((response)=> {
+      dispatch({type:'hideLoading'})
+      console.log(response.data);
+      setItems(response.data)
+    }).catch((error)=> {
+    dispatch({type:'hideLoading'})
+    console.log(error)
+    })
+  }
+
+  useEffect(()=> {
+    getAllItems()
+  }, [])
+
+  return (
+    <DefaultLayout>
+      {/* <div>Homepage</div> */}
+      <div className="row mx-1">
+        {items.map((item)=> {
+          return (
+            <div className="col-lg-3 col-md-6 col-sm-12 col-xs-12 px-1" key={item._id}>
+              <Item  item={item} />
+            </div>
+          )
+        })}
+      </div>
+    </DefaultLayout>
+  )
+}
+
+export default Homepage
+```
+Spinner コンポーネント  
+Bootstrap Spinner:https://getbootstrap.jp/docs/5.0/components/spinners/
+```js
+<div class="spinner-border" role="status">
+  <span class="visually-hidden">Loading...</span>
+</div>
+```
+defaltLayout.jsに上のSpinnerを実装する
+```js
+import {useEffect, useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+import '../resources/layout.css'
+import '../resources/global.css'
+import { useSelector } from 'react-redux'
+
+function DefaultLayout({children}) {
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(false)
+  const { cartItems, loading } = useSelector(state => state.rootReducer)
+
+  const adminMenu = [
+    {
+      name: 'Home',
+      path: '/home',
+      icon: 'ri-home-line'
+    },
+    {
+      name: 'Bills',
+      path: '/bills',
+      icon: 'ri-bill-line'
+    },
+    {
+      name: 'items',
+      path: '/items',
+      icon: 'ri-list-check'
+    },
+    {
+      name: 'Customers',
+      path: '/admin/users',
+      icon: 'ri-user-line'
+    },
+    {
+      name: 'Logout',
+      path: '/logout',
+      icon: 'ri-logout-box-line'
+    }
+  ]
+  const menuToBeRendered = adminMenu
+  const activeRoute = window.location.pathname
+
+  useEffect(()=> {
+    localStorage.setItem('cartItems', JSON.stringify(cartItems))
+
+  }, [cartItems])
+  console.log('DefaultLayout cartItems:', cartItems)
+  
+  return (
+    <div className='layout-parent'>
+      {loading && (　// Spinner Added
+        <div className='spinner'>
+          <div class="spinner-border" role="status">
+          </div>
+        </div>
+      )}
+      <div className="sidebar">
+        <div>
+          <p className="logo">Store POS</p>
+        </div>
+          <div className="item-container d-flex flex-column">
+            {menuToBeRendered.map((item, index) => {
+              return <div key={index} className={`${activeRoute===item.path && 'active-menu-item'} menu-item`}>
+                <i className={item.icon} ></i>
+                {!collapsed && 
+                <span onClick={()=>navigate(item.path)}>{item.name}</span>
+                }
+                </div>
+            })}
+          </div>
+      </div>
+      <div className="body">
+        <div className="header" onClick={()=>setCollapsed(!collapsed)}>
+            {collapsed ? (<i className="ri-menu-2-fill"></i>) : (<i className="ri-close-line"></i>)}
+            <div className="cart-count d-flex align-items-center" onClick={()=>navigate('/cart')}>
+              <p className='mt-3 mr-2'>{cartItems.length}</p>
+              <i className="ri-shopping-cart-2-line"></i>
+            </div>
+        </div>
+        <div className="content">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+export default DefaultLayout
+```
+SpinnerのCSS編集
+```js
+// resources/Layout.css
+.spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.spinner-border {
+  height: 100px;
+  width: 100px;
+}
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 ```js
 
 ```
@@ -1015,7 +1414,15 @@ export default CartTable
 
 ```
 
+```js
 
+```
+```js
+
+```
+```js
+
+```
 
 
 BootstrapのRegistration Formのサンプル
