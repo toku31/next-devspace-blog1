@@ -1398,12 +1398,90 @@ SpinnerのCSS編集
   width: 100px;
 }
 ```
+### items List
 ```js
+// src/pages/Items.js
+import { useEffect, useState } from 'react'
+import DefaultLayout from '../components/DefaultLayout'
+import axios from 'axios' 
+import { useDispatch } from 'react-redux'
+import ItemTable from '../components/ItemTable'
 
+function Items() {
+  const [items, setItems] = useState([])
+  const dispatch = useDispatch()
+  const getAllItems = () => {
+    dispatch({type:'showLoading'})
+    axios.get('/api/items/get-all-items').then((response)=> {
+      dispatch({type:'hideLoading'})
+      console.log('items.js', response.data);
+      setItems(response.data)
+    }).catch((error)=> {
+    dispatch({type:'hideLoading'})
+    console.log(error)
+    })
+  }
+
+  useEffect(()=> {
+    getAllItems()
+  }, [])
+
+  return (
+    <DefaultLayout>
+      <h3>商品リスト</h3>
+     <ItemTable items ={items} />
+    </DefaultLayout>
+  )
+}
+export default Items
 ```
 ```js
+// src/components/itemTable.js
+import { Table} from 'react-bootstrap';
+import {useDispatch}  from 'react-redux'
 
+function ItemTable({items}) {
+  // console.log('table->items', items.cartItems);
+  const dispatch = useDispatch()
+
+  return (
+    <div>
+        <Table hover striped bordered>
+          <thead>
+              <tr>
+                  <th>商品</th>
+                  <th>画像</th>
+                  <th>価格</th>
+                  <th>カテゴリー</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+           {items.map((item) => {
+                  return (
+                  <tr key={item._id}>
+                      <td className="align-middle">{item.name}</td>
+                      <td className="align-middle">
+                        <img src={item.image} alt="" hight='40' width='60' />
+                      </td>
+                      <td className="align-middle">{item.price}</td>
+                      <td className="align-middle">{item.category}</td>
+                      <td>
+                          <i className="ri-delete-bin-line delete-icon" />
+                          <i className="ri-edit-line"/>
+                      </td>
+                  </tr>
+                  )
+                }
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default ItemTable
 ```
+### Add item Model
 ```js
 
 ```

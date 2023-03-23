@@ -1786,23 +1786,355 @@ class UserRegisterView(SuccessMessageMixin, CreateView):
     user.save()
     return redirect(self.success_url)
 ```
+### Form Errorsを表示する
+```html
+<!-- user-register.html -->
+<div class="ftco-section bg-light">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 col-lg-8 mb-5">
+        <form action="#" class="p-5 bg-white" method="post">
+          {% csrf_token %}
 
+          {% if form.errors%}  // エラー表示の設定Added
+            <div class="alert alert-danger alert-dismissible" role="alert">
+              <div id="form_errors">
+                {% for key, value in form.errors.items %}
+                <span class="fieldwrapper">
+                  {{ key }} : {{ value }}
+                </span>
+                {% endfor %}
+              </div>
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="Close">
+                <span area-hidden="true">&times</span>
+              </button>
+            </div>
+          {% endif %}
+
+          {% for field in form.visible_fields|slice:"5" %}
+          <div class="row form-group">
+            <div class="col-md-12 mb-3 mb-md-0">
+              <label class="font-weight-bold" for="fullname">{{field.label}}</label>
+              <input type="{{ field.field.widget.input_type}}" id="fullname" 
+                  class="form-control" placeholder="{{field.label}}" name="{{ field.html_name }}">
+            </div>
+          </div>
+          {% endfor %}
+```
+### Login and Logout Viewsを作成する
 ```python
+from django.contrib.auth.views import LoginView, LogoutView
 
+class UserLoginView(LoginView):
+  template_name = 'user/login.html'
+
+class UserLogoutView(LogoutView):
+  template_name = 'users/logout.html'
+```
+user-register.htmlをコピーしてlogin.htmlを作成する
+```html
+<!-- templates/users/login.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    
+<div class="hero-wrap js-fullheight" style="background-image: url('{% static 'images/bg_2.jpg' %}');" data-stellar-background-ratio="0.5">
+      <div class="overlay"></div>
+      <div class="container">
+        <div class="row no-gutters slider-text js-fullheight align-items-end justify-content-start" data-scrollax-parent="true">
+          <div class="col-md-8 ftco-animate text-center text-md-left mb-5" data-scrollax=" properties: { translateY: '70%' }">
+          	<p class="breadcrumbs" data-scrollax="properties: { translateY: '30%', opacity: 1.6 }"><span class="mr-3"><a href="index.html">Home <i class="ion-ios-arrow-forward"></i></a></span> <span>ログイン</span></p>
+            <h1 class="mb-3 bread" data-scrollax="properties: { translateY: '30%', opacity: 1.6 }">ログイン</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftco-section bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 col-lg-8 mb-5">
+			     <form action="#" class="p-5 bg-white" method="post">
+              {% csrf_token %}
+              {% if form.errors%}
+                <div class="alert alert-danger alert-dismissible" role="alert">
+                  <div id="form_errors">
+                    {% for key, value in form.errors.items %}
+                    <span class="fieldwrapper">
+                      {{ key }} : {{ value }}
+                    </span>
+                    {% endfor %}
+                  </div>
+                  <button type="button" class="close" data-dismiss="alert" aria-hidden="Close">
+                    <span area-hidden="true">&times</span>
+                  </button>
+                </div>
+              {% endif %}
+              {% for field in form.visible_fields %}
+              <div class="row form-group">
+                <div class="col-md-12 mb-3 mb-md-0">
+                  <label class="font-weight-bold" for="fullname">{{field.label}}</label>
+                  <input type="{{ field.field.widget.input_type}}" id="fullname" 
+                      class="form-control" placeholder="{{field.label}}" name="{{ field.html_name }}">
+                </div>
+              </div>
+              {% endfor %}
+              
+              <div class="row form-group">
+                <div class="col-md-12">
+                  <input type="submit" value="ログイン" class="btn btn-primary  py-2 px-5">
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="p-4 mb-3 bg-white">
+              <h3 class="h5 text-black mb-3">Contact Info</h3>
+              <p class="mb-0 font-weight-bold">Address</p>
+              <p class="mb-4">203 Fake St. Mountain View, San Francisco, California, USA</p>
+
+              <p class="mb-0 font-weight-bold">Phone</p>
+              <p class="mb-4"><a href="#">+1 232 3235 324</a></p>
+
+              <p class="mb-0 font-weight-bold">Email Address</p>
+              <p class="mb-0"><a href="#"><span class="__cf_email__" data-cfemail="671e081215020a060e0b2703080a060e094904080a">[email&#160;protected]</span></a></p>
+
+            </div>
+            
+            <div class="p-4 mb-3 bg-white">
+              <h3 class="h5 text-black mb-3">More Info</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ipsa ad iure porro mollitia architecto hic consequuntur. Distinctio nisi perferendis dolore, ipsa consectetur</p>
+              <p><a href="#" class="btn btn-primary  py-2 px-4">Learn More</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+	{% endblock %}
 ```
 
 ```python
+# users/urls.py
+from django.urls import path
+from .views import *
 
+app_name = "users"
+urlpatterns = [
+    path('register', UserRegisterView.as_view(), name="register"),
+    path('login', UserLoginView.as_view(), name="login"), # added
+    path('logout', UserLoginView.as_view(), name="logout"), # added
+]
 ```
+adminでログインしている時、ログインの入力をさせないように「既にログイン済みです」のエラー表示させる
+```html
+<!-- templates/users/login.html -->
+{% if not user.is_authenticated %} # added
+  <form action="#" class="p-5 bg-white" method="post">
+    {% csrf_token %}
+    {% if form.errors%}
+      <div class="alert alert-danger alert-dismissible" role="alert">
+        <div id="form_errors">
+          {% for key, value in form.errors.items %}
+          <span class="fieldwrapper">
+            {{ key }} : {{ value }}
+          </span>
+          {% endfor %}
+        </div>
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="Close">
+          <span area-hidden="true">&times</span>
+        </button>
+      </div>
+    {% endif %}
+    {% for field in form.visible_fields|slice:"5" %}
+    <div class="row form-group">
+      <div class="col-md-12 mb-3 mb-md-0">
+        <label class="font-weight-bold" for="fullname">{{field.label}}</label>
+        <input type="{{ field.field.widget.input_type}}" id="fullname" 
+            class="form-control" placeholder="{{field.label}}" name="{{ field.html_name }}">
+      </div>
+    </div>
+    {% endfor %}
+    <div class="row form-group">
+      <div class="col-md-12">
+        <input type="submit" value="ログイン" class="btn btn-primary  py-2 px-5">
+      </div>
+    </div>
+  </form>
+{% else %}
+  <div class="col-md-12 mb-3 mb-md-0">
+    <label class="font-weight-bold" style="color:red"  for="fullname">既にログイン済みです</label>
+  </div>
+{% endif %}
+```
+ログインすると以下のエラーが出る
+```python
+Page not found (404)
+Request Method:	GET
+Request URL:	http://localhost:8000/accounts/profile/
+```
+以下を追加する
+```python
+# job/settings.py
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/users/login/'
+```
+### Profile Modelを作成する
+(venv) user@mbp Job-Portal % pip install pillow
+```python
+# users/models.py
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import PermissionsMixin
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from PIL import Image　# added
 
+class UserManager(BaseUserManager):
+  ・・・
+class Account(AbstractBaseUser, PermissionsMixin):
+  ・・・
+class Profile(models.Model): # added
+  user = models.OneToOneField(Account, on_delete=models.CASCADE, related_name="profile", verbose_name='ユーザ')
+  image = models.ImageField(upload_to='media/users', verbose_name='画像')
+  birth_day = models.DateField(default=None, blank=True, null=True, verbose_name='誕生日')
+  location = models.CharField(max_length=100, blank=True, verbose_name='住所')
+  resume = models.TextField(blank=True, verbose_name='レジュメ')
+  company =models.CharField(max_length=250, blank=True, verbose_name='会社')
+  
+  def __str__(self):
+    return self.user.last_name + " " + self.user.first_name + " " + self.user.email
+  
+  def save(self, *args, **kwargs):
+    super(Profile, self).save(*args, **kwargs)
+    img = Image.open(self.image)
+    if img.height > 200 or img.width > 200:
+      new_size = (200, 200)
+      img.thumbnail(new_size)
+      img.save(self.image.path)
+```
+```python
+# users/admin.py
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from .models import Account, Profile
+
+class MyAdminAccounts(UserAdmin):
+  model = Account
+  list_display = ('email', 'first_name', 'last_name', 'is_employee', 'is_employer')
+  list_filter = ('email', 'first_name', 'last_name', 'is_employee', 'is_employer')
+  search_fields = ('email', 'first_name', 'last_name')
+  ordering = ('email', 'first_name')
+  readonly_fields = ['date_joined']
+  
+  add_fieldsets = (
+    (None, {
+      'classes': ('wide',),
+      'fields':('email', 'first_name', 'last_name', 'password1', 'password2', 'is_employee', 'is_employer','is_staff', 'is_active')
+    }),
+  )
+  
+  fieldsets = (
+    (None, {'fields': ('email', 'first_name', 'last_name', 'password')}),
+    ('Permissions', {'fields': ('is_staff', 'is_active', 'is_employee', 'is_employer')})
+  )
+
+admin.site.register(Account, MyAdminAccounts)
+admin.site.register(Profile)
+```
+makemigrations & migrate
+#### Ckeditorをインストールする
+django ckeditorで検索  
+https://django-ckeditor.readthedocs.io/en/latest/#installation
+```python
+pip install django-ckeditor
+```
+Add ckeditor to your INSTALLED_APPS setting.  
+Usage:https://django-ckeditor.readthedocs.io/en/latest/#usage  
+The quickest way to add rich text editing capabilities to your models is to use the included RichTextField model field type. A CKEditor widget is rendered as the form field but in all other regards the field behaves like the standard Django TextField. For example:
+```python
+from django.db import models
+from ckeditor.fields import RichTextField
+
+class Post(models.Model):
+    content = RichTextField()
+```
+```python
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 300,
+        'width': 300,
+    },
+}
+```
+```python
+# job/sttings.py
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/users/login/'
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Basic',
+        'height': 300,
+        'width': 400,
+    },
+}
+```
+### ユーザプロファイルを作成する
+Signalsを使う
+```python
+・・・
+from PIL import Image
+from ckeditor.fields import RichTextField
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+
+class Profile(models.Model):
+  user = models.OneToOneField(Account, on_delete=models.CASCADE, related_name="profile", verbose_name='ユーザ')
+  image = models.ImageField(upload_to='media/users', verbose_name='画像', default="media/users/person_1.jpg")
+  birth_day = models.DateField(default=None, blank=True, null=True, verbose_name='誕生日')
+  location = models.CharField(max_length=100, blank=True, verbose_name='住所')
+  resume = RichTextField(blank=True, verbose_name='レジュメ')
+  company =models.CharField(max_length=250, blank=True, verbose_name='会社')
+  
+  def __str__(self):
+    return self.user.last_name + " " + self.user.first_name + " " + self.user.email
+  
+  def save(self, *args, **kwargs):
+    super(Profile, self).save(*args, **kwargs)
+    img = Image.open(self.image)
+    if img.height > 200 or img.width > 200:
+      new_size = (200, 200)
+      img.thumbnail(new_size)
+      img.save(self.image.path)
+
+@receiver(models.signals.post_save, sender=Account)
+def post_save_user_signal(sender, instance, created, **kwargs):
+  if created:
+    instance.save()
+  
+def create_user_profile(sender, instance, created, **kwargs):
+  if created:
+    Profile.objects.create(user=instance)
+    
+post_save.connect(create_user_profile, sender=Account)
+```
 ```python
 
 ```
-
 ```python
 
 ```
+```python
 
+```
+```python
+
+```
+```python
+
+```
 
 
 
