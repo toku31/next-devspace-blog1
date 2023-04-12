@@ -143,6 +143,7 @@ export default Homepage
 
 .category h4 {
   margin-right: 25px;
+  font-size: 22px;
 }
 
 .category img {
@@ -153,6 +154,454 @@ export default Homepage
 .selected-category {
   border: 3px solid rgb(50, 111, 201);
 }
+```
+### Categoriesの続き
+how to use filter and map simultaneously
+```js
+const numbers = [2, 7, 5, 10, 3];
+
+const filteredNumbers = numbers.filter(num => num > 5);
+
+const numberSquares = filteredNumbers.map(num => num * num);
+
+const numberList = numberSquares.map((square, index) => {
+  return <li key={index}>{square}</li>;
+});
+
+return <ul>{numberList}</ul>;
+```
+```js
+  <div className="d-flex  px-3">
+    {categories.map((category)=> {
+      return <div 
+      onClick={()=>setSelectedCategory(category.name)}
+      className={`d-flex category ${selectedCategory===category.name && 'selected-category'}`}>
+          <h4>{category.name}</h4>
+          <img src={category.imageURL} height='60' width='80' alt='' />
+      </div>
+    })}
+  </div>
+```
+```js
+// src/pages/Homepage.js
+import React, { useEffect, useState } from 'react'
+import DefaultLayout from '../components/DefaultLayout'
+import axios from 'axios' 
+import Item from '../components/Item'
+import { useDispatch } from 'react-redux'
+
+function Homepage() {
+  const [items, setItems] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState('フルーツ')
+  const categories = [
+    {
+      name: 'フルーツ',
+      imageURL: 'https://healthnewshub.org/wp-content/uploads/2022/10/Fruit.jpg',
+    },
+    {
+      name: '野菜',
+      imageURL: 'https://cdn.britannica.com/17/196817-050-6A15DAC3/vegetables.jpg',
+    },
+    {
+      name: '肉',
+      imageURL: 'https://cdn.britannica.com/72/143572-050-87DF1262/pork-butcher-shop-Hong-Kong.jpg',
+    },
+  ]
+  
+  const dispatch = useDispatch()
+  const getAllItems = () => {
+    dispatch({type:'showLoading'})
+    axios.get('/api/items/get-all-items').then((response)=> {
+      dispatch({type:'hideLoading'})
+      // console.log(response.data);
+      setItems(response.data)
+    }).catch((error)=> {
+    dispatch({type:'hideLoading'})
+    console.log(error)
+    })
+  }
+
+  useEffect(()=> {
+    getAllItems()
+  }, [])
+
+  return (
+    <DefaultLayout>
+      {/* <div>Homepage</div> */}
+      <div className="d-flex  px-3">
+        {categories.map((category)=> {
+          return <div 
+          onClick={()=>setSelectedCategory(category.name)}
+          className={`d-flex category ${selectedCategory===category.name && 'selected-category'}`}>
+              <h4>{category.name}</h4>
+              <img src={category.imageURL} height='60' width='80' alt='' />
+          </div>
+        })}
+      </div>
+
+      <div className="row m-1">
+        {/* {items.map((item)=> { */}
+        {items.filter((i)=> i.category === selectedCategory).map((item)=> {
+          return (
+            <div className="col-lg-3 col-md-6 col-sm-12 col-xs-12 px-1" key={item._id}>
+              <Item  item={item} />
+            </div>
+          )
+        })}
+      </div>
+    </DefaultLayout>
+  )
+}
+
+export default Homepage
+```
+### Login/Register
+Sample  how to write react-bootstrap Form Col and Row
+```js
+<Form>
+  <Row>
+    <Col>
+      <Form.Group controlId="formBasicEmail">
+        <Form.Label>Email address</Form.Label>
+        <Form.Control type="email" placeholder="Enter email" />
+      </Form.Group>
+    </Col>
+    <Col>
+      <Form.Group controlId="formBasicPassword">
+        <Form.Label>Password</Form.Label>
+        <Form.Control type="password" placeholder="Password" />
+      </Form.Group>
+    </Col>
+  </Row>
+  <Row>
+    <Col>
+      <Form.Group controlId="formBasicName">
+        <Form.Label>Name</Form.Label>
+        <Form.Control type="text" placeholder="Enter your name" />
+      </Form.Group>
+    </Col>
+    <Col>
+      <Form.Group controlId="formBasicPhone">
+        <Form.Label>Phone</Form.Label>
+        <Form.Control type="text" placeholder="Enter your phone number" />
+      </Form.Group>
+    </Col>
+  </Row>
+  <Button variant="primary" type="submit">
+    Submit
+  </Button>
+</Form>
+
+```
+Registerページを作成する
+```js
+// src/pages/Register.js
+import {useState} from 'react'
+import Button from 'react-bootstrap/Button';
+import { Form, Row, Col} from 'react-bootstrap'
+import '../resources/authentication.css'
+import { Link } from 'react-router-dom';
+
+function Register() {
+
+  const [formData, setFormData] = useState({
+    name: "",
+    userId: "",
+    password: "",
+  })
+
+  const {name, userId, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    const values ={
+      name: name,
+      userId: userId,
+      password: password,
+    }
+    console.log('values:', values);
+  }
+
+  return (
+    <div className='authentication'>
+      {/* <Form onSubmit={handleSubmit}> */}
+      <Row>
+        <Col lg={4} xs={11}>
+          <Form onSubmit={handleSubmit}>
+            <h1>Retail Store POS</h1>
+            <hr />
+            <h3>登録</h3>
+            <Form.Group className="mb-3" controlId="name">
+              <Form.Label>名前</Form.Label>
+              <Form.Control type="text" placeholder="" value={name} onChange={handleChange} name="name" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="userId">
+              <Form.Label>ユーザID</Form.Label>
+              <Form.Control type="text" placeholder="" value={userId} onChange={handleChange} name="userId" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" as={Col} controlId="price">
+              <Form.Label>パスワード</Form.Label>
+              <Form.Control type="password" placeholder="" value={password} onChange={handleChange} name="password" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3 d-flex justify-content-between align-items-center" controlId="register">
+              <Link to='/login'>既に登録済みですか？ ログインするにはここをクリック</Link>
+              <Button className="primary" type="submit">登録</Button>
+            </Form.Group> 
+          </Form>
+        </Col>
+      </Row>
+    </div>
+  )
+}
+
+export default Register
+```
+```css
+/* resources/authentication.css */
+.authentication {
+  align-items: center;
+  height: 100vh;
+}
+
+.authentication .row{
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+} 
+```
+登録ページの背景にhttps://bgjar.com/を用いる
+```css
+/* resources/authentication.css */
+.authentication {
+  align-items: center;
+  height: 100vh;
+  background-image: url(./auth.svg);
+  background-size: 100% 100%;
+}
+
+.authentication .row{
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+} 
+
+.authentication form {
+  background-color: white;
+  padding: 20px;
+}
+```
+ログインページを作成する
+```js
+// src/pages/Login.js
+import {useState} from 'react'
+import Button from 'react-bootstrap/Button';
+import { Form, Row, Col} from 'react-bootstrap'
+import '../resources/authentication.css'
+import { Link } from 'react-router-dom';
+
+function Login() {
+
+  const [formData, setFormData] = useState({
+    name: "",
+    userId: "",
+    password: "",
+  })
+
+  const {name, userId, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    const values ={
+      name: name,
+      userId: userId,
+      password: password,
+    }
+    console.log('values:', values);
+  }
+
+  return (
+    <div className='authentication'>
+      {/* <Form onSubmit={handleSubmit}> */}
+      <Row>
+        <Col lg={4} xs={11}>
+          <Form onSubmit={handleSubmit}>
+            <h1>Retail Store POS</h1>
+            <hr />
+            <h3>ログイン</h3>
+            <Form.Group className="mb-3" controlId="userId">
+              <Form.Label>ユーザID</Form.Label>
+              <Form.Control type="text" placeholder="" value={userId} onChange={handleChange} name="userId" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" as={Col} controlId="price">
+              <Form.Label>パスワード</Form.Label>
+              <Form.Control type="password" placeholder="" value={password} onChange={handleChange} name="password" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3 d-flex justify-content-between align-items-center" controlId="Login">
+              <Link to='/register'>まだ登録してないですか？ 登録するにはここをクリック</Link>
+              <Button className="primary" type="submit">ログイン</Button>
+            </Form.Group> 
+          </Form>
+        </Col>
+      </Row>
+    </div>
+  )
+}
+
+export default Login
+```
+```js
+// App.js
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom'
+import CartPage from './pages/CartPage';
+import Homepage from './pages/Homepage';
+import Items from './pages/Items';
+import { ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Register from './pages/Register';
+import Login from './pages/Login';
+
+function App() {
+  return (
+    <div className="App">
+      <Router>
+        <Routes>
+          <Route path="/home" element={<Homepage />}  />
+          <Route path="/items" element={<Items />}  />
+          <Route path="/cart" element={<CartPage />}  />
+          <Route path="/register" element={<Register />}  />
+          <Route path="/login" element={<Login />}  />
+        </Routes>
+      </Router>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
+  );
+}
+```
+### Login Register API
+ユーザモデルの作成
+```js
+const mongoose = require('mongoose')
+
+const usersSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true
+    },
+    userId: {
+      type: String,
+      required: true
+    },
+    password: {
+      type: String,
+      required: true
+    },
+    verified : {
+      type: Boolean,
+      required: false
+    }
+  }, {timestamps: true})
+
+module.exports = mongoose.model('users', usersSchema)
+```
+```js
+const express = require('express')
+const UsersModel = require('../models/usersModel')
+const router = express.Router()
+
+router.post('/login', async(req, res)=> {
+  try {
+    await UsersModel.findOne({userId: req.body.userId, password: req.body.password, verified: true})
+    res.send('ログインしました')
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
+router.post('/register', async(req, res)=> {
+  try {
+    const newUser = new UsersModel(req.body)
+    await newUser.save()
+    res.send('ユーザが登録されました')
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
+module.exports = router
+```
+ユーザルーターの作成
+```js
+// router/usersRouter.js
+const express = require('express')
+const UsersModel = require('../models/usersModel')
+const router = express.Router()
+
+router.post('/login', async(req, res)=> {
+  try {
+    await UsersModel.findOne({userId: req.body.userId, password: req.body.password, verified: true})
+    res.send('ログインしました')
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
+router.post('/register', async(req, res)=> {
+  try {
+    const newUser = new UsersModel(req.body)
+    await newUser.save()
+    res.send('ユーザが登録されました')
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
+module.exports = router
+```
+```js
+server.js
+const express = require('express')
+const dbConnect = require('./dbConnect')
+
+const app = express();
+app.use(express.json())
+const port = 5000;
+
+const itemsRoute = require('./routes/itemsRoute')
+const usersRoute = require('./routes/usersRoute') // added
+app.use('/api/items/', itemsRoute)
+app.use('/api/users/', usersRoute)  // added
+
+app.get('/', (req, res) => res.send('Hello World from home api'))
+app.listen(port, ()=> console.log(`Node JS Server Running at port ${port}!`))
 ```
 ```js
 
