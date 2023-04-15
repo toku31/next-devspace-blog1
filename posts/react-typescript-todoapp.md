@@ -142,13 +142,24 @@ class App extends React.Component<AppProps, AppState> {
 
 ReactDOM.render(<App />, document.querySelector('#root'))
 ```
-
+### ファンクション・コンポーネント
 ```js
+import React from 'react';
+import ReactDOM from 'react-dom'
 
+interface AppProps {
+  color?: string;
+}
+
+const App = (props: AppProps): JSX.Element => {
+  return <div>{props.color}</div>
+}
+
+ReactDOM.render(<App color='green' />, document.querySelector('#root'))
 ```
-
-```
-
+### Setup Redux
+```bash
+user@mbp todo-list % npm i redux react-redux axios redux-thunk
 ```
 
 ```

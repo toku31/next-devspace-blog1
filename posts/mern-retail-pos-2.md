@@ -539,8 +539,12 @@ const router = express.Router()
 
 router.post('/login', async(req, res)=> {
   try {
-    await UsersModel.findOne({userId: req.body.userId, password: req.body.password, verified: true})
-    res.send('ログインしました')
+    const user = await UsersModel.findOne({userId: req.body.userId, password: req.body.password, verified: true})
+    if(user){
+      res.send('ログインしました')
+    } else {
+    res.status(400).json(error)
+    }
   } catch (error) {
     res.status(400).json(error)
   }
@@ -548,7 +552,7 @@ router.post('/login', async(req, res)=> {
 
 router.post('/register', async(req, res)=> {
   try {
-    const newUser = new UsersModel(req.body)
+    const newUser = new UsersModel({...req.body, verified: false})
     await newUser.save()
     res.send('ユーザが登録されました')
   } catch (error) {
@@ -604,11 +608,167 @@ app.get('/', (req, res) => res.send('Hello World from home api'))
 app.listen(port, ()=> console.log(`Node JS Server Running at port ${port}!`))
 ```
 ```js
+// src/pages/Register.js
+import {useState} from 'react'
+import Button from 'react-bootstrap/Button';
+import { Form, Row, Col} from 'react-bootstrap'
+import '../resources/authentication.css'
+import { Link } from 'react-router-dom';
+import axios from 'axios'; // added
+import { toast } from 'react-toastify'; // added
+import { useDispatch } from 'react-redux';  // added
 
+function Register() {
+  const dispatch = useDispatch()  // added
+  const [formData, setFormData] = useState({
+    name: "",
+    userId: "",
+    password: "",
+  })
+
+  const {name, userId, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    const values ={
+      name: name,
+      userId: userId,
+      password: password,
+    }
+    console.log('values:', values);
+    try {  // added
+      dispatch({type:'showLoading'})
+      await axios.post('/api/users/register', values).then((res)=>{
+        dispatch({type:'hideLoading'})
+        toast.success("ユーザを登録しました 確認するのでお待ちください", {theme: "colored"})
+      })
+    } catch (error) {
+      dispatch({type:'hideLoading'})
+      toast.error("商品の登録に失敗しました", {theme: "colored"})
+    }
+  }
+
+  return (
+    <div className='authentication'>
+      {/* <Form onSubmit={handleSubmit}> */}
+      <Row>
+        <Col lg={4} xs={11}>
+          <Form onSubmit={handleSubmit}>
+            <h1>Retail Store POS</h1>
+            <hr />
+            <h3>登録</h3>
+            <Form.Group className="mb-3" controlId="name">
+              <Form.Label>名前</Form.Label>
+              <Form.Control type="text" placeholder="" value={name} onChange={handleChange} name="name" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="userId">
+              <Form.Label>ユーザID</Form.Label>
+              <Form.Control type="text" placeholder="" value={userId} onChange={handleChange} name="userId" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" as={Col} controlId="price">
+              <Form.Label>パスワード</Form.Label>
+              <Form.Control type="password" placeholder="" value={password} onChange={handleChange} name="password" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3 d-flex justify-content-between align-items-center" controlId="register">
+              <Link to='/login'>既に登録済みですか？ ログインするにはここをクリック</Link>
+              <Button className="primary" type="submit">登録</Button>
+            </Form.Group> 
+          </Form>
+        </Col>
+      </Row>
+    </div>
+  )
+}
+
+export default Register
 ```
 ```js
+// src/pages/Login.js
+import {useState} from 'react'
+import Button from 'react-bootstrap/Button';
+import { Form, Row, Col} from 'react-bootstrap'
+import '../resources/authentication.css'
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
 
+function Login() {
+  const dispatch = useDispatch()
+  const [formData, setFormData] = useState({
+    userId: "",
+    password: "",
+  })
+
+  const {userId, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    const values ={
+      userId: userId,
+      password: password,
+    }
+    console.log('values:', values);
+    try {
+      dispatch({type:'showLoading'})
+      await axios.post('/api/users/login', values).then((res)=>{
+        dispatch({type:'hideLoading'})
+        toast.success("ログイン処理に成功しました", {theme: "colored"})
+      })
+    } catch (error) {
+      dispatch({type:'hideLoading'})
+      toast.error("商品の登録に失敗しました", {theme: "colored"})
+    }
+  }
+
+  return (
+    <div className='authentication'>
+      {/* <Form onSubmit={handleSubmit}> */}
+      <Row>
+        <Col lg={4} xs={11}>
+          <Form onSubmit={handleSubmit}>
+            <h1>Retail Store POS</h1>
+            <hr />
+            <h3>ログイン</h3>
+            <Form.Group className="mb-3" controlId="userId">
+              <Form.Label>ユーザID</Form.Label>
+              <Form.Control type="text" placeholder="" value={userId} onChange={handleChange} name="userId" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" as={Col} controlId="price">
+              <Form.Label>パスワード</Form.Label>
+              <Form.Control type="password" placeholder="" value={password} onChange={handleChange} name="password" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3 d-flex justify-content-between align-items-center" controlId="Login">
+              <Link to='/register'>まだ登録してないですか？ 登録するにはここをクリック</Link>
+              <Button className="primary" type="submit">ログイン</Button>
+            </Form.Group> 
+          </Form>
+        </Col>
+      </Row>
+    </div>
+  )
+}
+
+export default Login
 ```
+### Protected Routes
 ```js
 
 ```
