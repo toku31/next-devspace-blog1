@@ -769,19 +769,177 @@ function Login() {
 export default Login
 ```
 ### Protected Routes
+localStorage.setItemを追加する
 ```js
-
+// src/pages/Login.js
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    const values ={
+      userId: userId,
+      password: password,
+    }
+    console.log('values:', values);
+    try {
+      dispatch({type:'showLoading'})
+      await axios.post('/api/users/login', values).then((response)=>{
+        console.log('login axios.post res:', response)
+        dispatch({type:'hideLoading'})
+        toast.success("ログイン処理に成功しました", {theme: "colored"})
+        localStorage.setItem('pos-user', JSON.stringify(response.data)) // added
+      })
+    } catch (error) {
+      dispatch({type:'hideLoading'})
+      console.log('catch error')
+      toast.error("商品の登録に失敗しました", {theme: "colored"})
+    }
+  }
+```
+response.dataは以下のようにuserRouter.jsのres.send('ログインしました')が入ってくる  
+またresponse.dataのresponseの名前は自由でres.dataでもよい
+```js
+ console.log('login axios.post res:', response)
+{data: 'ログインしました', status: 200, statusText: 'OK', headers: AxiosHeaders, config: {…}, …}
 ```
 ```js
+// routes/userRoute.js
+const express = require('express')
+const UsersModel = require('../models/usersModel')
+const router = express.Router()
 
+router.post('/login', async(req, res)=> {
+  try {
+    console.log('start')
+    const user = await UsersModel.findOne({userId: req.body.userId, password: req.body.password, verified:true})
+    console.log('user', user)
+    if(user){
+      // res.send('ログインしました')
+      res.send(user) // localStorageに保存 Changed
+    } else {
+    console.log('else')
+    res.status(400).json({message: 'login failed'})
+    // res.status(400).json(error)
+    }
+  } catch (error) {
+    console.log('error')
+    res.status(400).json(error)
+  }
+})
 ```
-```js
+react-router-domにおけるLinkとnavigateの違いは、ページ間のナビゲーションに使用されるが、目的が異なります。
+Linkは、アプリケーション内の異なるページ間のリンクを作成するために使用されるコンポーネントです。ユーザーがLinkをクリックすると、アプリケーションのURLが変更され、対応するコンポーネントがページにレンダリングされます。 Linkは、アプリケーション内のクリッカブルなリンクを作成するために使用され、通常、JSXコード内で異なるルートへのリンクを作成するために使用されます。
 
-```
+例えば以下のように書けます：
 ```js
+import { Link } from 'react-router-dom';
 
+function Home() {
+  return (
+    <div>
+      <h1>私のウェブサイトへようこそ</h1>
+      <nav>
+        <ul>
+          <li>
+            <Link to="/about">紹介</Link>
+          </li>
+          <li>
+            <Link to="/contact">お問い合わせ</Link>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  );
+}
 ```
+この例では、Linkを使用して/aboutと/contactルートへのリンクを作成しています。
+
+一方、navigateは、useNavigateフックによって提供される関数であり、特定のルートにプログラム的にナビゲートするために使用されます。たとえば、フォームが送信された後や、その他のアクションが実行された後にプログラム的にナビゲーションする必要がある場合に役立ちます。
+
+例えば以下のように書けます：
 ```js
+import { useNavigate } from 'react-router-dom';
+
+function ContactForm() {
+  const navigate = useNavigate();
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    // フォームの送信ロジック...
+    navigate('/thank-you');
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* フォームのフィールドはここに入ります */}
+      <button type="submit">送信</button>
+    </form>
+  );
+}
+```
+この例では、useNavigateを使用してnavigate関数の参照を取得しています。フォームが送信されたとき、navigate関数を使用して/thank-youルートに移動します。
+
+以上のように、Linkはクリッカブルなリンクを作成するために使用され、navigateは特定のルートにプログラム的にナビゲートするために使用されます。
+```js
+// App.js
+import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
+import CartPage from './pages/CartPage';
+import Homepage from './pages/Homepage';
+import Items from './pages/Items';
+import { ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Register from './pages/Register';
+import Login from './pages/Login';
+
+function App() {
+  return (
+    <div className="App">
+      <Router>
+        <Routes>
+          <Route path="/home" element={<ProtectedRoute><Homepage /></ProtectedRoute>}  />
+          <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
+          <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+          <Route path="/register" element={<Register />}  />
+          <Route path="/login" element={<Login />}  />
+        </Routes>
+      </Router>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
+  );
+}
+export default App;
+
+export function ProtectedRoute({children})  {
+  if (localStorage.getItem('pos-user')){
+    return children
+  } else {
+    return <Navigate to='/login' />
+  }
+}
+```
+Navigate component can be used to programmatically navigate to a new URL in your React application. The Navigate component is provided by the react-router-dom library, and it can be used in place of calling the navigate function directly.
+```js
+import { Navigate } from 'react-router-dom';
+
+function MyComponent() {
+  const isAuthenticated = false;
+
+  if (!isAuthenticated) {
+    return <Navigate to='/login' />;
+  }
+
+  return <div>Welcome to My App!</div>;
+}
+
 
 ```
 ```js
