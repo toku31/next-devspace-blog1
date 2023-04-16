@@ -665,17 +665,64 @@ class SingleJobView(SuccessMessageMixin, UpdateView):
 {% endif %}
 </form>
 ```
+### How to List Applied Candidates
 ```python
+# src/jobs/views.py
+class SingleJobView(SuccessMessageMixin, UpdateView):
+  template_name = 'jobs/single.html'
+  model = Job
+  context_object_name = 'job'
+  form_class = ApplyJobForm
+  success_message = "仕事の応募が完了しました"
 
+  def get_context_data(self, **kwargs):
+    print('self.request.user', self.request.user)
+    print('self.request.user.id', self.request.user.id)
+    context = super(SingleJobView, self).get_context_data(**kwargs)
+    context['categories'] = Category.objects.all()
+    context['employee_applied']=Job.objects.get(pk=self.kwargs['pk']).employee.all().filter(id=self.request.user.id)
+    context['applied_employees']=Job.objects.get(pk=self.kwargs['pk']).employee.all()
+    
+    return context
+```
+BootstrapのList groupを使う  
+https://getbootstrap.jp/docs/5.0/components/list-group/
+```html
+<div class="list-group">
+  <button type="button" class="list-group-item list-group-item-action active" aria-current="true">
+    The current button
+  </button>
+  <button type="button" class="list-group-item list-group-item-action">A second item</button>
+  <button type="button" class="list-group-item list-group-item-action">A third button item</button>
+  <button type="button" class="list-group-item list-group-item-action">A fourth button item</button>
+  <button type="button" class="list-group-item list-group-item-action" disabled>A disabled button item</button>
+</div>
 ```
 ```python
-
+text-alignプロパティは文字以外に画像に対しても使うことができる
+imgタグなどのインライン要素を中央揃えするには、外側をブロック要素で囲い、「text-align: center」と指定する
+<div style=”text-align: center;”><img src=”画像パス” /></div>
+実際に画像を表示するコードは下記のようになる
+<div style=”text-align: center;”><img src=”img/sample1.jpg” /></div>
+ブロック要素内のインライン要素」以外にはtext-align: center;は効かない
 ```
-```python
-
-```
-```python
-
+```html
+{% if applied_employees %}
+  <div class="list-group">
+    <button type="button" class="list-group-item list-group-item-action active" style="text-align:center">
+    応募者
+    </button>
+    {% for employee in applied_employees %}
+    <button type="button" class="list-group-item list-group-item-action">{{employee.first_name}}</button>
+    {% endfor %}
+  </div>
+{% else %}
+<div class="list-group">
+  <button type="button" class="list-group-item list-group-item-action active" style="text-align:center">
+  応募者はいません
+  </button>
+</div>
+{% endif %}
 ```
 ```python
 

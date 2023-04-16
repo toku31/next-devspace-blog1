@@ -3326,10 +3326,20 @@ urlpatterns = [
     path('category-detail/<str:pk>/', CategoryDetailView.as_view(), name="category_detail"),
 ]
 ```
+In Django, super() is used to call a method on the parent class of a derived class. This is often used in class-based views and other Django classes that are meant to be subclassed.
+
+When you use super() with a method call, you're telling Python to look for the method in the parent class of the current class. For example, if you have a view that inherits from django.views.generic.base.View, you can call the dispatch method of the parent class like this:
 ```python
-
+class MyView(View):
+    def dispatch(self, request, *args, **kwargs):
+        # do some processing here
+        return super().dispatch(request, *args, **kwargs)
 ```
+In this example, we're overriding the dispatch method of the View class, but we still want to call the parent class's dispatch method to ensure that all the necessary processing is done. We're doing this by calling super().dispatch() with the same arguments that were passed to our method.
 
+The super() function returns a temporary object of the superclass, which allows you to call its methods. In the above example, super() returns an object that represents the View class, and then we're calling its dispatch method with the same arguments that were passed to our method. This ensures that the parent class's dispatch method is called with the correct arguments, and any processing that it does is also done.
+
+Using super() in this way is a common pattern in Django, especially when working with class-based views and other classes that are designed to be subclassed.
 ```python
 
 ```
