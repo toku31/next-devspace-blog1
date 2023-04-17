@@ -927,27 +927,7 @@ export function ProtectedRoute({children})  {
 }
 ```
 Navigate component can be used to programmatically navigate to a new URL in your React application. The Navigate component is provided by the react-router-dom library, and it can be used in place of calling the navigate function directly.
-```js
-import { Navigate } from 'react-router-dom';
 
-function MyComponent() {
-  const isAuthenticated = false;
-
-  if (!isAuthenticated) {
-    return <Navigate to='/login' />;
-  }
-
-  return <div>Welcome to My App!</div>;
-}
-
-
-```
-```js
-
-```
-```js
-
-```
 ```js
 
 ```

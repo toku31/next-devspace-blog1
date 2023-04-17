@@ -680,7 +680,9 @@ class SingleJobView(SuccessMessageMixin, UpdateView):
     print('self.request.user.id', self.request.user.id)
     context = super(SingleJobView, self).get_context_data(**kwargs)
     context['categories'] = Category.objects.all()
+    # employeeが自分が応募した仕事かを確認する
     context['employee_applied']=Job.objects.get(pk=self.kwargs['pk']).employee.all().filter(id=self.request.user.id)
+    # employerが自身が募集した仕事に応募者がいるか確認する
     context['applied_employees']=Job.objects.get(pk=self.kwargs['pk']).employee.all()
     
     return context
@@ -724,6 +726,77 @@ imgタグなどのインライン要素を中央揃えするには、外側を�
 </div>
 {% endif %}
 ```
+```js
+import { Navigate } from 'react-router-dom';
+
+function MyComponent() {
+  const isAuthenticated = false;
+
+  if (!isAuthenticated) {
+    return <Navigate to='/login' />;
+  }
+
+  return <div>Welcome to My App!</div>;
+}
+```
+従業員には応募者リストを見せないようにする  
+また雇用主は自分の募集する仕事の応募者しか見れないようにする  
+jobテーブルにはemployer_idというプロパティがあるのでこれで雇用主を特定する
+```html
+ <!-- templates/jobs/single.html -->
+{% if user.is_employer %}
+  {% if applied_employees %}
+    <div class="list-group">
+      <button type="button" class="list-group-item list-group-item-action active" style="text-align:center">
+      応募者
+      </button>
+      {% for employee in applied_employees %}
+      <button type="button" class="list-group-item list-group-item-action">{{employee.first_name}}</button>
+      {% endfor %}
+    </div>
+  {% else %}
+  <div class="list-group">
+    <button type="button" class="list-group-item list-group-item-action active" style="text-align:center">
+    応募者はいません
+    </button>
+  </div>
+  {% endif %}
+{% endif %}
+```
+
+```python
+# src/jobs/views.py
+class SingleJobView(SuccessMessageMixin, UpdateView):
+  template_name = 'jobs/single.html'
+  model = Job
+  context_object_name = 'job'
+  form_class = ApplyJobForm
+  success_message = "仕事の応募が完了しました"
+
+  def get_context_data(self, **kwargs):
+    print('self.request.user', self.request.user)
+    print('self.request.user.id', self.request.user.id)
+    context = super(SingleJobView, self).get_context_data(**kwargs)
+    context['categories'] = Category.objects.all()
+     # employeeが自分が応募した仕事かを確認する
+    context['employee_applied']=Job.objects.get(pk=self.kwargs['pk']).employee.all().filter(id=self.request.user.id)
+     # employerが自身が募集した仕事に応募者がいるか確認する
+    try:
+      context['applied_employees']=Job.objects.get(pk=self.kwargs['pk'], employer_id=self.request.user.id).employee.all()
+    except:
+      pass   
+    return context
+  
+  def form_valid(self, form):
+    employee = self.request.user
+    form.instance.employee.add(employee)
+    form.save()
+    return super(SingleJobView, self).form_valid(form)
+  
+  def get_success_url(self):
+    return reverse('jobs:single_job', kwargs={"pk":self.object.pk})
+```
+### Employee　Profileを作成する
 ```python
 
 ```
