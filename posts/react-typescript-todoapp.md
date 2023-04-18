@@ -162,8 +162,20 @@ ReactDOM.render(<App color='green' />, document.querySelector('#root'))
 user@mbp todo-list % npm i redux react-redux axios redux-thunk
 ```
 
-```
+```js
+import React from 'react';
+import ReactDOM from 'react-dom'
+import {legacy_createStore as createStore, applyMiddleware} from 'redux'
+import thunk from 'redux-thunk';
+import { Provider } from 'react-redux';
 
+const store = createStore(reducers, applyMiddleware(thunk))
+
+ReactDOM.render(
+  <Provider store={store}>
+    <App color='green' />
+  </Provider>,
+  document.querySelector('#root'))
 ```
 
 ```
