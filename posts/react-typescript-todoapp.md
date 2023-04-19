@@ -452,9 +452,8 @@ const App = () => {
 export default App;
 ```
 上記のコードでは、store.tsファイルでReduxストアを定義し、actions.tsファイルでReduxアクションを定義しています。App.tsxファイルで、useSelectorとuseDispatchフックを使用してReduxストアにアクセスし、Reduxアクションをディスパッチしています。これにより、ReactコンポーネントからReduxの状態管理を実現できます。また、Reduxストアを作成する際に、createStore関数に代わってconfigureStore関数を使用することで、TypeScriptとの統合がさらに強化されます。
-```js
+
 以下はTypeScriptとReactを使用してReduxとredux-thunkを実装するためのサンプルコードです。
-```
 ```js
 // store.ts
 import { applyMiddleware, combineReducers, createStore } from 'redux';
