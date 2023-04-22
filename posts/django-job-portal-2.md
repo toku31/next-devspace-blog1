@@ -798,14 +798,57 @@ class SingleJobView(SuccessMessageMixin, UpdateView):
 ```
 ### Employee　Profileを作成する
 ```python
+from django.views.generic import CreateView, UpdateView, DetailView
+・・・
+from .models import Account
 
+# users/views.py
+class EmployeeProfileView(DetailView):
+  template_name ='users/employee-profile.html'
+  model = Account
+  
+  def get_context_data(self, **kwargs):
+    context = super(EmployeeProfileView, self).get_context_data(**kwargs)
+    context['account'] = Account.objects.get(pk=self.kwargs['pk'])
+    context['profile'] = Profile.objects.get(user_id = self.kwargs['pk'])
+    return context
 ```
 ```python
+from django.urls import path
+from .views import *
 
+app_name = "users"
+urlpatterns = [
+    path('register', UserRegisterView.as_view(), name="register"),
+    path('login', UserLoginView.as_view(), name="login"),
+    path('logout', UserLogoutView.as_view(), name="logout"),
+    path('update-profile/<int:pk>/', UserUpdateView.as_view(), name="update_profile"),
+    path('employee-profile/<int:pk>/', EmployeeProfileView.as_view(), name="employee_profile"),
+]
 ```
-```python
-
+```html
+<!-- templates/users/employee-profile.html -->
+  {% if user.is_employer and user.id == employer_id %}
+    {% if applied_employees %}
+      <div class="list-group">
+        <button type="button" class="list-group-item list-group-item-action active" style="text-align:center">
+        応募者
+        </button>
+        {% for employee in applied_employees %}
+        <a href="{% url 'users:employee_profile' pk=employee.pk %}" class="list-group-item list-group-item-action">{{employee.first_name}}</a>
+        {% endfor %}
+      </div>
+    {% else %}
+    <div class="list-group">
+      <button type="button" class="list-group-item list-group-item-action active" style="text-align:center">
+      応募者はいません
+      </button>
+    </div>
+    {% endif %}
+  {% endif %}
 ```
+### employee-profile.htmlを編集する
+single.htmlをコピーして使う
 ```python
 
 ```

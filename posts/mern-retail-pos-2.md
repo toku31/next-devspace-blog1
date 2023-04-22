@@ -1150,9 +1150,119 @@ function App() {
 ```
 # Bills
 ### Bill Total
+cartの画面に合計金額を表示する
 ```js
+// src/components/CartTable.js
+import { Table} from 'react-bootstrap';
+import { ReactComponent as MinusIcon } from "../minus_circle_icon.svg";
+import {useDispatch}  from 'react-redux'
+import { useEffect, useState } from 'react';
+import Modal from 'react-bootstrap/Modal';
 
+function CartTable({cartItems}) {
+  // console.log('table->items', cartItems.cartItems);
+  const {cartItems: items}  = cartItems
+  console.log('cartItems->items', items);
+  const dispatch = useDispatch()
+  const [subTotal, setSubTotal] = useState(0)
+  const [billChargeModel, setBillChargeModel] = useState(false)
+
+  const increaseQuantity = (item) => {
+    dispatch({type:'updateCart', payload: {...item, quantity:item.quantity + 1}})
+  }
+  const decreaseQuantity = (item) => {
+    if (item.quantity !== 1){
+      dispatch({type:'updateCart', payload: {...item, quantity:item.quantity - 1}})
+    }
+  }
+  const deleteFromCart = (id) => {
+    dispatch({type:'deleteFromCart', payload:id})
+  }
+
+  const handleSubmit = () => {
+
+  }
+
+  const handleChange = () => {
+    
+  }
+
+  useEffect(()=> {
+    let temp=0;
+    items.forEach((item) => {
+      temp = temp + (item.price * item.quantity)
+    })
+    setSubTotal(temp)
+
+  },[items])
+
+  return (
+    <div>
+        <Table hover bordered>
+          <thead>
+              <tr>
+                  <th>商品</th>
+                  <th>画像</th>
+                  <th>価格</th>
+                  <th>数量</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+           {items.map((item) => {
+                  return (
+                  <tr key={item._id}>
+                      <td className="align-middle">{item.name}</td>
+                      <td className="align-middle">
+                        <img src={item.image} alt="" hight='40' width='60' />
+                      </td>
+                      <td className="align-middle">{item.price}</td>
+                      <td className="align-middle">
+                        <div className='d-flex justify-content-start align-items-center'>
+                          <i className="plus-icon ri-add-circle-line" onClick={()=>increaseQuantity(item)}/>
+                          <b>{item.quantity}</b>
+                          <MinusIcon width={24} height={24} 
+                            className="minus-icon" onClick={()=>decreaseQuantity(item) }/>
+                        </div>
+                      </td>
+                      <td>
+                          {/* <Button variant="outline-secondary">編集</Button> */}
+                          <i className="ri-delete-bin-line"
+                             onClick={()=>{deleteFromCart(item._id)}}                        
+                          />
+                      </td>
+                  </tr>
+                  )
+                }
+              )}
+          </tbody>
+        </Table>
+        <hr />
+        <div className="d-flex justify-content-end flex-column align-items-end">
+          <div className="subtotal">
+            <h3>小計 : <b>¥{subTotal}</b></h3>
+          </div>
+          <button className="btn btn-primary" 
+            onClick={()=>setBillChargeModel(true)}>請求書の発行</button>
+        </div>
+
+        <div className="modal-80w">
+          <Modal show={billChargeModel} onHide={()=>setBillChargeModel(false)} dialogClassName="modal-dialog-fluid ">
+            <Modal.Header closeButton >
+              <Modal.Title>請求書の発行</Modal.Title>
+            </Modal.Header>
+
+            {/* <Modal.Body>
+
+            </Modal.Body> */}
+            </Modal>
+    </div>
+    </div>
+  )
+}
+export default CartTable
 ```
+### 請求書画面のUI Charge Bill UI
 ```js
 
 ```
