@@ -484,7 +484,7 @@ if not playerchoice.strip().isnumeric():
 
 player = int(playerchoice)
 
-if player < 1 or player > 3:
+if player < 1 | player > 3:
     sys.exit("You must enter 1, 2, or 3.")
 
 computerchoice = random.choice("123")
@@ -507,127 +507,271 @@ elif player == computer:
 else:
     print("🐍 Python wins!")
 ```
-Python 標準ライブラリ  
-https://docs.python.org/ja/3/library/index.html  
-Pythonの組み込み関数  
-https://docs.python.org/ja/3/library/functions.html  
-
+## Lesson6 List & Tuples
+https://www.youtube.com/@DaveGrayTeachesCode/videos  
+https://www.youtube.com/watch?v=KWKWswDfAb0  
+ターミナルを右に寄せる: 表示=>外観=>パネルの位置=>右
 ```python
-A
-abs()
-aiter()
-all()
-any()
-anext()
-ascii()
+users = ['Dave', 'John', 'Sara']
 
-B
-bin()
-bool()
-breakpoint()
-bytearray()
-bytes()
+data = ['Dave', 42, True]
 
-C
-callable()
-chr()
-classmethod()
-compile()
-complex()
+emptylist = []　
 
-D
-delattr()
-dict()
-dir()
-divmod()
+print("Dave" in emptylist)  # False
 
-E
-enumerate()
-eval()
-exec()
+print(users[0])  # Dave
+print(users[-2])  # John
 
-F
-filter()
-float()
-format()
-frozenset()
+print(users.index('Sara')) # 2
 
-G
-getattr()
-globals()
+print(users[0:2])  # ['Dave', 'John']
+print(users[1:])  #  ['John', 'Sara']
+print(users[-3:-1])  # ['Dave', 'John']
 
-H
-hasattr()
-hash()
-help()
-hex()
+print(len(data))  # 3
 
-I
-id()
-input()
-int()
-isinstance()
-issubclass()
-iter()
-L
-len()
-list()
-locals()
+users.append('Elsa') 　# リストの最後に追加
+print(users)  # ['Dave', 'John', 'Sara', 'Elsa']
 
-M
-map()
-max()
-memoryview()
-min()
+# users += 'Jason' # ['Bob', 'Dave', 'John', 'Sara', 'Elsa', 'J', 'a', 's', 'o', 'n']
+users += ['Jason']　# リストの結合
+print(users) # ['Dave', 'John', 'Sara', 'Elsa', 'Jason']
 
-N
-next()
+users.extend(['Robert', 'Jimmy'])  # リストを追加する
+print(users)  # ['Dave', 'John', 'Sara', 'Elsa', 'Jason', 'Robert', 'Jimmy']
 
-O
-object()
-oct()
-open()
-ord()
+# users.extend(data) 
+# print(users) # ['Dave', 'John', 'Sara', 'Elsa', 'Jason', 'Robert', 'Jimmy', 'Dave', 42, True]
 
-P
-pow()
-print()
-property()
+users.insert(0, 'Bob')  # 挿入
+print(users)  # ['Bob', 'Dave', 'John', 'Sara', 'Elsa', 'Jason', 'Robert', 'Jimmy']
+
+users[2:2] = ['Eddie', 'Alex']   # 複数挿入
+print(users)　# ['Bob', 'Dave', 'Eddie', 'Alex', 'John', 'Sara', 'Elsa', 'Jason', 'Robert', 'Jimmy']
+
+users[1:3] = ['Robert', 'JPJ']   # Replace
+print(users)  # ['Bob', 'Robert', 'JPJ', 'Alex', 'John', 'Sara', 'Elsa', 'Jason', 'Robert', 'Jimmy']
+
+users.remove('Bob')
+print(users)  # ['Robert', 'JPJ', 'Alex', 'John', 'Sara', 'Elsa', 'Jason', 'Robert', 'Jimmy']
+
+print(users.pop())  #  Jimmy  最後の要素取り出す
+print(users)  # ['Robert', 'JPJ', 'Alex', 'John', 'Sara', 'Elsa', 'Jason', 'Robert']
+
+del users[0]  # 削除
+print(users)　# ['JPJ', 'Alex', 'John', 'Sara', 'Elsa', 'Jason', 'Robert']
+
+# del data　　＃　　変数全体要素を削除
+data.clear()
+print(data)　# []
+
+users[1:2] = ['dave']  # 最初が小文字のものを挿入
+users.sort()
+print(users)  # ['Elsa', 'JPJ', 'Jason', 'John', 'Robert', 'Sara', 'dave']　＃　小文字は大文字の後にくる
+
+users.sort(key=str.lower)
+print(users)　# ['dave', 'Elsa', 'Jason', 'John', 'JPJ', 'Robert', 'Sara']
+
+nums = [4, 42, 78, 1, 5]
+nums.reverse()　# 逆順にする
+print(nums)　# [5, 1, 78, 42, 4]
+
+# nums.sort(reverse=True)　＃　ソートしたものを逆順にする
+# print(nums)　　＃　[78, 42, 5, 4, 1]　　numsが変わる
+
+print(sorted(nums, reverse=True))　# [78, 42, 5, 4, 1]　　Global Sorted Function
+print(nums)  # [5, 1, 78, 42, 4]  # numsは変わらない
+
+# コピー
+numscopy = nums.copy()
+mynums = list(nums)  # constructor
+mycopy = nums[:]  # slice all list
+
+print(numscopy)　　# [5, 1, 78, 42, 4]
+print(mynums)   # [5, 1, 78, 42, 4]
+mycopy.sort()   
+print(mycopy)  # [1, 4, 5, 42, 78]
+print(nums)  #  [5, 1, 78, 42, 4]
+
+print(type(nums))  # <class 'list'>
+
+mylist = list([1, "Neil", True])  # コンストラクタでリストを作成する
+print(mylist) # [1, 'Neil', True]
+
+# Tuples
+mytuple = tuple(('Dave', 42, True)) # コンストラクタでタプルを作成する
+print(mytuple)　# ('Dave', 42, True)
+print(type(mytuple))　# <class 'tuple'>
 
 
+# タプルは追加や変更ができない
+newlist = list(mytuple)　# タプルをリストに変換
+newlist.append('Neil')　　
+newtuple = tuple(newlist)　# リストをタプルに変換　
+print(newtuple)　# 　('Dave', 42, True, 'Neil')
 
-
-R
-range()
-repr()
-reversed()
-round()
-
-S
-set()
-setattr()
-slice()
-sorted()
-staticmethod()
-str()
-sum()
-super()
-
-T
-tuple()
-type()
-
-V
-vars()
-
-Z
-zip()
-
-_
-__import__()
+anothertuple = (1, 4, 2, 8, 2, 2)
+print(type(anothertuple))　　# <class 'tuple'>
+(one, *two, hey) = anothertuple
+print(one)　#️　　1
+print(two)　#️　　[4, 2, 8, 2]　　リスト
+print(hey)　#️　　２
+print(anothertuple.count(2))　#️　２が３個ある
 ```
+### Lesson7 Dictionaries & Sets
 ```python
+# Dictionaries
+band = {
+    "vocals": "Plant",
+    "guitar": "Page"
+}
+# constructor function
+band2 = dict(vocals="Plant", guitar="Page") 
 
+print(band)  # {'vocals': 'Plant', 'guitar': 'Page'}
+print(band2)  # {'vocals': 'Plant', 'guitar': 'Page'}
+print(type(band))　# <class 'dict'>
+print(len(band))  # 2
+
+# Access items
+print(band["vocals"])  # Plant
+print(band.get("guitar")) # Page
+
+# list all keys
+print(band.keys())  # dict_keys(['vocals', 'guitar'])
+
+# list all values
+print(band.values()) # dict_values(['Plant', 'Page'])
+
+# list of key/value pairs as tuples
+print(band.items())  # dict_items([('vocals', 'Plant'), ('guitar', 'Page')])
+True
+
+# verify a key exists
+print("guitar" in band)
+print("triangle" in band)
+
+# Change values
+band["vocals"] = "Coverdale"
+band.update({"bass": "JPJ"})
+
+print(band)
+
+# Remove items
+print(band.pop("bass"))
+print(band)
+
+band["drums"] = "Bonham"
+print(band)
+
+print(band.popitem())  # tuple
+print(band)
+
+# Delete and clear
+
+band["drums"] = "Bonham"
+del band["drums"]
+print(band)
+
+band2.clear()
+print(band2)
+
+del band2
+
+# Copy dictionaries
+
+# band2 = band  # create a reference
+# print("Bad copy!")
+# print(band2)
+# print(band)
+
+# band2["drums"] = "Dave"
+# print(band)
+
+band2 = band.copy()
+band2["drums"] = "Dave"
+print("Good copy!")
+print(band)
+print(band2)
+
+# or use the dict() constructor function
+band3 = dict(band)
+print("Good copy!")
+print(band3)
+
+# Nested dictionaries
+
+member1 = {
+    "name": "Plant",
+    "instrument": "vocals"
+}
+member2 = {
+    "name": "Page",
+    "instrument": "guitar"
+}
+band = {
+    "member1": member1,
+    "member2": member2
+}
+print(band)
+print(band["member1"]["name"])
+
+# Sets
+
+nums = {1, 2, 3, 4}
+
+nums2 = set((1, 2, 3, 4))
+
+print(nums)
+print(nums2)
+print(type(nums))
+print(len(nums))
+
+# No duplicate allowed
+nums = {1, 2, 2, 3}
+print(nums)
+
+# True is a dupe of 1, False is a dupe of zero
+nums = {1, True, 2, False, 3, 4, 0}
+print(nums)
+
+# check if a value is in a set
+print(2 in nums)
+
+# but you cannot refer to an element in the set with an index position or a key
+
+# Add a new element to a set
+nums.add(8)
+print(nums)
+
+# Add elements from one set to another
+morenums = {5, 6, 7}
+nums.update(morenums)
+print(nums)
+
+# you can use update with lists, tuples, and dictionaries, too.
+
+# Merge two sets to create a new set
+one = {1, 2, 3}
+two = {5, 6, 7}
+
+mynewset = one.union(two)
+print(mynewset)
+
+# Keep only the duplicates
+one = {1, 2, 3}
+two = {2, 3, 4}
+
+one.intersection_update(two)
+print(one)
+
+# Keep everything except the duplicates
+one = {1, 2, 3}
+two = {2, 3, 4}
+
+one.symmetric_difference_update(two)
+print(one)
 ```
 
 ```python

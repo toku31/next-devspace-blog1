@@ -10,6 +10,8 @@ author_image: 'https://randomuser.me/api/portraits/men/7.jpg'
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 ### 検索機能の作成
 参考：Udemyの  [Django 3.0 MasterClass - Learn How To Create Django Apps](https://www.udemy.com/course/django-30-masterclass-learn-how-to-create-django-apps/)  
+[Djangoで静的ファイル（イメージファイル、CSSファイル、Javascriptファイル）を使用する方法](https://super-vitality.com/django-static-file/)  
+[クラスベースビューを理解する](https://super-vitality.com/django-class-based-views/)  
 SearchViewの作成  
 django-fantom-blog-2の「**検索機能を作成する**」を参照
 ```html
@@ -848,10 +850,97 @@ urlpatterns = [
   {% endif %}
 ```
 ### employee-profile.htmlを編集する
-single.htmlをコピーして使う
-```python
+single.htmlをコピーして使う  
+{{ profile.resume | safe }}のsafeは{{ 〇〇 }}の中にHTMLタグを埋め込んでもただのテキストとして表示されてしまうのでタグとして表示させたい時には{{ 〇〇 |safe }}とする  
+div class="col-md-8 ftco-animate" style="text-align: center"> で中央よせにする
+```html
+<!-- templates/users/employee-profile.html -->
+{% extends 'base.html' %} {% load static %} {% block content %}
+<div
+  class="hero-wrap js-fullheight"
+  style="background-image: url('{% static 'images/bg_2.jpg' %}')"
+  data-stellar-background-ratio="0.5"
+>
+  <div class="overlay"></div>
+  <div class="container">
+    <div
+      class="row no-gutters slider-text js-fullheight align-items-end justify-content-start"
+      data-scrollax-parent="true"
+    >
+      <div
+        class="col-md-8 ftco-animate text-center text-md-left mb-5"
+        data-scrollax=" properties: { translateY: '70%' }"
+      >
+        <p
+          class="breadcrumbs"
+          data-scrollax="properties: { translateY: '30%', opacity: 1.6 }"
+        >
+          <span class="mr-3"
+            ><a href="index.html">Home <i class="ion-ios-arrow-forward"></i></a
+          ></span>
+          <span class="mr-3"
+            ><a href="blog.html">Blog <i class="ion-ios-arrow-forward"></i></a
+          ></span>
+          <span>Single</span>
+        </p>
+        <h1
+          class="mb-3 bread"
+          data-scrollax="properties: { translateY: '30%', opacity: 1.6 }"
+        >
+          応募者の詳細
+        </h1>
+      </div>
+    </div>
+  </div>
+</div>
 
+<section class="ftco-section ftco-degree-bg">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 ftco-animate" style="text-align: center">
+        <h2 class="mb-3">{{ account.first_name }} {{account.last_name }}</h2>
+          <h5><img src="{{ profile.image.url }}"></h5>
+          <h5>メールアドレス：{{ account.email }}</h5>
+          <h5>誕生日：{{ profile.birth_day }}</h5>
+          <h5>住所：{{ profile.location }}</h5>
+          <h5>{{ profile.resume | safe }}</h5>
+          <p>{{ job.description | safe }}</p>
+        <hr >
+      </div>
+      <!-- .col-md-8 -->
+      <div class="col-md-4 sidebar ftco-animate">
+        <div class="sidebar-box">
+          <form action="#" class="search-form">
+            <div class="form-group">
+              <span class="icon icon-search"></span>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Type a keyword and hit enter"
+              />
+            </div>
+          </form>
+        </div>
+        <div class="sidebar-box ftco-animate">
+          <div class="categories">
+            <h3>カテゴリー</h3>
+            {% for category in categories %}
+            <li>
+              <a href="#"
+                >{{ category.title }}<span>({{ category.job_count}})</span></a
+              >
+            </li>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- .section -->
+{% endblock %}
 ```
+### 雇用主が募集した仕事のリストを作成する
 ```python
 
 ```
