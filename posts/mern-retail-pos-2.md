@@ -1303,6 +1303,7 @@ function CartTable({cartItems}) {
 
   const handleChange = (e) => {
     setFormData((prevState)=> ({
+      console.log('prevState', prevState)
       ...prevState,
       [e.target.name]: e.target.value,
     }))
@@ -1446,17 +1447,271 @@ function CartTable({cartItems}) {
 }
 export default CartTable
 ```
+### Charge Bill APIの作成
 ```js
+// src/bills/billModels.js
+const mongoose = require('mongoose')
 
+const billsSchema = new mongoose.Schema(
+  {
+    customerName: {
+      type: String,
+      required: true
+    },
+    customerPhoneNumber: {
+      type: String,
+      required: true
+    },
+    totalAmount: {
+      type: Number,
+      required: true
+    },
+    tax: {
+      type: Number,
+      required: true
+    },
+    subTotal: {
+      type: Number,
+      required: true
+    },
+    paymentMode: {
+      type: String,
+      required: true
+    },
+    cartItems: {
+      type: Array,
+      required: true
+    },
+  }, {timestamps: true})
+
+const billModel = mongoose.model('bills', billsSchema)
+
+module.exports = billModel;
+```
+
+```js
+// src/routes/billsRoute.js
+const express = require('express')
+// const { findOneAndUpdate } = require('../models/itemsModel')
+const BillModel = require('../models/billModels')
+const router = express.Router()
+
+router.post('/charge-bill', async(req, res)=> {
+  try {
+    const newBill = new BillModel(req.body)
+    await newBill.save()
+    res.send('請求書に課金されました')
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
+module.exports = router
 ```
 ```js
+// server.js
+const express = require('express')
+const dbConnect = require('./dbConnect')
 
+const app = express();
+app.use(express.json())
+const port = 5000;
+
+const itemsRoute = require('./routes/itemsRoute')
+const usersRoute = require('./routes/usersRoute')
+const billsRoute = require('./routes/billsRoute')
+app.use('/api/items/', itemsRoute)
+app.use('/api/users/', usersRoute)
+app.use('/api/bills/', billsRoute)
+
+app.get('/', (req, res) => res.send('Hello World from home api'))
+app.listen(port, ()=> console.log(`Node JS Server Running at port ${port}!`))
 ```
 ```js
+// components/CarTable.js
+import axios from 'axios'
+import { Table} from 'react-bootstrap';
+import { ReactComponent as MinusIcon } from "../minus_circle_icon.svg";
+import {useDispatch}  from 'react-redux'
+import { useEffect, useState } from 'react';
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import Col from 'react-bootstrap/Col';
+import Form from 'react-bootstrap/Form';
+import { toast } from 'react-toastify';
 
-```
-```js
+function CartTable({cartItems}) {
+  // console.log('table->items', cartItems.cartItems);
+  const {cartItems: items}  = cartItems
+  console.log('cartItems->items', items);
+  const dispatch = useDispatch()
+  const [subTotal, setSubTotal] = useState(0)
+  const [billChargeModel, setBillChargeModel] = useState(false)
+  const [formData, setFormData] = useState({
+    customerName: "",
+    customerPhoneNumber: "",
+    paymentMode: "",
+  })
+  console.log('formData', formData)
+  const {customerName, customerPhoneNumber, paymentMode} = formData
 
+  const increaseQuantity = (item) => {
+    dispatch({type:'updateCart', payload: {...item, quantity:item.quantity + 1}})
+  }
+  const decreaseQuantity = (item) => {
+    if (item.quantity !== 1){
+      dispatch({type:'updateCart', payload: {...item, quantity:item.quantity - 1}})
+    }
+  }
+  const deleteFromCart = (id) => {
+    dispatch({type:'deleteFromCart', payload:id})
+  }
+
+  const handleChange = (e) => {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const values ={
+      customerName: customerName,
+      customerPhoneNumber: customerPhoneNumber,
+      paymentMode: paymentMode,
+    }
+    console.log('bill value:', values)
+    dispatch({type:'showLoading'})
+    const reqObject = {
+      ...values,
+      subTotal: subTotal,
+      cartItems: items,
+      tax: Number((subTotal * 0.1).toFixed(0)),
+      totalAmount: subTotal + Number((subTotal * 0.1).toFixed(0)),
+      userId: JSON.parse(localStorage.getItem('pos-user'))._id
+    }
+    console.log('reqObject:', reqObject)
+    try {
+      console.log('try')
+      axios.post('/api/bills/charge-bill', reqObject).then((response)=> {
+        console.log('CartTable.js charge-bill', response.data);
+        dispatch({type:'hideLoading'})
+        toast.success("料金を請求しました", {theme: "colored"})
+        setBillChargeModel(false)
+    })} catch (error) {
+      dispatch({type:'hideLoading'})
+      toast.error('料金を請求に失敗しました')
+      console.log(error)
+    }
+    }
+ 
+  useEffect(()=> {
+    let temp=0;
+    items.forEach((item) => {
+      temp = temp + (item.price * item.quantity)
+    })
+    setSubTotal(temp)
+
+  },[items])
+
+  return (
+    <div>
+      <Table hover bordered>
+        <thead>
+            <tr>
+                <th>商品</th>
+                <th>画像</th>
+                <th>価格</th>
+                <th>数量</th>
+                <th>アクション</th>
+            </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => {
+                return (
+                <tr key={item._id}>
+                    <td className="align-middle">{item.name}</td>
+                    <td className="align-middle">
+                      <img src={item.image} alt="" hight='40' width='60' />
+                    </td>
+                    <td className="align-middle">{item.price}</td>
+                    <td className="align-middle">
+                      <div className='d-flex justify-content-start align-items-center'>
+                        <i className="plus-icon ri-add-circle-line" onClick={()=>increaseQuantity(item)}/>
+                        <b>{item.quantity}</b>
+                        <MinusIcon width={24} height={24} 
+                          className="minus-icon" onClick={()=>decreaseQuantity(item) }/>
+                      </div>
+                    </td>
+                    <td>
+                        {/* <Button variant="outline-secondary">編集</Button> */}
+                        <i className="ri-delete-bin-line"
+                            onClick={()=>{deleteFromCart(item._id)}}                        
+                        />
+                    </td>
+                </tr>
+                )
+              }
+            )}
+        </tbody>
+      </Table>
+      <hr />
+      <div className="d-flex justify-content-end flex-column align-items-end">
+        <div className="subtotal">
+          <h3>小計 : <b>¥{subTotal}</b></h3>
+        </div>
+        <button className="btn btn-primary" 
+          onClick={()=>setBillChargeModel(true)}>請求書の発行</button>
+      </div>
+
+      <div className="modal-80w">
+        <Modal show={billChargeModel} onHide={()=>setBillChargeModel(false)} dialogClassName="modal-dialog-fluid ">
+          <Modal.Header closeButton >
+            <Modal.Title>請求書の発行</Modal.Title>
+          </Modal.Header>
+
+          <Modal.Body>
+            <div>
+            <Form className='transaction-form' onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="customerName">
+              <Form.Label>お客様氏名</Form.Label>
+              <Form.Control type="text" placeholder="" value={customerName} onChange={handleChange} name="customerName" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" as={Col} controlId="customerPhoneNumber">
+              <Form.Label>電話番号</Form.Label>
+              <Form.Control type="text" placeholder="" value={customerPhoneNumber} onChange={handleChange} name="customerPhoneNumber" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" as={Col} controlId="paymentMode">
+              <Form.Label>お支払い方法</Form.Label>
+              <Form.Select className="input-border" name="paymentMode" value={paymentMode} onChange={handleChange} > 
+                <option value=""></option>
+                <option value="cash">現金</option>
+                <option value="card">クレジットカード</option>
+              </Form.Select>
+            </Form.Group>
+
+            <div className="charge-bill-amount">
+              <h5>小計 : <b>{subTotal}</b></h5>
+              <h5>税金 : <b>{(subTotal * 0.1).toFixed(0)}</b></h5>
+              <hr />
+              <h2>合計: <b>{subTotal + Number((subTotal * 0.1).toFixed(0))}</b></h2>
+            </div>
+
+            <Form.Group className="mb-3 d-flex justify-content-end" controlId="save">
+            <Button className="primary" type="submit">発行</Button>
+            </Form.Group> 
+          </Form>
+            </div>
+          </Modal.Body>
+          </Modal>
+      </div>
+    </div>
+  )
+}
+export default CartTable
 ```
 ```js
 
