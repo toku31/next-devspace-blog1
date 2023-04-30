@@ -1107,9 +1107,11 @@ function DefaultLayout({children}) {
 
 export default DefaultLayout
 ```
+32  
 localhost:3000の時はログインページ誘導する  
 ただしログイン状態の時はホームページに行く
 ```js
+// App.js
 import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
 import CartPage from './pages/CartPage';
 import Homepage from './pages/Homepage';
@@ -1147,6 +1149,104 @@ function App() {
     </div>
   );
 }
+
+export function ProtectedRoute({children})  {
+  if (localStorage.getItem('pos-user')){
+    return children
+  } else {
+    return <Navigate to='/login' />
+  }
+}
+```
+```js
+// src/pages/Login.js
+import {useEffect, useState} from 'react'
+import Button from 'react-bootstrap/Button';
+import { Form, Row, Col} from 'react-bootstrap'
+import '../resources/authentication.css'
+import { Link, useNavigate} from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
+
+function Login() {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const [formData, setFormData] = useState({
+    userId: "",
+    password: "",
+  })
+
+  const {userId, password} = formData
+
+  const handleChange=(e)=> {
+    setFormData((prevState)=> ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+  const handleSubmit=async (e)=> {
+    e.preventDefault()
+    const values ={
+      userId: userId,
+      password: password,
+    }
+    console.log('values:', values);
+    try {
+      dispatch({type:'showLoading'})
+      await axios.post('/api/users/login', values).then((response)=>{
+        console.log('login axios.post res:', response)
+        dispatch({type:'hideLoading'})
+        toast.success("ログイン処理に成功しました", {theme: "colored"})
+        localStorage.setItem('pos-user', JSON.stringify(response.data))
+        navigate('/home')
+      })
+    } catch (error) {
+      dispatch({type:'hideLoading'})
+      console.log('catch error')
+      toast.error("商品の登録に失敗しました", {theme: "colored"})
+    }
+  }
+
+  // ローカルストーレジにデータがあればログインページや登録ページに
+  // 行くことなくホームページに行かせる
+  useEffect(()=> {  // added
+    if (localStorage.getItem('pos-user')){
+      navigate('/home')
+    } 
+  },[])
+
+  return (
+    <div className='authentication'>
+      {/* <Form onSubmit={handleSubmit}> */}
+      <Row>
+        <Col lg={4} xs={11}>
+          <Form onSubmit={handleSubmit}>
+            <h1>Retail Store POS</h1>
+            <hr />
+            <h3>ログイン</h3>
+            <Form.Group className="mb-3" controlId="userId">
+              <Form.Label>ユーザID</Form.Label>
+              <Form.Control type="text" placeholder="" value={userId} onChange={handleChange} name="userId" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3" as={Col} controlId="price">
+              <Form.Label>パスワード</Form.Label>
+              <Form.Control type="password" placeholder="" value={password} onChange={handleChange} name="password" className="input-border"/>
+            </Form.Group>
+
+            <Form.Group className="mb-3 d-flex justify-content-between align-items-center" controlId="Login">
+              <Link to='/register'>まだ登録してないですか？ 登録するにはここをクリック</Link>
+              <Button className="primary" type="submit">ログイン</Button>
+            </Form.Group> 
+          </Form>
+        </Col>
+      </Row>
+    </div>
+  )
+}
+
+export default Login
 ```
 # Bills
 ### Bill Total
@@ -1712,6 +1812,279 @@ function CartTable({cartItems}) {
   )
 }
 export default CartTable
+```
+res.status(400).json(error) について  
+このコードは、Node.jsアプリケーションで使用される一般的なコードの一部であり、HTTPステータスコードとエラーオブジェクトをクライアントに返すために使用されます。
+
+jsonを使わない方法    
+res.status(400) は、HTTPステータスコード400（Bad Request）をレスポンスに設定します。 json() メソッドは、指定されたオブジェクトをJSON形式に変換し、それをレスポンスの本文として送信します。
+
+したがって、res.status(400).json(error) は、HTTPステータスコード400でエラーオブジェクトをJSON形式でレスポンスに返すことを意味します。これにより、クライアントがエラーに対処するために必要な情報を含むエラーレスポンスを返すことができます。
+
+res.status(400) を使用してレスポンスステータスコードを設定し、エラーメッセージを含むプレーンテキストメッセージをレスポンス本文として返すこともできます。
+
+例えば、以下のように書くことができます。
+```js
+res.status(400).send('Bad Request: ' + error.message);
+```
+この例では、HTTPステータスコード400で、エラーメッセージを含むプレーンテキストメッセージが返されます。ただし、JSON形式のエラーメッセージを使用する場合は、json() メソッドを使用する必要があります。
+### 請求書画面
+```js
+// pages/bills.js
+import { useEffect, useState } from 'react'
+import DefaultLayout from '../components/DefaultLayout'
+import axios from 'axios' 
+import { useDispatch } from 'react-redux'
+import BillTable from '../components/BillTable'
+import BillForm from '../components/billForm'
+
+function Bills() {
+  const [billsData, setBillsData] = useState([])
+  const [printModalOpen, setPrintModalOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState(null)
+  const dispatch = useDispatch()
+
+  const getAllBills = () => {
+    dispatch({type:'showLoading'})
+    console.log('bills.js getAllBills1')
+    axios.get('/api/bills/get-all-bills').then((response)=> {
+      dispatch({type:'hideLoading'})
+      console.log('bills.js getAllBills2', response);
+      setBillsData(response.data)
+    }).catch((error)=> {
+    dispatch({type:'hideLoading'})
+    console.log(error)
+    })
+  }
+
+  useEffect(()=> {
+    console.log('useEffect')
+    getAllBills()
+  }, [])
+
+  // console.log('setSelectedItem', setSelectedItem)
+  return (
+    <DefaultLayout>
+      <div className="d-flex justify-content-between">
+        <h3>請求書</h3>
+      </div>
+
+      {/* 請求書テーブル */}
+     <BillTable bills ={billsData} 
+      setPrintModalOpen = {setPrintModalOpen}
+      setSelectedItem = {setSelectedItem}
+      />
+
+    {/* 請求書フォーム */}
+    {printModalOpen && (
+      <BillForm
+      setPrintModalOpen = {setPrintModalOpen}
+      printModalOpen = {printModalOpen}
+      selectedItem = {selectedItem}
+      />
+    )}
+
+    </DefaultLayout>
+  )
+}
+export default Bills
+```
+Bill Table
+```js
+// src/components/billTable.js
+import { Table} from 'react-bootstrap';
+
+function BillTable({bills, setPrintModalOpen, setSelectedItem}) {
+  console.log('table->bills', bills);
+
+  return (
+    <div>
+        <Table hover bordered>
+          <thead>
+              <tr>
+                  <th>ID</th>
+                  <th>顧客名</th>
+                  <th>小計</th>
+                  <th>税金</th>
+                  <th>合計金額</th>
+                  <th>アクション</th>
+              </tr>
+          </thead>
+          <tbody>
+           {bills.map((bill) => {
+                  return (
+                  <tr key={bill._id} className='itemTable-row'>
+                      <td className="align-middle">{bill._id}</td>
+                      <td className="align-middle">{bill.customerName}</td>
+                      <td className="align-middle">{bill.subTotal}</td>
+                      <td className="align-middle">{bill.tax}</td>
+                      <td className="align-middle">{bill.totalAmount}</td>
+                      <td className="align-middle">
+                        <i className="ri-eye-line mx-2" onClick={()=>{
+                          setPrintModalOpen(true)
+                          setSelectedItem(bill)
+                        }}                        
+                        />
+                      </td>
+                  </tr>
+                  )
+                }
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default BillTable
+```
+Bill Form
+```js
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import Form from 'react-bootstrap/Form';
+import Table from 'react-bootstrap/Table';
+import '../resources/items.css'
+
+function BillForm(props) {
+  const {printModalOpen, 
+        setPrintModalOpen, 
+        selectedItem,
+      } = props
+
+  const handleChange=(e)=> {
+
+  }
+
+  const handleSubmit=async (e)=> {
+
+  }
+
+  return (
+   <Modal show={printModalOpen} 
+   onHide={()=>{ 
+    setPrintModalOpen(false)
+   }}
+   dialogClassName="modal-dialog-fluid "
+>
+<Modal.Header closeButton >
+ {/* <Modal.Title>{actionType==='add' ? '商品の追加' : '商品の編集'}</Modal.Title> */}
+ <Modal.Title>請求書の内訳</Modal.Title>
+</Modal.Header>
+
+<Modal.Body>
+ <div className='bill-model'>
+   <div className="d-flex justify-content-between bill-header pb-2">
+    <div>
+      <h1><b>POS マーケット</b></h1>
+    </div>
+    <div>
+      <p>東京都新宿区</p>
+      <p>北新宿１−２−３</p>
+      <p>998954316</p>
+    </div>
+   </div>
+   <div className="bill-customer-details mt-2">
+    <p><b>氏名</b>: {selectedItem.customerName} </p>
+    <p><b>電話番号</b>: {selectedItem.customerPhoneNumber} </p>
+    <p><b>日付</b>: {selectedItem.createdAt.toString().substring(0, 10)} </p>
+   </div>
+
+   <Table hover bordered>
+    <thead>
+        <tr>
+            <th>商品名</th>
+            <th>価格</th>
+            <th>数量</th>
+            <th>合計</th>
+        </tr>
+    </thead>
+    <tbody>
+      {selectedItem.cartItems.map((item) => {
+            return (
+            <tr key={item._id} className='itemTable-row'>
+                <td className="align-middle">{item.name}</td>
+                <td className="align-middle">{item.price}</td>
+                <td className="align-middle">{item.quantity}</td>
+                <td className="align-middle">{item.quantity * item.price}</td>
+            </tr>
+            )
+          }
+        )}
+    </tbody>
+  </Table>
+  <div className="dotted-border mt-2 pb-2">
+    <p><b>小計</b> : {selectedItem.subTotal}</p>
+    <p><b>税</b> : {selectedItem.tax}</p>
+  </div>
+
+  <div className="pb-2">
+    <h2><b>総計</b> : ¥{selectedItem.totalAmount}</h2>
+  </div>
+
+  <div className="dotted-border mt-2"></div>
+
+  <div className='text-center'>
+    <p>ありがとうございます</p>
+    <p>またの来店をお待ちしています</p>
+  </div>
+
+   <Form className='transaction-form' onSubmit={handleSubmit}>
+       <Form.Group className="mb-3 d-flex justify-content-end" controlId="save">
+     <Button className="primary" type="submit">保存</Button>
+     </Form.Group> 
+   </Form>
+ </div>
+</Modal.Body>
+</Modal>
+  )
+}
+
+export default BillForm
+```
+```js
+モーダル画面のサイズの設定をglobal.cssで行う
+
+/* src/resources/global.css */
+.modal-dialog-fluid {
+  max-width: inherit;
+  width: 800px;
+  margin: auto;
+  margin-top: 10px;
+  /* margin-left: 300px; */
+}
+```
+```css
+/* ============ Bills Styling =============== */
+.bill-header {
+  border-bottom: 2px dotted rgb(167, 164, 164);
+}
+
+.bill-model b{
+  font-size: 30px;
+}
+
+.bill-model p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.bill-customer-details b {
+  font-size: 20px;
+}
+
+.dotted-border {
+  border-bottom: 2px dotted rgb(167, 164, 164);
+}
+
+.dotted-border b{
+  font-size: 20px;
+}
+```
+```js
+
+```
+```js
+
 ```
 ```js
 
