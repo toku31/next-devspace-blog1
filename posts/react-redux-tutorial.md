@@ -14,6 +14,7 @@ author_image: 'https://randomuser.me/api/portraits/men/13.jpg'
 **セットアップ**
 #### インストール
 ```js
+user@mbp client % npm i react-router-dom axios redux react-redux
 npm install redux-thunk
 ```
 ```js
@@ -427,3 +428,22 @@ export default App;
 以下はTypeScriptとReactを使用してReduxとredux-thunkを実装したtodolistアプリの例です。
 
 まず、Reduxのアプリケーションステートの形式を定義するために、src/types.tsファイルを作成します。
+## その他メモ  
+Reactではタグをスタイルするときはキャメルケースで書き{{}} 2
+重波括弧を使う
+```js
+<div>
+  <h1 style={{ textDecoration: 'underline' }}>Hello, world!</h1>
+  <p style={{ textDecoration: 'line-through' }}>This text is crossed out.</p>
+</div>
+
+<span style={{ textDecoration: 'underline' }}>アンダーラインが表示されるテキスト</span>
+
+<span style={{ textDecoration: 'line-through' }}>取り消し線が表示されるテキスト</span>
+
+<span style={{ textDecoration: 'overline' }}>上線が表示されるテキスト</span>
+
+<span style={{ textDecoration: 'none' }}>下線、取り消し線、上線がないテキスト</span>
+
+
+```

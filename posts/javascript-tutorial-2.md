@@ -44,21 +44,105 @@ sayHello() // hello
 ~~~js
 
 ~~~
-
+### その他メモ
+JavaScriptを使用してDOMから取得したオブジェクトをスタイリングすることができます。  
+これは、JavaScriptのstyleプロパティを使用して行われます。  
+たとえば、以下のように、JavaScriptを使用してidがexampleの要素の背景色を赤色に変更することができます。
 ~~~js
-
+var element = document.getElementById("example");
+element.style.backgroundColor = "red";
 ~~~
-
+同様に、以下のように、JavaScriptを使用して要素にスタイルを追加することもできます。
 ~~~js
-
+var element = document.getElementById("example");
+element.style.color = "blue";
+element.style.fontSize = "24px";
 ~~~
+このように、DOMから取得したオブジェクトにスタイルを追加することができます。  
+ただし、CSSを使用してスタイルを定義し、JavaScriptを使用してスタイルを適用することが一般的です。
 
-~~~js
+モーダル画面のサイズの設定をglobal.cssで行う
+```js
+/* src/resources/global.css */
+.modal-dialog-fluid {
+  max-width: inherit;
+  width: 800px;
+  margin: auto;
+  margin-top: 10px;
+  /* margin-left: 300px; */
+}
+```
+フォームのサンプル
+~~~html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Form Example</title>
+    <style>
+      /* フォーム要素のスタイル */
+      input,
+      select,
+      textarea {
+        display: block;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        box-sizing: border-box;
+        width: 100%;
+        font-size: 16px;
+      }
+      input[type="submit"] {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <form>
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
 
-~~~
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
 
-~~~js
+      <label for="subject">Subject:</label>
+      <select id="subject" name="subject" required>
+        <option value="">Choose an option</option>
+        <option value="general">General Inquiry</option>
+        <option value="support">Support</option>
+        <option value="feedback">Feedback</option>
+      </select>
 
+      <label for="message">Message:</label>
+      <textarea id="message" name="message" rows="6" required></textarea>
+
+      <input type="submit" value="Submit">
+    </form>
+
+    <script>
+      const form = document.querySelector("form");
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const name = form.elements["name"].value;
+        const email = form.elements["email"].value;
+        const subject = form.elements["subject"].value;
+        const message = form.elements["message"].value;
+
+        console.log(`Name: ${name}`);
+        console.log(`Email: ${email}`);
+        console.log(`Subject: ${subject}`);
+        console.log(`Message: ${message}`);
+      });
+    </script>
+  </body>
+</html>
 ~~~
 
 ~~~js

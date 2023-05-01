@@ -17,11 +17,11 @@ user@mbp Django-tutorial-blog % python -m django --version
 4.0.4
 ```
 **Django Girls のチュートリアル**を参考  
-仮想環境:https://tutorial.djangogirls.org/ja/django_installation/
+仮想環境:https://tutorial.djangogirls.org/ja/django_installation/  
 ```python
 $ python3 -m venv myvenv
 ```
-
+**クラスベースビュー**:https://super-vitality.com/django-class-based-views/  
 ```python
 user@mbp Django-tutorial-blog  % python3 -m venv venv
 user@mbp Django-tutorial-blog % source venv/bin/activate

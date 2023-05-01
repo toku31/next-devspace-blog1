@@ -1813,7 +1813,7 @@ function CartTable({cartItems}) {
 }
 export default CartTable
 ```
-res.status(400).json(error) について  
+★★★res.status(400).json(error) について  
 このコードは、Node.jsアプリケーションで使用される一般的なコードの一部であり、HTTPステータスコードとエラーオブジェクトをクライアントに返すために使用されます。
 
 jsonを使わない方法    
@@ -1826,8 +1826,28 @@ res.status(400) を使用してレスポンスステータスコードを設定�
 例えば、以下のように書くことができます。
 ```js
 res.status(400).send('Bad Request: ' + error.message);
+または
+res.status(401)
+throw new Error('User not found')
 ```
 この例では、HTTPステータスコード400で、エラーメッセージを含むプレーンテキストメッセージが返されます。ただし、JSON形式のエラーメッセージを使用する場合は、json() メソッドを使用する必要があります。
+
+成功時のメッセージ
+```js
+const setGoal = asyncHandler(async (req, res) => {
+  if (!req.body.text) {
+    res.status(400)
+    throw new Error('Please add a text field')　　// エラーメッセージ
+  }
+
+  const goal = await Goal.create({
+    text: req.body.text,
+    user: req.user.id,  // 追加
+  })
+
+  res.status(200).json(goal)　// 成功時メッセージ
+})
+```
 ### 請求書画面
 ```js
 // pages/bills.js
@@ -1939,6 +1959,7 @@ export default BillTable
 ```
 Bill Form
 ```js
+// src/components/billForm.js
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
@@ -1967,7 +1988,6 @@ function BillForm(props) {
    dialogClassName="modal-dialog-fluid "
 >
 <Modal.Header closeButton >
- {/* <Modal.Title>{actionType==='add' ? '商品の追加' : '商品の編集'}</Modal.Title> */}
  <Modal.Title>請求書の内訳</Modal.Title>
 </Modal.Header>
 
@@ -2013,7 +2033,7 @@ function BillForm(props) {
     </tbody>
   </Table>
   <div className="dotted-border mt-2 pb-2">
-    <p><b>小計</b> : {selectedItem.subTotal}</p>
+    <p><b>小計</b> : {selectedItem.subTotal}</p> // fontweight: boldでもOK
     <p><b>税</b> : {selectedItem.tax}</p>
   </div>
 
@@ -2080,6 +2100,241 @@ export default BillForm
   font-size: 20px;
 }
 ```
+以下はBootstrapで "text-center" クラスを使用してテキストを中央揃えにする例
+```css
+<div class="text-center">
+  <h1>Hello, world!</h1>
+  <p>This is a paragraph of text.</p>
+</div>
+
+```
+以下は、HTML で "text-center" クラスを使用してテキストを中央揃えにする例
+```html
+<div class="text-center">
+  <h1>Hello, world!</h1>
+  <p>This is a paragraph of text.</p>
+</div>
+```
+```css
+.text-center {
+  text-align: center;
+}
+```
+### 請求書を印刷する
+https://www.npmjs.com/package/react-to-print  
+react-to-printをインストール
+```js
+user@mbp client % npm install --save react-to-print   
+```
+Calling from functional components with useReactToPrint
+```js
+import React, { useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+
+import { ComponentToPrint } from './ComponentToPrint';
+
+const Example = () => {
+  const componentRef = useRef();
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+  });
+
+  return (
+    <div>
+      <ComponentToPrint ref={componentRef} />
+      <button onClick={handlePrint}>Print this out!</button>
+    </div>
+  );
+};
+```
+```js
+// src/components/billForm.js
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import Table from 'react-bootstrap/Table';
+import '../resources/items.css'
+import { useReactToPrint } from 'react-to-print'; // added
+import { useRef } from 'react';  // added
+
+function BillForm(props) {
+  const componentRef = useRef();   // added
+  const {printModalOpen, 
+        setPrintModalOpen, 
+        selectedItem,
+      } = props
+
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+  });
+
+  return (
+   <Modal show={printModalOpen} 
+   onHide={()=>{ 
+    setPrintModalOpen(false)
+   }}
+   dialogClassName="modal-dialog-fluid "
+>
+<Modal.Header closeButton >
+ <Modal.Title>請求書の内訳</Modal.Title>
+</Modal.Header>
+
+<Modal.Body>
+ <div className='bill-model p-3' ref={componentRef}>
+   <div className="d-flex justify-content-between bill-header pb-2">
+    <div>
+      <h1><b>POS マーケット</b></h1>
+    </div>
+    <div>
+      <p>東京都新宿区</p>
+      <p>北新宿１−２−３</p>
+      <p>998954316</p>
+    </div>
+   </div>
+   <div className="bill-customer-details mt-2">
+    <p><b>氏名</b>: {selectedItem.customerName} </p>
+    <p><b>電話番号</b>: {selectedItem.customerPhoneNumber} </p>
+    <p><b>日付</b>: {selectedItem.createdAt.toString().substring(0, 10)} </p>
+  </div>
+
+   <Table hover bordered>
+    <thead>
+        <tr>
+            <th>商品名</th>
+            <th>価格</th>
+            <th>数量</th>
+            <th>合計</th>
+        </tr>
+    </thead>
+    <tbody>
+      {selectedItem.cartItems.map((item) => {
+            return (
+            <tr key={item._id} className='itemTable-row'>
+                <td className="align-middle">{item.name}</td>
+                <td className="align-middle">{item.price}</td>
+                <td className="align-middle">{item.quantity}</td>
+                <td className="align-middle">{item.quantity * item.price}</td>
+            </tr>
+            )
+          }
+        )}
+    </tbody>
+  </Table>
+  <div className="dotted-border mt-2 pb-2">
+    <p><b>小計</b> : {selectedItem.subTotal}</p>
+    <p><b>税</b> : {selectedItem.tax}</p>
+  </div>
+
+  <div className="pb-2">
+    <h2><b>総計</b> : ¥{selectedItem.totalAmount}</h2>
+  </div>
+
+  <div className="dotted-border mt-2"></div>
+
+  <div className='text-center'>
+    <p>ありがとうございます</p>
+    <p>またの来店をお待ちしています</p>
+  </div>
+ </div>
+  <div className="mb-3 d-flex justify-content-end" controlId="print">  // added
+     <Button className="primary" type="submit" onClick={handlePrint}>印刷</Button>
+  </div>
+</Modal.Body>
+</Modal>
+  )
+}
+
+export default BillForm
+```
+### Customers Tableの作成
+Bills.jsをCusomers.jsにコピー
+```js
+// src/Customers.js
+import { useEffect, useState } from 'react'
+import DefaultLayout from '../components/DefaultLayout'
+import axios from 'axios' 
+import { useDispatch } from 'react-redux'
+import CustomerTable from '../components/CustomerTable'
+
+function Customers() {
+  const [billsData, setBillsData] = useState([])
+  const dispatch = useDispatch()
+
+  const getAllBills = () => {
+    dispatch({type:'showLoading'})
+    axios.get('/api/bills/get-all-bills').then((response)=> {
+      dispatch({type:'hideLoading'})
+      console.log('bills.js getAllBills2', response);
+      const data = response.data
+      data.sort((a, b)=> (a.createdAt > b.createdAt? -1 : 1))
+      setBillsData(data)
+    }).catch((error)=> {
+    dispatch({type:'hideLoading'})
+    console.log(error)
+    })
+  }
+
+  useEffect(()=> {
+    console.log('useEffect')
+    getAllBills()
+  }, [])
+
+  return (
+    <DefaultLayout>
+      <div className="d-flex justify-content-between">
+        <h3>顧客リスト</h3>
+      </div>
+      {/* 請求書テーブル */}
+     <CustomerTable bills ={billsData} />
+    </DefaultLayout>
+  )
+}
+
+export default Customers
+```
+```js
+// src/components/CustomerTable.js
+import { Table} from 'react-bootstrap';
+
+function CustomerTable({bills}) {
+  console.log('table->bills', bills);
+
+  return (
+    <div>
+        <Table hover bordered>
+          <thead>
+              <tr>
+                  <th>顧客名</th>
+                  <th>電話番号</th>
+                  <th>登録日</th>
+              </tr>
+          </thead>
+          <tbody>
+           {bills.map((bill) => {
+                  return (
+                  <tr key={bill._id} className='itemTable-row'>
+                      <td className="align-middle">{bill.customerName}</td>
+                      <td className="align-middle">{bill.customerPhoneNumber}</td>
+                      <td className="align-middle">{bill.createdAt.toString().substring(0, 10)}</td>
+                  </tr>
+                  )
+                }
+              )}
+          </tbody>
+        </Table>
+    </div>
+  )
+}
+export default CustomerTable
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 ```js
 
 ```
@@ -2092,7 +2347,21 @@ export default BillForm
 ```js
 
 ```
+```js
 
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
+```js
+
+```
 
 
 
