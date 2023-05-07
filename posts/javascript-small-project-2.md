@@ -622,8 +622,8 @@ input[type='number'] {
 
 .delete-btn {
   cursor: pointer;
-  background-color: #e74c3c;
-  border: 0;
+  background-color: #e74c3c;  // 赤
+  border: 0;　// ボータを削除
   color: #fff;
   font-size: 20px;
   line-height: 20px;
@@ -670,38 +670,654 @@ CSSのセレクターの1つで、最初にマッチする div 要素にスタ�
   display: inline-block;
   margin: 10px 0;
 }について***  
-要素をインラインレベルとして表示しながら、幅と高さの指定が可能なブロックレベル要素にします label要素を、上下に10ピクセルの余白を持つ行内ブロック要素として表示するスタイルを定義しています。たとえば、フォームで使用されるチェックボックスやラジオボタンのラベルを表すためにlabel要素に対して適用されることが多いです。
-
+要素をインラインレベルとして表示しながら、幅と高さの指定が可能なブロックレベル要素にします label要素を、上下に10ピクセルの余白を持つ行内ブロック要素として表示するスタイルを定義しています。たとえば、フォームで使用されるチェックボックスやラジオボタンのラベルを表すためにlabel要素に対して適用されることが多いです  
+***.delete-btn {
+  cursor: pointer;
+  background-color: #e74c3c;
+  border: 0;
+  color: #fff;
+  font-size: 20px;
+  line-height: 20px;
+  padding: 2px 5px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-100%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}について***  
+line-height: 20px;は一般的に以下のような行の高さに使う
+~~~html
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+		/* 行の高さを20pxに設定 */
+		p {
+			line-height: 20px;
+		}
+	</style>
+</head>
+<body>
+	<!-- テキストを含む段落要素 -->
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac neque et </p>
+</html>
+~~~
+***transform: translate(-100%, -50%);について*** 
+削除ボタンを入力欄の左側に表示している opacity: 0;にすることで初期時はボタンを隠している  
+***.list li:hover .delete-btn {
+  opacity: 1;
+}について***  
+入力らんをホバーするとボタン隠していたボタンが表示できるようにする  
+***.delete-btn {
+  ・・・
+  transform: translate(-100%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}について***  
+隠れていたボタンが表示される速さをtransition: opacity 0.3s ease;で指定する  
+#### script.jsの編集
+Step-1 ダミーデータを作って表示する
 ~~~js
+// script.js
+const balance = document.getElementById('balance');
+const money_plus = document.getElementById('money-plus');
+const money_minus = document.getElementById('money-minus');
+const list = document.getElementById('list');
+const form = document.getElementById('form');
+const text = document.getElementById('text');
+const amount = document.getElementById('amount');
 
+const dummyTransactions = [
+  { id: 1, text: 'Flower', amount: -20 },
+  { id: 2, text: 'Salary', amount: 300 },
+  { id: 3, text: 'Book', amount: -10 },
+  { id: 4, text: 'Camera', amount: 150 }
+];
+
+let transactions = dummyTransactions
+
+// Add transactions to DOM list
+function addTransactionDOM(transaction) {
+  // Get sign
+  const sign = transaction.amount < 0 ? '-' : '+';
+
+  const item = document.createElement('li');
+
+  // Add class based on value
+  item.classList.add(transaction.amount < 0 ? 'minus' : 'plus');
+
+  item.innerHTML = `
+    ${transaction.text} <span>${sign}${Math.abs(
+    transaction.amount
+  )}</span> <button class="delete-btn">x</button>
+  `;
+
+  list.appendChild(item);
+}
+
+// Init app
+function init() {
+  list.innerHTML = '';
+  transactions.forEach(addTransactionDOM);
+}
+
+init();
+~~~
+Step-2 残高balance、収入income、支出expenseを表示する
+~~~js
+// script.js
+const balance = document.getElementById('balance');
+const money_plus = document.getElementById('money-plus');
+const money_minus = document.getElementById('money-minus');
+const list = document.getElementById('list');
+const form = document.getElementById('form');
+const text = document.getElementById('text');
+const amount = document.getElementById('amount');
+
+const dummyTransactions = [
+  { id: 1, text: 'Flower', amount: -20 },
+  { id: 2, text: 'Salary', amount: 300 },
+  { id: 3, text: 'Book', amount: -10 },
+  { id: 4, text: 'Camera', amount: 150 }
+];
+
+let transactions = dummyTransactions
+
+// Add transactions to DOM list
+function addTransactionDOM(transaction) {
+  // Get sign
+  const sign = transaction.amount < 0 ? '-' : '+';
+
+  const item = document.createElement('li');
+
+  // Add class based on value
+  item.classList.add(transaction.amount < 0 ? 'minus' : 'plus');
+
+  item.innerHTML = `
+    ${transaction.text} <span>${sign}${Math.abs(
+    transaction.amount
+  )}</span> <button class="delete-btn">x</button>
+  `;
+
+  list.appendChild(item);
+}
+
+// Update the balance, income and expense  // Added
+function updateValues() {
+  const amounts = transactions.map(transaction => transaction.amount);
+  console.log('amounts', amounts);
+  const total = amounts.reduce((acc, item) => (acc += item), 0).toFixed(2);
+  // const total1 = amounts.reduce((acc ,cur)=> {
+  //   return acc + cur
+  // }, 0).toFixed(2)
+  // console.log('total1', total1);
+  // const total2 = transactions.reduce((acc, tran)=> (acc + tran.amount), 0).toFixed(2)
+  // console.log('total2', total2);
+
+  const income = amounts
+    .filter(item => item > 0)
+    .reduce((acc, item) => (acc += item), 0)
+    .toFixed(2);
+    console.log('income', income);
+
+  const expense = (
+    amounts.filter(item => item < 0).reduce((acc, item) => (acc += item), 0) *
+    -1
+  ).toFixed(2);
+  console.log('expense', expense);
+
+  balance.innerText = '$' + total;
+  money_plus.innerText = `$${income}`;
+  money_minus.innerText = `$${expense}`;
+}
+
+// Init app
+function init() {
+  list.innerHTML = '';
+  transactions.forEach(addTransactionDOM);
+  updateValues(); // Added
+}
+
+init();
+~~~
+Step-3 トランザクションの追加、削除処理
+~~~js
+// Add transaction　　追加処理
+function addTransaction(e) {
+  e.preventDefault();
+
+  if (text.value.trim() === '' || amount.value.trim() === '') {
+    alert('Please add a text and amount');
+  } else {
+    const transaction = {
+      id: generateID(),
+      text: text.value,
+      amount: +amount.value
+    };
+
+    transactions.push(transaction);
+    addTransactionDOM(transaction);
+
+    updateValues();
+    // updateLocalStorage();  あとで追加
+    text.value = '';
+    amount.value = '';
+  }
+}
+
+// Generate random ID
+function generateID() {
+  return Math.floor(Math.random() * 100000000);
+}
+・・・
+init();
+
+form.addEventListener('submit', addTransaction);　// added
+~~~
+**上のポイント１**  
+Reactと異なり、JavaScriptではonChangeを実現するために、input要素に対してvalue属性を設定し、input要素のvalueプロパティを取得する必要があります。以下は、onchangeイベントを使用せずにJavaScriptでinput要素の値を取得する例です。
+~~~js
+<input type="text" id="myInput">
+<div id="output"></div>
+
+<script>
+  const inputElement = document.getElementById('myInput');
+  const outputElement = document.getElementById('output');
+
+  inputElement.addEventListener('input', (event) => {
+    outputElement.textContent = inputElement.value;
+  });
+</script>
+~~~
+この例では、input要素に対してinputイベントをリッスンするイベントリスナーを登録し、input要素のvalueプロパティを取得して、div要素に入力値を表示しています。
+
+Reactでは、input要素のvalue属性を直接設定する代わりに、stateやpropsを使用して、コンポーネントの状態を管理することが一般的です。onChangeイベントは、このような状態管理をより簡単にするために使用されます。onChangeイベントがトリガーされるたびに、コンポーネントの状態を更新し、変更された値を反映することができます。  
+**上のポイント2**  
+amount: +amount.valueとすることで文字列から数値に変換している これをしないとupdateValuesのreduce関数を使うところでエラーになる  
+**削除処理**  
+削除ボタンにonclick="removeTransaction(${
+    transaction.id
+  })"を追加
+~~~js
+// Add transactions to DOM list
+function addTransactionDOM(transaction) {
+  // Get sign
+  const sign = transaction.amount < 0 ? '-' : '+';
+
+  const item = document.createElement('li');
+
+  // Add class based on value
+  item.classList.add(transaction.amount < 0 ? 'minus' : 'plus');
+
+  item.innerHTML = `
+    ${transaction.text} <span>${sign}${Math.abs(
+    transaction.amount
+  )}</span> <button class="delete-btn" onclick="removeTransaction(${
+    transaction.id
+  })">x</button>
+  `;
+
+  list.appendChild(item);
+}
 ~~~
 ~~~js
-
+// IDでトランジションを削除する
+function removeTransaction(id) {
+  transactions = transactions.filter(tran=> tran.id !== id)
+  init()
+  updateLocalStorage();　// あとで追加する
+}
 ~~~
+***LocalStorage***
 ~~~js
+const localStorageTransactions = JSON.parse(
+  localStorage.getItem('transactions')
+);
 
+transactions = localStorage.getItem('transactions') !== null  // nullの代わりに[]を設定したらエラー
+  ? localStorageTransactions 
+  : dummyTransactions; 　
+
+// Update local storage transactions
+function updateLocalStorage() {
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+}
 ~~~
+script.jsの完成形
 ~~~js
+const balance = document.getElementById('balance');
+const money_plus = document.getElementById('money-plus');
+const money_minus = document.getElementById('money-minus');
+const list = document.getElementById('list');
+const form = document.getElementById('form');
+const text = document.getElementById('text');
+const amount = document.getElementById('amount');
 
+// const dummyTransactions = [
+//   { id: 1, text: 'Flower', amount: -20 },
+//   { id: 2, text: 'Salary', amount: 300 },
+//   { id: 3, text: 'Book', amount: -10 },
+//   { id: 4, text: 'Camera', amount: 150 }
+// ];
+
+const localStorageTransactions = JSON.parse(
+  localStorage.getItem('transactions')
+);
+
+let transactions =
+  localStorage.getItem('transactions') !== null ? localStorageTransactions : [];
+
+// Add transaction
+function addTransaction(e) {
+  e.preventDefault();
+
+  if (text.value.trim() === '' || amount.value.trim() === '') {
+    alert('Please add a text and amount');
+  } else {
+    const transaction = {
+      id: generateID(),
+      text: text.value,
+      amount: +amount.value
+    };
+
+    transactions.push(transaction);
+
+    addTransactionDOM(transaction);
+
+    updateValues();
+
+    updateLocalStorage();
+
+    text.value = '';
+    amount.value = '';
+  }
+}
+
+// Generate random ID
+function generateID() {
+  return Math.floor(Math.random() * 100000000);
+}
+
+// Add transactions to DOM list
+function addTransactionDOM(transaction) {
+  // Get sign
+  const sign = transaction.amount < 0 ? '-' : '+';
+
+  const item = document.createElement('li');
+
+  // Add class based on value
+  item.classList.add(transaction.amount < 0 ? 'minus' : 'plus');
+
+  item.innerHTML = `
+    ${transaction.text} <span>${sign}${Math.abs(
+    transaction.amount
+  )}</span> <button class="delete-btn" onclick="removeTransaction(${
+    transaction.id
+  })">x</button>
+  `;
+
+  list.appendChild(item);
+}
+
+// Update the balance, income and expense
+function updateValues() {
+  const amounts = transactions.map(transaction => transaction.amount);
+
+  const total = amounts.reduce((acc, item) => (acc += item), 0).toFixed(2);
+
+  const income = amounts
+    .filter(item => item > 0)
+    .reduce((acc, item) => (acc += item), 0)
+    .toFixed(2);
+
+  const expense = (
+    amounts.filter(item => item < 0).reduce((acc, item) => (acc += item), 0) *
+    -1
+  ).toFixed(2);
+
+  balance.innerText = `$${total}`;
+  money_plus.innerText = `$${income}`;
+  money_minus.innerText = `$${expense}`;
+}
+
+// Remove transaction by ID
+function removeTransaction(id) {
+  transactions = transactions.filter(transaction => transaction.id !== id);
+
+  updateLocalStorage();
+
+  init();
+}
+
+// Update local storage transactions
+function updateLocalStorage() {
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+}
+
+// Init app
+function init() {
+  list.innerHTML = '';
+
+  transactions.forEach(addTransactionDOM);
+  updateValues();
+}
+
+init();
+
+form.addEventListener('submit', addTransaction);
 ~~~
+## Section12 Blog Posts - Scroll Fetch, Async/Await, CssLoader
+UIの作成
+~~~html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="style.css" />
+    <title>My Blog</title>
+  </head>
+  <body>
+    <h1>My Blog</h1>
+
+    <div class="filter-container">
+      <input
+        type="text"
+        id="filter"
+        class="filter"
+        placeholder="Filter posts..."
+      />
+    </div>
+
+    <div id="posts-container">
+      <div class="post">
+        <div class="number">1</div>
+        <div class="post-info">
+          <h2 class="post-title">Post One</h2>
+          <p class="post-body">
+            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Fugit, cumque necessitatibus? Vero laborum beatae a ab quo dolor itaque suscipit?
+          </p>
+        </div>
+      </div>
+      <div class="post">
+        <div class="number">2</div>
+        <div class="post-info">
+          <h2 class="post-title">Post Two</h2>
+          <p class="post-body">
+            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Fugit, cumque necessitatibus? Vero laborum beatae a ab quo dolor itaque suscipit?
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="loader">
+      <div class="circle"></div>
+      <div class="circle"></div>
+      <div class="circle"></div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
+~~~
+~~~css
+@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #296ca8;
+  color: #fff;
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  padding-bottom: 100px;
+}
+
+h1 {
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.filter-container {
+  margin-top: 20px;
+  width: 80vw;
+  max-width: 800px;
+}
+
+.filter {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+}
+
+.post {
+  position: relative;
+  background-color: #4992d3;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  padding: 20px;
+  margin: 40px 0;
+  display: flex;
+  width: 80vw;
+  max-width: 800px;
+}
+
+.post .post-title {
+  margin: 0;
+}
+
+.post .post-body {
+  margin: 15px 0 0;
+  line-height: 1.3;
+}
+
+.post .post-info {
+  margin-left: 20px;
+}
+
+.post .number {
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  font-size: 15px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  color: #296ca8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+}
+
+.loader {
+  opacity: 0;
+  display: flex;
+  position: fixed;
+  bottom: 50px;
+  transition: opacity 0.3s ease-in;
+}
+
+.loader.show {
+  opacity: 1;
+}
+
+.circle {
+  background-color: #fff;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 5px;
+  animation: bounce 0.5s ease-in infinite;
+}
+
+.circle:nth-of-type(2) {
+  animation-delay: 0.1s;
+}
+
+.circle:nth-of-type(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+~~~
+上のポイント  
+***.filter-container {
+  width: 80vw;
+  max-width: 800px;
+}について***  
+幅をビューポートの幅の80％（vw）に設定し、最大幅を800ピクセルに制限する  
+幅を80vwに設定すると、コンテナの幅はビューポート幅の80％になる  
+ビューポート幅は、ビューポートの横幅のことであり、ピクセル単位で表されます。例えば、スマートフォンの縦向きのビューポート幅は通常、約320ピクセルから375ピクセルの間であり、デスクトップのビューポート幅は一般的に1200ピクセル以上になる場合があります  
+**script.jsの編集**  
+https://jsonplaceholder.typicode.com/postsを使う 他にもhttps://jsonplaceholder.typicode.com/todos、https://jsonplaceholder.typicode.com/usersなどある  
+https://jsonplaceholder.typicode.com/posts?_limit=3とすると個数制限できる  
+https://jsonplaceholder.typicode.com/posts?_limit=3&_page=2とすると次ページにいく  
+#### postsをFetchして画面に表示する
 ~~~js
+// scripts.js
+const postsContainer = document.getElementById('posts-container');
+const loading = document.querySelector('.loader');
+const filter = document.getElementById('filter');
 
+let limit = 5;
+let page = 1;
+
+// Fetch posts from API
+async function getPosts() {
+  const res = await fetch(
+    `https://jsonplaceholder.typicode.com/posts?_limit=${limit}&_page=${page}`
+  );
+  const data = await res.json();
+  return data;
+}
+// Show posts in DOM
+async function showPosts() {
+  const posts = await getPosts(); // 上のgetPostsをawaitでコールする
+  console,log(posts)
+  posts.forEach(post => {
+    const postEl = document.createElement('div');
+    postEl.classList.add('post');
+    postEl.innerHTML = `
+      <div class="number">${post.id}</div>
+      <div class="post-info">
+        <h2 class="post-title">${post.title}</h2>
+        <p class="post-body">${post.body}</p>
+      </div>
+    `;
+
+    postsContainer.appendChild(postEl);
+  });
+}
 ~~~
+#### Scroll機能を追加する
 ~~~js
+// Show loader & fetch more posts
+function showLoading() {
+  loading.classList.add('show');
 
-~~~
-~~~js
+  setTimeout(() => {
+    loading.classList.remove('show');
 
-~~~
-~~~js
+    setTimeout(() => {
+      page++;
+      showPosts(); // 次ページを表示
+    }, 300);
+  }, 1000);
+}
 
-~~~
-~~~js
+window.addEventListener('scroll', () => {
+  // console.log('scrollTop', document.documentElement.scrollTop)
+  // console.log('scrollHeight', document.documentElement.scrollHeight)
+  console.log('clientHeight', document.documentElement.clientHeight)
+  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
 
+  if (scrollTop + clientHeight >= scrollHeight - 5) {
+    console.log(123);
+    showLoading();
+  }
+});
 ~~~
-~~~js
-
-~~~
+### フィルター機能を追加する
 ~~~js
 
 ~~~

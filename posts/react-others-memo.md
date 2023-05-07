@@ -1,7 +1,7 @@
 ---
-title: 'React Redux Tutorial -1-'
+title: 'React学習のメモ2023'
 date: 'April 20, 2023'
-excerpt: 'React Reduxの基礎を学びます'
+excerpt: 'Reactの学習中でメモしたことを列挙しました'
 cover_image: '/images/posts/img1.jpg'
 category: 'React'
 author: 'Toku'
@@ -11,8 +11,8 @@ author_image: 'https://randomuser.me/api/portraits/men/13.jpg'
 <!-- Markdow generator - https://jaspervdj.be/lorem-markdownum/ -->
 
 **参考サイト**：
+#### Redux Thunk
 **セットアップ**
-#### インストール
 ```js
 user@mbp client % npm i react-router-dom axios redux react-redux
 npm install redux-thunk
@@ -206,229 +206,7 @@ export function decrementAsync() {
 ```
 上記のコードでは、redux-thunkをストアのミドルウェアとして適用するために、applyMiddleware関数を使用しています。また、actions/counterActions.jsファイルに、非同期処理を含むアクションincrementAsyncとdecrementAsyncを追加しました。これらのアクションは、1000ミリ秒の遅延を設定した後、通常のincrementとdecrementアクションをディスパッチします。これにより、非同期でカウンターの値を変更することができます。App.jsコンポーネントには、新しい非同期アクションをトリガーするための2つの新しいボタンが追加されています。  
 
-以下はTypeScriptとReactを使用してReduxを実装するための簡単なサンプルコードです。
-```js
-// store.ts
-import { createStore } from 'redux';
-import { ActionType, CounterAction } from './actions';
-
-export type CounterState = {
-  count: number;
-};
-
-const initialState: CounterState = {
-  count: 0,
-};
-
-const counterReducer = (state = initialState, action: CounterAction): CounterState => {
-  switch (action.type) {
-    case ActionType.INCREMENT:
-      return { count: state.count + 1 };
-    case ActionType.DECREMENT:
-      return { count: state.count - 1 };
-    default:
-      return state;
-  }
-};
-
-const store = createStore(counterReducer);
-
-export default store;
-
-```
-
-```js
-// actions.ts
-export enum ActionType {
-  INCREMENT = 'INCREMENT',
-  DECREMENT = 'DECREMENT',
-}
-
-type IncrementAction = {
-  type: ActionType.INCREMENT;
-};
-
-type DecrementAction = {
-  type: ActionType.DECREMENT;
-};
-
-export type CounterAction = IncrementAction | DecrementAction;
-
-export const increment = (): IncrementAction => {
-  return { type: ActionType.INCREMENT };
-};
-
-export const decrement = (): DecrementAction => {
-  return { type: ActionType.DECREMENT };
-};
-```
-
-```js
-// App.tsx
-import { useDispatch, useSelector } from 'react-redux';
-import { decrement, increment } from './actions';
-import { CounterState } from './store';
-
-const App = () => {
-  const count = useSelector((state: CounterState) => state.count);
-  const dispatch = useDispatch();
-
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <button onClick={() => dispatch(increment())}>Increment</button>
-      <button onClick={() => dispatch(decrement())}>Decrement</button>
-    </div>
-  );
-};
-
-export default App;
-```
-上記のコードでは、store.tsファイルでReduxストアを定義し、actions.tsファイルでReduxアクションを定義しています。App.tsxファイルで、useSelectorとuseDispatchフックを使用してReduxストアにアクセスし、Reduxアクションをディスパッチしています。これにより、ReactコンポーネントからReduxの状態管理を実現できます。また、Reduxストアを作成する際に、createStore関数に代わってconfigureStore関数を使用することで、TypeScriptとの統合がさらに強化されます。
-
-以下はTypeScriptとReactを使用してReduxとredux-thunkを実装するためのサンプルコードです。
-```js
-// store.ts
-import { applyMiddleware, combineReducers, createStore } from 'redux';
-import { composeWithDevTools } from 'redux-devtools-extension';
-import thunk, { ThunkAction } from 'redux-thunk';
-import { ActionType, CounterAction } from './actions';
-
-export type CounterState = {
-  count: number;
-  loading: boolean;
-};
-
-const initialState: CounterState = {
-  count: 0,
-  loading: false,
-};
-
-const counterReducer = (state = initialState, action: CounterAction): CounterState => {
-  switch (action.type) {
-    case ActionType.INCREMENT:
-      return { ...state, count: state.count + 1 };
-    case ActionType.DECREMENT:
-      return { ...state, count: state.count - 1 };
-    case ActionType.SET_LOADING:
-      return { ...state, loading: action.payload };
-    default:
-      return state;
-  }
-};
-
-const rootReducer = combineReducers({
-  counter: counterReducer,
-});
-
-export type RootState = ReturnType<typeof rootReducer>;
-
-export type AppThunk<ReturnType = void> = ThunkAction<
-  ReturnType,
-  RootState,
-  unknown,
-  CounterAction
->;
-
-const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(thunk)));
-
-export default store;
-```
-
-```js
-// actions.ts
-import { Action } from 'redux';
-import { ThunkAction } from 'redux-thunk';
-import { RootState } from './store';
-
-export enum ActionType {
-  INCREMENT = 'INCREMENT',
-  DECREMENT = 'DECREMENT',
-  SET_LOADING = 'SET_LOADING',
-}
-
-type IncrementAction = {
-  type: ActionType.INCREMENT;
-};
-
-type DecrementAction = {
-  type: ActionType.DECREMENT;
-};
-
-type SetLoadingAction = {
-  type: ActionType.SET_LOADING;
-  payload: boolean;
-};
-
-export type CounterAction = IncrementAction | DecrementAction | SetLoadingAction;
-
-export const increment = (): IncrementAction => {
-  return { type: ActionType.INCREMENT };
-};
-
-export const decrement = (): DecrementAction => {
-  return { type: ActionType.DECREMENT };
-};
-
-export const setLoading = (loading: boolean): SetLoadingAction => {
-  return { type: ActionType.SET_LOADING, payload: loading };
-};
-
-export const incrementAsync = (): ThunkAction<void, RootState, unknown, Action<string>> => {
-  return async (dispatch) => {
-    dispatch(setLoading(true));
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    dispatch(increment());
-    dispatch(setLoading(false));
-  };
-};
-
-```
-
-```js
-// App.tsx
-import { useDispatch, useSelector } from 'react-redux';
-import { decrement, increment, incrementAsync } from './actions';
-import { CounterState } from './store';
-
-const App = () => {
-  const { count, loading } = useSelector((state: CounterState) => state.counter);
-  const dispatch = useDispatch();
-
-  const handleIncrement = () => {
-    dispatch(increment());
-  };
-
-  const handleDecrement = () => {
-    dispatch(decrement());
-  };
-
-  const handleIncrementAsync = () => {
-    dispatch(incrementAsync());
-  };
-
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <button onClick={handleIncrement} disabled={loading}>
-        Increment
-      </button>
-      <button onClick={handleDecrement} disabled={loading}>
-        Decrement
-      </button>
-      <button onClick={handleIncrementAsync} disabled={loading}>
-        Increment Async
-      </button>
-    </div>
-  );
-};
-
-export default App;
-```
-以下はTypeScriptとReactを使用してReduxとredux-thunkを実装したtodolistアプリの例です。
-
-まず、Reduxのアプリケーションステートの形式を定義するために、src/types.tsファイルを作成します。
-## その他メモ  
+## タグをスタイル
 Reactではタグをスタイルするときはキャメルケースで書き{{}} 2
 重波括弧を使う
 ```js
@@ -444,6 +222,180 @@ Reactではタグをスタイルするときはキャメルケースで書き{{}
 <span style={{ textDecoration: 'overline' }}>上線が表示されるテキスト</span>
 
 <span style={{ textDecoration: 'none' }}>下線、取り消し線、上線がないテキスト</span>
-
-
 ```
+
+### javascriptでpushを使うのにreactで使わない理由
+eactでの配列操作において、直接push()メソッドを使うと、元の配列を変更してしまうため、Reactが正常に機能しなくなる可能性があります。Reactでは、直接配列を変更するのではなく、新しい配列を生成することを推奨しています。このように、新しい配列を生成してから、その新しい配列をReactに渡すことで、Reactのパフォーマンスや機能性を維持することができます。このように、Reactでは、push()メソッドの代わりに、concat()メソッドやスプレッド演算子を使用することが推奨されます。  
+Reactでコンポーネントを再描画する場合、そのコンポーネントの状態が変更されたかどうかを判断するために、Reactは内部的に前の状態と現在の状態を比較しています。この比較は非常に高速であり、配列やオブジェクトの変更の検出にも非常に有効ですが、配列のpush()メソッドを使用する場合、Reactはこれを新しい配列に変更されたと誤解してしまうため、再描画されません。
+例えば、以下のようなコンポーネントを考えてみましょう。
+~~~js
+function Example() {
+  const [items, setItems] = useState([1, 2, 3]);
+
+  function handleClick() {
+    items.push(4);
+    setItems(items);
+  }
+
+  return (
+    <div>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+      <button onClick={handleClick}>Add Item</button>
+    </div>
+  );
+}
+~~~
+このコンポーネントは、itemsという状態を持ち、ボタンがクリックされたときにitemsに新しい要素を追加することができます。しかし、このコードでは、配列に新しい要素を追加する代わりに、配列自体を変更しています。そのため、Reactは新しい配列を検出せず、再描画が発生しません。  
+代わりに、新しい配列を生成してsetItems()関数に渡すことができます。
+~~~js
+import React, { useState } from 'react'
+
+function ArrayOperation() {
+  const [items, setItems] = useState(['item 1', 'item 2', 'item 3'])
+
+  const handleAdd = () => {
+    setItems([...items, `item ${items.length + 1}`])
+  }
+
+  const handleDelete = (index) => {
+    const updatedItems = items.filter((item, i) => i !== index)
+    setItems(updatedItems)
+  }
+
+  return (
+    <div>
+      <h2>Items:</h2>
+      <ul>
+        {items.map((item, index) => (
+          <li key={index}>
+            {item}
+            <button onClick={() => handleDelete(index)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+      <button onClick={handleAdd}>Add Item</button>
+    </div>
+  )
+}
+export default ArrayOperation
+~~~
+Reactにおいて、配列から特定の要素を削除するには、配列の操作をする必要があります。具体的には、Array.prototype.filter()を使用して、削除したい要素以外の要素を残した新しい配列を作成することができます。  
+~~~js
+import React, { useState } from 'react'
+import {v4 as uuidv4} from 'uuid'
+
+function ArrayOperation() {
+  const [items, setItems] = useState([
+    {
+    id : 1,
+    item : 'item 1'
+    },
+    {
+    id : 2,
+    item : 'item 2'
+    },
+    {
+    id : 3,
+    item : 'item 3'
+    }
+  ])
+
+  const handleAdd = () => {
+    const newEl = {
+      id: uuidv4(),
+      item: `item ${items.length + 1}`
+    }
+    setItems([...items, newEl])
+  }
+
+  const handleDelete = (id) => {
+    const updatedItems = items.filter((item) => item.id !== id)
+    setItems(updatedItems)
+  }
+
+  return (
+    <div>
+      <h2>Items:</h2>
+      <ul>
+        {items.map((item) => (
+          <li key={item.id}>
+            {item.item}
+            <button onClick={() => handleDelete(item.id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+      <button onClick={handleAdd}>Add Item</button>
+    </div>
+  )
+}
+export default ArrayOperation
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
+
+~~~js
+
+~~~
