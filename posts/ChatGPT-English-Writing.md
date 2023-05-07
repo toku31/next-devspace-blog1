@@ -124,8 +124,11 @@ In addition, providing breakfast at school can help to teach children healthy ea
 
 In conclusion, breakfast is the most important meal of the day, and schools have a responsibility to ensure that all children have access to a nutritious meal. By providing breakfast at school, schools can improve academic performance, reduce food insecurity, and teach healthy eating habits. Therefore, I strongly agree that schools should provide breakfast for their students.
 
+## 環境問題
 ```Question
-Environmental problems are becoming increasingly severe in many parts of the world. What are the causes of these problems and what measures can individuals and governments take to address them? Provide relevant examples and support your arguments with evidence.
+Environmental problems are becoming increasingly severe in many parts of the world. 
+What are the causes of these problems and what measures can individuals and governments take to address them? 
+Provide relevant examples and support your arguments with evidence.
 ```
 Environmental problems have become a serious concern for our planet. The root causes of these problems are varied, but can be broadly classified into three categories: human activities, natural disasters, and climate change.
 
@@ -139,9 +142,31 @@ To address these environmental problems, individuals and governments can take se
 
 In conclusion, environmental problems are caused by a range of factors, including human activities, natural disasters, and climate change. It is essential that we take immediate action to address these problems and ensure a sustainable future for our planet.
 ```Question
-
+Smoking and drinking alcohol lead to increased health care costs. 
+Is it therefore necessary for smokers and drinkers to pay higher medical insurance rates. 
+To what extent do you agree or disagree with this opinion?
 ```
+解答例1 
+Smoking and drinking too much alcohol can cause serious health problems, which can be expensive to treat. Some people think that smokers and drinkers should have to pay more for medical insurance because they are more likely to get sick. However, others believe that this is not fair or helpful.
 
+On the one hand, people who support higher rates argue that smokers and drinkers are more likely to get sick, and should therefore pay more for their healthcare. This is because smoking can cause lung cancer and heart disease, and drinking too much alcohol can damage the liver and cause other health problems.
+
+On the other hand, others think that charging higher rates is not a good idea. They say that some health problems are not caused by lifestyle choices, and that higher rates could make it harder for smokers and drinkers to get the medical help they need.
+
+Personally, I think that it is better to focus on preventing health problems and helping people who are struggling with addiction. By promoting healthy lifestyles and providing support, we can reduce the number of people who get sick and lower healthcare costs overall.
+
+Overall, while some people think that smokers and drinkers should pay more for medical insurance, I believe that prevention and education are better ways to address the issue of healthcare costs.
+
+解答例2
+Smoking and drinking alcohol are habits that can lead to serious health problems, which can be expensive to treat. Some people argue that smokers and drinkers should pay more for medical insurance because they are more likely to get sick. However, others believe that this approach is unfair and may not be effective in reducing healthcare costs.
+
+On one hand, proponents of higher insurance rates argue that smokers and drinkers should be responsible for their own health problems. They point out that smoking can cause lung cancer and heart disease, and drinking too much alcohol can damage the liver and lead to other health issues. By charging higher rates for medical insurance, they believe that smokers and drinkers will be more motivated to quit these harmful habits.
+
+On the other hand, opponents of higher insurance rates argue that such a policy is unfair to people who are addicted to smoking or drinking. They argue that addiction is a disease, and that charging higher rates for medical insurance is not the best way to help people overcome their addiction. Additionally, some people develop health problems even if they do not smoke or drink excessively, so it would not be fair to charge them higher rates.
+
+In my opinion, it is important to focus on prevention and education rather than simply charging higher rates for medical insurance. By promoting healthy lifestyles and educating people about the risks of smoking and drinking, we can reduce the number of people who develop health problems. Additionally, we should provide support and resources for people who are struggling with addiction, rather than punishing them with higher insurance rates.
+
+In conclusion, while some people argue that smokers and drinkers should pay more for medical insurance, I believe that prevention, education, and support are better ways to address the issue of healthcare costs.
 ```Question
 
 ```
