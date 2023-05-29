@@ -107,7 +107,10 @@ Secondly, free Wi-Fi would attract more visitors and businesses to the community
 
 Lastly, free Wi-Fi would improve public safety and emergency response. In the event of a natural disaster or emergency, Wi-Fi networks can be used to communicate important information and coordinate relief efforts. It would also help police and emergency services to respond more quickly to incidents.
 
-In conclusion, providing community-wide free Wi-Fi would have many benefits for local communities. It would help bridge the digital divide, attract more visitors and businesses, and improve public safety and emergency response. Therefore, I strongly agree that city and local governments should provide free Wi-Fi to their communities.
+In conclusion, providing community-wide free Wi-Fi would have many benefits for local communities. It would help bridge the digital divide, attract more visitors and businesses, and improve public safety and emergency response. Therefore, I strongly agree that city and local governments should provide free Wi-Fi to their communities.  
+
+その他参考：https://tokyoapartmentinc.com/foreigners/internet/202006151309.html
+
 ```Question
 can you write an essay on the following topic? 
 Agree or disagree? breakfast is the most important meal of the day. Therefore schools provide breakfast for school children. 

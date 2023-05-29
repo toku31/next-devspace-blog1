@@ -1319,16 +1319,128 @@ window.addEventListener('scroll', () => {
 ~~~
 ### フィルター機能を追加する
 ~~~js
+// Filter posts by input
+function filterPosts(e) {
+  const term = e.target.value.toLowerCase();
+  const posts = document.querySelectorAll('.post');
 
+  posts.forEach(post => {
+    const title = post.querySelector('.post-title').innerText.toLowerCase();
+    const body = post.querySelector('.post-body').innerText.toLowerCase();
+
+    if (title.indexOf(term) > -1 || body.indexOf(term) > -1) {
+      console.log('flex')
+      post.style.display = 'flex';
+    } else {
+      post.style.display = 'none';
+    }
+  });
+}
+~~~
+フィルター機能のサンプル
+~~~html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>記事検索</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>記事検索</h1>
+      <input type="text" id="searchBox" placeholder="検索...">
+      <ul id="postList"></ul>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
+~~~
+~~~css
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  margin-bottom: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+p {
+  font-size: 1rem;
+}
 ~~~
 ~~~js
+const searchBox = document.getElementById('searchBox');
+const postList = document.getElementById('postList');
+const posts = [
+  {
+    title: '最新の技術動向について',
+    content: '最近、人工知能やブロックチェーンなど、様々な技術が注目を集めています。'
+  },
+  {
+    title: '旅行記：アジアの美しい景色',
+    content: 'アジアには素晴らしい景色がたくさんあります。私が訪れた中で特に印象に残った場所を紹介します。'
+  },
+  {
+    title: '美味しい料理を作るコツ',
+    content: '料理初心者でも簡単にできる、美味しい料理の作り方を紹介します。'
+  }
+];
 
-~~~
-~~~js
+function searchPosts(e) {
+  // const searchWord = searchBox.value.toLowerCase();　　// OK
+  const searchWord = e.target.value.toLowerCase()
+  postList.innerHTML = '';
+  // for (let i = 0; i < posts.length; i++) {
+  posts.forEach(post => {
+    // const post = posts[i];
+    if (post.title.toLowerCase().includes(searchWord) || post.content.toLowerCase().includes(searchWord)) {
+      const li = document.createElement('li')
+      li.innerHTML = `
+          <h2>${post.title}</h2>
+          <p>${post.content}</p>
+      `
+      // const li = document.createElement('li');
+      // const h2 = document.createElement('h2');
+      // h2.textContent = post.title;
+      // const p = document.createElement('p');
+      // p.innerText = post.content;
+      // li.appendChild(h2);
+      // li.appendChild(p);
+      postList.appendChild(li);
+    }
+  })
+  }
 
-~~~
-~~~js
-
+searchBox.addEventListener('keyup', searchPosts);
 ~~~
 ~~~js
 
