@@ -171,9 +171,19 @@ In my opinion, it is important to focus on prevention and education rather than 
 
 In conclusion, while some people argue that smokers and drinkers should pay more for medical insurance, I believe that prevention, education, and support are better ways to address the issue of healthcare costs.
 ```Question
-
+Title: Should Smokers and Drinkers Be Charged Higher Medical Insurance Rates?
 ```
+Introduction (approx. 40 words):  
+This essay explores the question of whether smokers and drinkers should pay higher medical insurance rates due to the increased healthcare costs associated with their habits. While some argue for the fairness of this approach, others highlight alternative considerations.
 
+Body Paragraph 1 (approx. 90 words):  
+Supporters of higher medical insurance rates for smokers and drinkers contend that these individuals contribute to rising healthcare costs. Smoking and excessive alcohol consumption are known to lead to various health conditions that necessitate costly medical treatments. By imposing higher insurance rates, the responsibility for these costs is placed on those who engage in these habits. This approach is seen as equitable, as it holds individuals accountable for their lifestyle choices and helps alleviate the financial strain on healthcare systems.
+
+Body Paragraph 2 (approx. 90 words):  
+However, opponents argue against higher medical insurance rates for smokers and drinkers, raising concerns about fairness and discrimination. They assert that healthcare costs are influenced by multiple factors, and singling out these individuals is unfair. Moreover, higher rates may discourage smokers and drinkers from seeking necessary healthcare services, potentially worsening their conditions and overall costs. A more comprehensive approach that emphasizes prevention, education, and support for healthy lifestyle choices could be a more effective and just solution.
+
+Conclusion (approx. 30 words):  
+In conclusion, the question of whether smokers and drinkers should pay higher medical insurance rates is complex. While some support this measure as fair, others emphasize the importance of comprehensive strategies promoting health and well-being for all individuals.
 ```Question
 
 ```
