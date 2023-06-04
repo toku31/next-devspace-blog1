@@ -54,6 +54,17 @@ d) 調査や研究の場面で
 5. b) 悪口や中傷の場面で
 
 ```
+「equitable」と「equable」は似ていますが、意味と用法が異なります。
+
+「Equitable」は形容詞であり、公正で公平なことを意味します。これは、人々や社会の間での公正な分配や扱いを指します。例えば、公平な分配や公正な法的手続きに関連する場合に使用されます。
+
+例：The judge ensured an equitable distribution of the inheritance among the heirs.
+
+一方、「Equable」も形容詞ですが、比較的穏やかで変化が少ないことを表現します。これは、気候や気質のようなものが一貫して安定している状態を指します。穏やかで安定した状態を示すため、感情や気質の表現に使用されることがあります。
+
+例：She has an equable temperament and rarely gets upset.
+
+したがって、「equitable」は公正性や公平性を指し、「equable」は穏やかさや安定性を指します。両者は意味的に異なるため、注意が必要です。
 ```Question
 
 ```
