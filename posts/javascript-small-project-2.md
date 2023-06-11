@@ -1,6 +1,6 @@
 ---
 title: 'JavaScript Small Project -2-'
-date: 'September30, 2022'
+date: 'June 9, 2023'
 excerpt: 'JavaScriptで簡単なプロジェクトを作成していきます。今回はその2回目です'
 cover_image: '/images/posts/img1.jpg'
 category: 'JavaScript'
