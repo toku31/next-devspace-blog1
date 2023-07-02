@@ -278,19 +278,289 @@ itemForm.addEventListener('submit', addItem)
 itemList.addEventListener('click', removeItem)
 clearBtn.addEventListener('click', clearItems)
 ~~~
+### 検索欄で入力した文字を含むITEMを表示するフィルター機能の追加
+~~~js
+const filter = document.getElementById('filter');
 
+function filterItems(e) {
+  //console.log(filter.value)
+  const text = e.target.value.toLowerCase()
+  console.log(text);
+  // const items = document.querySelectorAll('li')
+  // querySelectorAllを使った時はArray.fromは不要　items.forEachでOK
+  const items = document.getElementsByTagName('li')
+  console.log(items); // htmlElement
+  // getElementsByTagNameを使ったときArray.fromが必要
+  Array.from(items).forEach((item) => {
+      console.log(item)
+      console.log('firstChild: ', item.firstChild)
+      const itemName = item.firstChild.textContent
+      console.log(itemName)
+      if (itemName.indexOf(text) != -1){
+        console.log(true);
+        item.style.display = 'flex'
+      }else {
+        console.log(false);
+        item.style.display = 'none'
+      }
+
+  } )
+
+  // console.log(items[0].innerText)
+  // for (let item of items) {
+  //   console.log(item.innerText)
+  //   if (item.innerText.includes(text)){
+  //     item.style.display = 'block'
+  //   }else  {
+  //     item.style.display = 'none'
+  //   }
+  // }
+}
+
+filter.addEventListener('input', filterItems)
+~~~
+itemをLocal Storageに追加する
+~~~js
+  // add item to local storage
+  addItemToStorage(newItem)
+
+function addItemToStorage(item) {
+  let itemsFromStorage
+
+  if(localStorage.getItem('items') === null) {
+    itemsFromStorage = [];
+  } else {
+    itemsFromStorage = JSON.parse(localStorage.getItem('items'))
+  }
+  itemsFromStorage.push(item)
+  // Convert to JSON string and set to local storage
+  localStorage.setItem('items', JSON.stringify(itemsFromStorage))
+}
+~~~
+LocalStorageからItemを取得する
+~~~js
+function getItemFromStorage() {
+  let itemsFromStorage
+
+  if(localStorage.getItem('items') === null) {
+    itemsFromStorage = [];
+  } else {
+    itemsFromStorage = JSON.parse(localStorage.getItem('items'))
+  }
+  return itemsFromStorage
+}
+~~~
+getItemFromStorageを使ってaddItemToStorage(item) を書き直す
+~~~js
+function addItemToStorage(item) {
+  let itemsFromStorage = getItemFromStorage()
+
+  itemsFromStorage.push(item)
+  // Convert to JSON string and set to local storage
+  localStorage.setItem('items', JSON.stringify(itemsFromStorage))
+}
+~~~
+## 最初にロードされた時にlocasStrageにあるitemsを全て表示するdisplayItems
+~~~js
+function displayItems(){
+  let itemsFromStorage = getItemFromStorage()
+  itemsFromStorage.forEach((item)=> addItemToDom(item))
+  checkUI()
+}
+
+// 各liタグの数をチェックして０個の時はクリアボタンとフィルターボタンを削除する
+function checkUI(){
+  const items = document.querySelectorAll('li')
+  console.log('items', items)
+  console.log('items.length', items.length)
+  if (items.length==0){
+    clearBtn.style.display = 'none'
+    filter.style.display = 'none'
+  } else {
+    clearBtn.style.display = 'block'
+    filter.style.display = 'block'
+  }
+}
+
+document.addEventListener('DOMContentLoaded', displayItems)
+~~~
+イベントリスナーを全てinit()関数にまとめる
+~~~js
+// Event Listeners
+function init(){
+  itemForm.addEventListener('submit', onAddItemSubmit)
+  itemList.addEventListener('click', removeItem)
+  clearBtn.addEventListener('click', clearItems)
+  filter.addEventListener('input', filterItems)
+  document.addEventListener('DOMContentLoaded', displayItems)
+  
+  checkUI()
+}
+
+init()
+~~~
+### Remove items from localStorage
+↓のremoveItem(item) 処理を修正してonClickItemで呼ぶようにする
+~~~js
+function removeItem(item) {
+  console.log('classList', e.target.parentElement.classList)
+  if (e.target.parentElement.classList.contains('remove-item')){
+    if (confirm('Are you sure?')){
+      console.log('click')
+      e.target.parentElement.parentElement.remove()
+      checkUI()
+    }
+  }
+}
+~~~
+修正後はonClickItemからremoveItem(item) を呼んでいる
+~~~js
+function onClickItem(e){
+  console.log('click')
+  if (e.target.parentElement.classList.contains('remove-item')){
+    console.log('contain')
+    removeItem(e.target.parentElement.parentElement)
+  }
+}
+
+function removeItem(item) {
+  console.log(item)
+  console.log('item.textContent: ', item.textContent)
+  if (confirm('Are you sure?')){
+    item.remove()
+
+    // Remove item from storage
+    removeItemFromStorage();
+
+    checkUI()
+  }
+
+
+function init(){
+  // itemList.addEventListener('click', removeItem)
+  itemList.addEventListener('click', onClickItem)
+
+  checkUI()
+}
+
+init()
+~~~
+~~~js
+function removeItem(item) {
+  console.log(item)
+  console.log('item.textContent: ', item.textContent)
+  if (confirm('Are you sure?')){
+    item.remove()
+
+    // Remove item from storage
+    removeItemFromStorage();
+
+    checkUI()
+  }
+}
+~~~
+### 各Itemの内容を編集できるようにする 104
+~~~js
+const formBtn = itemForm.querySelector('Button') // Add Item のボタン
+let isEditMode = false
+
+function onClickItem(e){
+  console.log('click')
+  if (e.target.parentElement.classList.contains('remove-item')){
+    console.log('contain')
+    removeItem(e.target.parentElement.parentElement)
+  } else {
+    console.log('not remove-item');
+    setItemToEdit(e.target)
+  }
+}
+
+function setItemToEdit(item) {
+  console.log('setItemToEdit', item)
+  isEditMode = true;
+  itemList.querySelectorAll('li').forEach(i => i.classList.remove('edit-mode'))
+  // item.style.color = '#ccc'
+  item.classList.add('edit-mode')
+  formBtn.innerHTML = '<i class="fa-solid fa-pen"></i> Itemの編集'
+  formBtn.style.backgroundColor = '#228B22';
+  itemInput.value = item.textContent
+}
+~~~
 ~~~js
 
 ~~~
-
 ~~~js
 
 ~~~
-
 ~~~js
 
 ~~~
+~~~js
 
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
+~~~js
+
+~~~
 ~~~js
 
 ~~~

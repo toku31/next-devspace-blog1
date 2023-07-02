@@ -79,7 +79,276 @@ if __name__ == '__main__':
   # print(l.head.next.data)
   # print(l.head.next.next.data)
 ```
+Python Tutorials:Singly Linked List  
+https://www.youtube.com/watch?v=xRTdfZsAz6Y&t=666s
+```python
+class Node:
+  def __init__(self, data):
+    self.data = data
+    self.ref = None
+    
+# node1 = Node(10)
+# print(node1)
 
+class LinkedList:
+  def __init__(self):
+    self.head = None
+    
+  def print_LL(self):
+    if self.head == None:
+      print('linked list is empty!')
+    else:
+      n = self.head
+      while n is not None:
+        print(n.data)
+        n = n.ref
+        
+LL1 = LinkedList()
+LL1.print_LL() // linked list is empty!
+```
+Inserting/Adding Elements At The Beginning Of The Linked List  
+https://www.youtube.com/watch?v=B-zO18TJKYQ&t=70s
+```python
+  def add_begin(self ,data):
+    new_node = Node(data)
+    new_node.ref = self.head
+    self.head = new_node
+        
+LL1 = LinkedList()
+LL1.add_begin(10)
+LL1.add_begin(20)
+LL1.print_LL()
+```
+双方向リンクリスト
+```python
+from __future__ import annotations
+from typing import Any, Optional
+
+class Node(object):
+  def __init__(self, data: Any, next_node: Node= None, prev_node: Node= None) -> None:
+    self.data = data
+    self.next = next_node
+    self.prev = prev_node
+    
+class DoublyLInkedList(object):
+  def __init__(self, head: Node = None) -> None:
+    self.head = head
+    
+  def append(self, data:Any) -> None:
+    new_node = Node(data)
+    if self.head is None:
+      self.head = new_node
+      return
+    
+    current_node = self.head
+    while current_node.next:
+      current_node = current_node.next
+    current_node.next = new_node
+    new_node.prev = current_node
+    
+  def insert(self, data: Any) -> None:
+    new_node = Node(data)
+    if self.head is None:
+      self.head = new_node
+      return
+    
+    self.head.prev = new_node
+    new_node.next = self.head
+    self.head = new_node
+    
+  def print(self) -> None:
+    current_node = self.head
+    while current_node:
+      print(current_node.data)
+      current_node = current_node.next
+      
+      
+  def remove(self, data: Any) -> Node:
+    current_node = self.head
+    if current_node and current_node.data == data:
+      if current_node.next is None:
+        current_node = None
+        self.head = None
+        return
+      else:
+        next_node = current_node.next
+        next_node.prev = None
+        current_node = None
+        self.head = next_node
+        return
+      
+    while current_node and current_node.data != data:
+      current_node = current_node.next
+      
+    if current_node is None:
+      return  # 一致するデータがなかった時
+    
+    if current_node.next is None:  #最後尾のNode
+      prev = current_node.prev
+      prev.next = None
+      current_node = None
+      return
+    else:
+      next_node = current_node.next  # 中間にあるNode
+      prev_node = current_node.prev
+      prev_node.next = next_node
+      next_node.prev = prev_node
+      current_node = None
+      return
+      
+
+if __name__ == '__main__':
+  d = DoublyLInkedList()
+  d.append(0)
+  d.append(1)
+  d.append(2)
+  d.append(3)
+  d.print()
+  print("########")
+  d.remove(2)
+  d.print()
+  # print(d.head.data)
+  # print(d.head.next.data)
+  # print(d.head.next.next.data)
+  # print(d.head.next.next.next.data)
+  # print(d.head.next.next.prev.prev.data)
+```
+双方向リンクリストを逆方向に並び変える
+```python
+  def reverse_iterative(self) ->None:
+    previous_node = None
+    current_node = self.head
+    while current_node:
+      previous_node = current_node.prev
+      current_node.prev = current_node.next
+      current_node.next = previous_node
+      
+      # 次のカレントノードに移る
+      current_node = current_node.prev
+    
+    if previous_node:
+      self.head = previous_node.prev
+      
+  def reverse_recursive(self) -> None:
+    def _reverse_recursive(current_node: Node) -> Optional[Node]:
+      if not current_node:
+        return Node
+      
+      previous_node = current_node.prev
+      current_node.prev = current_node.next
+      current_node.next = previous_node
+      
+      if current_node.prev is None:
+        return current_node
+      
+      return _reverse_recursive(current_node.prev)
+    
+    self.head = _reverse_recursive(self.head)
+
+if __name__ == '__main__':
+  d = DoublyLInkedList()
+  d.append(0)
+  d.append(1)
+  d.append(2)
+  d.append(3)
+  d.print()
+  print("########")
+  # d.remove(2)
+  d.reverse_iterative()
+  d.print()
+  print("########")
+  d.reverse_recursive()
+  d.print()
+```
+ソートして並び替える
+```python
+  def sort(self)-> None:
+    if self.head is None:
+      return
+    
+    current_node = self.head
+    # 1, 5, 2, 9
+    while current_node.next:
+      # print(current_node.data)
+      next_node = current_node.next
+      while next_node:
+        if current_node.data > next_node.data:
+          current_node.data, next_node.data = next_node.data, current_node.data
+        next_node = next_node.next
+      
+      current_node = current_node.next
+
+if __name__ == '__main__':
+  d = DoublyLInkedList()
+  d.append(1)
+  d.append(5)
+  d.append(2)
+  d.append(9)
+  d.print()
+  print("######## Sort")
+  d.sort()
+  d.print()
+```
+### ハッシュテーブル
+```python
+import hashlib
+
+class HashTable(object):
+  
+  def __init__(self, size = 10) -> None:
+    self.size = size
+    self.table = [ [] for _ in range(self.size)]
+    
+  def hash(self, key) -> int:
+  
+if __name__ == '__main__':
+  hash_table = HashTable()
+  print(hash_table.table)
+```
+user@mbp hash_table % python main.py
+[[], [], [], [], [], [], [], [], [], []]
+user@mbp hash_table % python 
+Python 3.10.3 (main, Apr 23 2022, 13:42:19) [Clang 13.1.6 (clang-1316.0.21.2)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import hashlib
+>>> hashlib.md5('car')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: Strings must be encoded before hashing
+>>> hashlib.md5('car'.endcode()
+... )
+>>> hashlib.md5('car'.encode())
+<md5 _hashlib.HASH object @ 0x102bd05d0>
+>>> hashlib.md5('car'.encode()).hexdigest()
+'e6d96502596d7e7887b76646c5f615d9'
+>>> int(hashlib.md5('car'.encode()).hexdigest())
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ValueError: invalid literal for int() with base 10: 'e6d96502596d7e7887b76646c5f615d9'
+>>> int(hashlib.md5('car'.encode()).hexdigest(), base=16)
+306851216158335538240511469114392712665
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
 ```python
 
 ```
