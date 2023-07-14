@@ -297,26 +297,27 @@ class HashTable(object):
   
   def __init__(self, size = 10) -> None:
     self.size = size
-    self.table = [ [] for _ in range(self.size)]
+    self.table = [ [] for _ in range(self.size)]  #[[], [], [], [], []]
     
   def hash(self, key) -> int:
-  
+    return int(hashlib.md5(key.encode()).hexdigest(), base=16) % self.size
+    
 if __name__ == '__main__':
   hash_table = HashTable()
   print(hash_table.table)
+  print(hash_table.hash('car'))
 ```
 user@mbp hash_table % python main.py
-[[], [], [], [], [], [], [], [], [], []]
-user@mbp hash_table % python 
-Python 3.10.3 (main, Apr 23 2022, 13:42:19) [Clang 13.1.6 (clang-1316.0.21.2)] on darwin
-Type "help", "copyright", "credits" or "license" for more information.
+[[], [], [], [], [], [], [], [], [], []]  
+user@mbp hash_table % python  
+Python 3.10.3 (main, Apr 23 2022, 13:42:19) [Clang 13.1.6 (clang-1316.0.21.2)] on darwin  
+Type "help", "copyright", "credits" or "license" for more information.  
+```python
 >>> import hashlib
 >>> hashlib.md5('car')
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-TypeError: Strings must be encoded before hashing
->>> hashlib.md5('car'.endcode()
-... )
+Traceback (most recent call last):  
+  File "<stdin>", line 1, in <module>  
+TypeError: Strings must be encoded before hashing  
 >>> hashlib.md5('car'.encode())
 <md5 _hashlib.HASH object @ 0x102bd05d0>
 >>> hashlib.md5('car'.encode()).hexdigest()
@@ -327,23 +328,126 @@ Traceback (most recent call last):
 ValueError: invalid literal for int() with base 10: 'e6d96502596d7e7887b76646c5f615d9'
 >>> int(hashlib.md5('car'.encode()).hexdigest(), base=16)
 306851216158335538240511469114392712665
+```
+carやPCなどある文字列を入力するとそれぞれ必ず同じ数列が戻ってくる  
+Pythonのforループでは、elseブロックを使用することができます。elseブロックは、forループが終了した後に実行されるコードブロックです。forループが正常に終了した場合にのみ実行され、breakステートメントによってループが中断された場合は実行されません。
 ```python
+fruits = ['apple', 'banana', 'orange']
 
+for fruit in fruits:
+    if fruit == 'banana':
+        print("I found the banana!")
+        break
+else:
+    print("The banana is not in the list.")
 ```
 
 ```python
+import hashlib
 
+class HashTable(object):
+  
+  def __init__(self, size = 10) -> None:
+    self.size = size
+    self.table = [ [] for _ in range(self.size)]  #[[], [], [], [], []]
+    
+  def hash(self, key) -> int:
+    return int(hashlib.md5(key.encode()).hexdigest(), base=16) % self.size
+  
+  def add(self, key, value) -> None:
+    index = self.hash(key)
+    for data in self.table[index]:
+      if data[0] == key:
+        data[1] = value
+        break
+    else:
+      self.table[index].append([key, value])
+    
+if __name__ == '__main__':
+  hash_table = HashTable()
+  # print(hash_table.table)
+  # print(hash_table.hash('car'))
+  hash_table.add('car', 'Tesla')
+  hash_table.add('car', 'Toyota')
+  print(hash_table.table) # [[], [], [], [], [], [['car', 'Toyota']], [], [], [], []]
+```
+from typing import Anyは、PythonのtypingモジュールからAnyという型ヒントをインポートしていることを示します。  
+Anyは、Pythonの型ヒントの一つで、あらゆる型を表す特殊な型です。つまり、変数や関数の引数、戻り値などに対して「どんな型でも良い」という意味を持ちます。具体的な型を指定せずに柔軟性を持たせたい場合に使用されます。
+例えば、以下のように関数の引数にAnyを指定することで、どんな型の引数でも受け入れることができます。
+```python
+def print_value(value: Any) -> None:
+    print(value)
+```
+Getメソッドの作成
+```python
+  from typing import Any
+  def get(self, key) -> Any:
+    index = self.hash(key)
+    for data in self.table[index]:
+      if data[0] == key:
+        return data[1]
+
+ print(hash_table.get('car')) # Toyota
 ```
 
 ```python
+import hashlib
 
-```
-```python
-
-```
-
-```python
-
+class HashTable(object):
+  
+  def __init__(self, size = 10) -> None:
+    self.size = size
+    self.table = [ [] for _ in range(self.size)]  #[[], [], [], [], []]
+    
+  def hash(self, key) -> int:
+    return int(hashlib.md5(key.encode()).hexdigest(), base=16) % self.size
+  
+  def add(self, key, value) -> None:
+    index = self.hash(key)
+    for data in self.table[index]:
+      if data[0] == key:
+        data[1] = value
+        break
+    else:
+      self.table[index].append([key, value])
+      
+  def print(self) -> None:
+    for index in range(self.size):
+      print(index, end=' ')  # 改行されなくなる
+      for data in self.table[index]:
+        print("===>", end=' ')
+        print(data, end=' ')
+      print()
+      
+      
+  from typing import Any
+  def get(self, key) -> Any:
+    index = self.hash(key)
+    for data in self.table[index]:
+      if data[0] == key:
+        return data[1]
+      
+   # hash_table['car'] = 'Tesla' という形式で設定できる
+  def __setitem__(self, key, value) -> None:
+    self.add(key, value)
+    
+  # hash_table['sns'] という形式で取得できる
+  def __getitem__(self, key):
+    return self.get(key)
+    
+    
+if __name__ == '__main__':
+  hash_table = HashTable()
+  # print(hash_table.table)
+  # print(hash_table.hash('car'))
+  hash_table['car'] = 'Tesla'
+  hash_table.add('car', 'Toyota')
+  hash_table.add('pc', 'Mac')
+  hash_table.add('sns', 'Youtube')
+  # print(hash_table.table)
+  hash_table.print()
+  print(hash_table.get('car'))
+  print(hash_table['sns'])
 ```
 
 ```python

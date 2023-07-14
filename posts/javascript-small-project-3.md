@@ -486,19 +486,143 @@ function setItemToEdit(item) {
   itemInput.value = item.textContent
 }
 ~~~
+### 編集の値の更新とボタンや入力欄の初期化
+~~~js
+let isEditMode = false
+
+function onAddItemSubmit(e) {
+  e.preventDefault()
+
+  const newItem = itemInput.value 
+  // const newItem = e.target.value NG
+  // Validate Input
+  if ( newItem === "" ){
+    alert('Please add an item')
+    return;   // Exit Sub
+  }
+  // console.log('success')
+
+  // Check for edit mode　　　★★★★★　Added
+  if (isEditMode) {
+    const itemToEdit = itemList.querySelector('.edit-mode')
+    removeItemFromStorage(itemToEdit.textContent)
+    // itemToEdit.classList.remove('edit-mode')
+    itemToEdit.remove()
+    isEditMode = false
+  }
+
+  // Create list item Dom element
+  addItemToDom(newItem)
+  // add item to local storage
+  addItemToStorage(newItem)
+
+  checkUI()
+  itemInput.value = ""
+}
+
+// リセットする
+function checkUI(){
+  itemInput.value = ''  // ★★★★★　Added
+  
+  const items = document.querySelectorAll('li')
+  console.log('items', items)
+  console.log('items.length', items.length)
+  if (items.length==0){
+    clearBtn.style.display = 'none'
+    filter.style.display = 'none'
+  } else {
+    clearBtn.style.display = 'block'
+    filter.style.display = 'block'
+  }
+
+  // ★★★★★　Added
+  formBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Itemの追加'
+  formBtn.style.backgroundColor = '#333';
+}
+~~~
+### 重複したitemの入力をさせないようにする
 ~~~js
 
-~~~
-~~~js
+function onAddItemSubmit(e) {
+  e.preventDefault()
+
+  const newItem = itemInput.value 
+  // const newItem = e.target.value NG
+  // Validate Input
+  if ( newItem === "" ){
+    alert('Please add an item')
+    return;   // Exit Sub
+  }
+
+  // Check for edit mode
+  if (isEditMode) {
+    const itemToEdit = itemList.querySelector('.edit-mode')
+    removeItemFromStorage(itemToEdit.textContent)
+    // itemToEdit.classList.remove('edit-mode')
+    itemToEdit.remove()
+    isEditMode = false
+  } else {
+    console.log('duplicated')
+    if (checkIfItemExists(newItem)){
+      alert('既に入力済みの値です')
+      return
+    }
+  }
+
+  // Create list item Dom element
+  addItemToDom(newItem)
+  // add item to local storage
+  addItemToStorage(newItem)
+  checkUI()
+}
+
+function checkIfItemExists(item) {
+  const itemsFromStorage = getItemFromStorage();
+  // if (itemsFromStorage.includes(item)){
+  //   return true;
+  // } else {
+  //   return false;
+  // }
+  return itemsFromStorage.includes(item)
+}
+
 
 ~~~
+### Fetch Basics
 ~~~js
+fetch('./movies.json')
+  .then(response => {
+    console.log(response);
+  })
+~~~
+Response {type: 'basic', url: 'http://127.0.0.1:5500/23_10_async-and-async-await/01-fetch-basics/movies.json', redirected: false, status: 200, ok: true, …}
+~~~js
+// Fetching a JSON file
+fetch('./movies.json')
+  .then((response) => response.json())
+  .then((data) => console.log(data));
+  
+// Fetching a text file
+fetch('./test.txt')
+  .then((response) => response.text())
+  .then((data) => console.log(data));
+
+// Fetching from an API
+fetch('https://api.github.com/users/bradtraversy')
+  .then((response) => response.json())
+  .then((data) => (document.querySelector('h1').textContent = data.login));
 
 ~~~
+axios
 ~~~js
-
-~~~
-~~~js
+getMovieList(){
+  axios.get('https://api.themoviedb.org/3/movie/550?api_key=xxxxxxxxxxxxxxxxxxxxx&language=ja')
+  .then(response => {
+    console.log(response.data)
+  }).catch(err => {
+    console.log('err:', err);
+  });
+}
 
 ~~~
 ~~~js
