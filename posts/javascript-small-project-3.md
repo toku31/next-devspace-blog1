@@ -625,41 +625,279 @@ getMovieList(){
 }
 
 ~~~
+### 127 Fetch Options - Method, Body, Headers
 ~~~js
+function createPost({ title, body }) {
+  fetch('https://jsonplaceholder.typicode.com/posts', {
+    method: 'POST',
+    body: JSON.stringify({
+      title,  // title: title
+      body,   // body: title
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      token: 'abc123',
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => console.log(data));
+}
 
+createPost({ title: 'My Post', body: 'This is my Post' });
+~~~
+### Todos 
+~~~js
+const apiUrl = 'https://jsonplaceholder.typicode.com/todos';
+
+// const getTodos = () => {
+//   fetch(apiUrl + '?_limit=10')
+//     .then((res) => res.json())
+//     .then((data) => {
+//       data.forEach((todo) => addTodoToDOM(todo));
+//     });
+// };
+
+// 取得する
+const getTodos = async () => {
+  const res = await fetch(apiUrl + '?_limit=5')
+  console.log('res:', res);
+  const data = await res.json()
+  console.log('data:', data);
+  data.forEach((todo) => addTodoToDOM(todo));
+};
+
+// 追加する
+const addTodoToDOM = (todo) => {
+  const div = document.createElement('div');
+  div.classList.add('todo');
+  div.appendChild(document.createTextNode(todo.title));
+  div.setAttribute('data-id', todo.id);
+
+  if (todo.completed) {
+    div.classList.add('done');
+  }
+
+  document.getElementById('todo-list').appendChild(div);
+};
+
+// addボタンを押したとき
+const createTodo = async (e) => {
+  e.preventDefault();
+  // console.log(e.target.firstElementChild.value)
+  const newTodo = {
+    title: e.target.firstElementChild.value,
+    completed: false,
+  };
+
+  const res = await fetch(apiUrl, {
+    method: 'POST',s
+    body: JSON.stringify(newTodo),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+ const data = await res.json())
+ addTodoToDOM(data);
+};
+
+const init = () => {
+  document.addEventListener('DOMContentLoaded', getTodos);
+  document.querySelector('#todo-form').addEventListener('submit', createTodo);
+};
+
+init();
+~~~
+### todos toggle, update, delete
+~~~js
+const toggleCompleted = (e) => {
+  console.log('toggle', e.target);
+  if (e.target.classList.contains('todo')) {
+    e.target.classList.toggle('done');
+    console.log('id:', e.target.dataset.id);
+    console.log('completed:', e.target.classList.contains('done'));
+    updateTodo(e.target.dataset.id, e.target.classList.contains('done'));
+  }
+};
+
+const updateTodo = (id, completed) => {
+  fetch(`${apiUrl}/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ completed }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }) // 以下は不要だが、検証用
+    .then((res) => res.json())
+    .then((data) => console.log('update:', data))
+};
+
+const deleteTodo = (e) => {
+  if (e.target.classList.contains('todo')) {
+    const id = e.target.dataset.id;
+    fetch(`${apiUrl}/${id}`, {
+      method: 'DELETE',
+    })
+      .then((res) => res.json())
+      .then(() => e.target.remove());
+  }
+};
+
+
+const init = () => {
+  document
+    .querySelector('#todo-list')
+    .addEventListener('click', toggleCompleted);
+  document.querySelector('#todo-list').addEventListener('dblclick', deleteTodo);
+};
+
+init();
+~~~
+### Fetch Error handling
+~~~js
+// Success
+fetch('http://httpstat.us/200')
+  .then((response) => {
+    return response;
+  })
+  .then(() => {
+    console.log('success');
+  });
+~~~
+The issue here is that the 'success' shows and the .catch() does NOT run for an error status like 404 or 500  
+throw Errorを書かないとcatch(error)を通らないでsuccessが表示される
+~~~js
+// Check for specific Code
+fetch('http://httpstat.us/404')
+  .then((response) => {
+    // console.log(response.status); // 404
+    // console.log(response.ok); // false
+    // console.log(response.statusText); // not Found
+    // if(!response.ok) {
+    //   throw new Error('Request Failed') // catchに送る
+    // }
+    if (response.status === 404){
+      throw new Error('Not Found')
+    } else if (response.status === 500) {
+      throw new Error('ServerError')
+    } else if (response.status !== 200) {
+      throw new Error('Request Failed') 
+    }
+    return response;
+  })
+  .then(() => {
+    console.log('success'); // 表示される
+  })
+  .catch((error) => {  // ここを通らない
+    console.log('catch', error);
+  });
 ~~~
 ~~~js
+function fetchUser() {
+  showSpinner();
+  fetch('https://randomuser.me/api')
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Request Failed');
+      }
 
+      return res.json();
+    })
+    .then((data) => {
+      hideSpinner();
+      displayUser(data.results[0]);
+    })
+    .catch((error) => {
+      hideSpinner();
+      document.querySelector('#user').innerHTML = `
+      <p class="text-xl text-center text-red-500 mb-5">
+      ${error}</p>`;
+    });
+}
+~~~
+### Async & Await
+~~~js
+const promise = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    resolve({ name: 'John', age: 20 });
+  }, 1000);
+});
+
+promise.then((data) => console.log(data)); // { name: 'John', age: 20 }
 ~~~
 ~~~js
+const promise = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    resolve({ name: 'John', age: 20 });
+  }, 1000);
+});
 
+async function getPromise() {
+  const response = await promise;
+  console.log(response);
+}
+
+getPromise();
 ~~~
 ~~~js
+async function getUsers() {
+  const res = await fetch('https://jsonplaceholder.typicode.com/users');
+  const data = await res.json();
 
+  console.log(data);
+}
+getUsers();
 ~~~
+### Try Catch 
 ~~~js
+function double(number) {
+  if (isNaN(number)) {
+    throw new Error(number + ' is not a number');
+  }
 
+  return number * 2;
+}
+
+try {
+  const y = double('hello');
+  console.log(y);
+} catch (error) {
+  console.log(error);
+}
 ~~~
+### async-await-error-handling
 ~~~js
+const getUsers = async () => {
+  try {
+    // const response = await fetch('https://jsonplaceholder.typicode.com/users');
+    const response = await fetch('http://httpstat.us/500');
 
+    if (!response.ok) {
+      throw new Error('Request Failed');
+    }
+
+    const data = await response.text();
+
+    console.log(data);
+  } catch (error) {
+    console.log(error);
+  }
+};
 ~~~
+### Multiple Promises with Async & Await
 ~~~js
+const getPosts = async () => {
+  // const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+  const response = await fetch('http://httpstat.us/500');
+  if (!response.ok) {
+    throw new Error('Request Failed');
+  }
 
-~~~
-~~~js
-
-~~~
-~~~js
-
-~~~
-~~~js
-
-~~~
-~~~js
-
-~~~
-~~~js
-
+  const data = await response.text();
+  console.log(data);
+};
+// getUsers();
+getPosts().catch((error) => console.log(error));
 ~~~
 ~~~js
 
