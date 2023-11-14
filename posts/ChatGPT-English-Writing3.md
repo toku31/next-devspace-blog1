@@ -1,7 +1,7 @@
 ---
 title: "ChatGPT English Writing3"
 date: "November 8, 2023"
-excerpt: "ChatGPTを使って英作文を作成します 3回目"
+excerpt: "ChatGPTを使ってWriting Task1を作成します 3回目"
 cover_image: "/images/posts/img2.jpg"
 category: "Others"
 author: "Toku"
